@@ -152,7 +152,6 @@ def main(year):
                     else:
                         data[var] = formatter(data[var])
                 except:
-                    # print data[var]
                     print "Error reading {0} ID on line {1}. Got value: '{2}'".format(var, i+1, data[var])
                     errors_dict[var].add(data[var])
                     errors = True

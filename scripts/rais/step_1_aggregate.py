@@ -25,7 +25,7 @@ from os import environ
 from decimal import Decimal, ROUND_HALF_UP
 from ..config import DATA_DIR
 from ..helpers import d, get_file, format_runtime
-from scripts import YEAR
+from scripts import YEAR,DELIMITER
 
 ''' Connect to DB '''
 db = MySQLdb.connect(host="localhost", user=environ["DATAVIVA_DB_USER"], 
@@ -171,7 +171,7 @@ def write(tables, directory, year):
                             d(tables[tbl][var1][var2][var3]['wage_avg']), \
                             tables[tbl][var1][var2][var3]['num_emp_est'] ])
 
-def main(year):
+def main(year,delimiter):
     '''Initialize our data dictionaries'''
     ybio = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(float))))
     
@@ -196,7 +196,7 @@ def main(year):
     raw_file_name = "Rais{0}.csv".format(year)
     raw_file_path = os.path.abspath(os.path.join(DATA_DIR, 'rais', raw_file_name))
     raw_file = get_file(raw_file_path)
-    csv_reader = csv.reader(raw_file, delimiter=",", quotechar='"')
+    csv_reader = csv.reader(raw_file, delimiter=delimiter, quotechar='"')
     header = [s.replace('\xef\xbb\xbf', '') for s in csv_reader.next()]
     
     errors_dict = defaultdict(set)
@@ -225,6 +225,10 @@ def main(year):
                 # print "Error reading year on line {0}".format(i+1)
                 if var_name == "EconomicAtivity_ID_ISIC":
                     new_col = "EconmicAtivity_ID_ISIC"
+                elif var_name == "EconmicAtivity_ID_ISIC":
+                    new_col = "EconomicAtivity_ID_ISIC"                
+                elif var_name == "AverageMonthlyWage":
+                    new_col = "WagesReceived"          
                 else:
                     new_col = raw_input('Could not find value for "{0}" column. '\
                                 'Use different column name? : ' \
@@ -247,7 +251,6 @@ def main(year):
                     else:
                         data[var] = formatter(data[var])
                 except:
-                    # print data[var]
                     print "Error reading {0} ID on line {1}".format(var, i+1)
                     errors_dict[var].add(data[var])
                     errors = True
@@ -418,7 +421,7 @@ def main(year):
 if __name__ == "__main__":
     start = time.time()
     
-    main(YEAR)
+    main(YEAR,DELIMITER)
     
     total_run_time = time.time() - start
     print; print;
