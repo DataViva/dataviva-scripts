@@ -29,10 +29,13 @@ db.autocommit(1)
 cursor = db.cursor()
 
 def hs_format(hs_code, lookup):
-    # make sure it's a 6 digit (with leading zeros)
-    hs_code = hs_code.zfill(6)
-    # take off last 2 digits
-    hs_code = hs_code[:-2]
+    if len(hs_code)>4:
+        # take off last 2 digits
+        hs_code = hs_code[:-2]
+   
+    # make sure it's a 4 digit (with leading zeros). Ex.: 10119 will be 010119
+    hs_code = hs_code.zfill(4)
+    
     if hs_code in ['9991', '9992', '9998', '9997']:
         return "229999"
     return lookup[hs_code]
@@ -62,6 +65,7 @@ def get_lookup(type):
         cursor.execute("select id_mdic, id from attrs_bra where length(id)=8 or length(id)=2")
         return {str(r[0]):r[1] for r in cursor.fetchall()}
     elif type == "hs":
+        #Example: Original number 01010119 will be 010119
         cursor.execute("select id from attrs_hs")
         return {r[0][2:]:r[0] for r in cursor.fetchall()}
     elif type == "wld":
@@ -74,6 +78,38 @@ def get_lookup(type):
 def add(ybpw, munic, isic, occ, val_usd):
     ybpw[munic][isic][occ]["val_usd"] += val_usd
     return ybpw
+
+def updateMDICxIBGE():
+    '''Open CSV file'''
+    raw_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', 'MDICxIBGE.csv'))
+    raw_file = get_file(raw_file_path)
+    delim = ";"
+    csv_reader = csv.reader(raw_file, delimiter=delim)
+    for i, line in enumerate(csv_reader):
+        #7 = IBGE , 9 = MDIC
+        ibge_cod=line[7].strip()
+        mdic_cod=line[9].strip()
+        if i==0:
+            continue
+
+        sql="select id_mdic, id from attrs_bra where id_ibge = {0}".format(ibge_cod)
+        cursor.execute(sql)
+        values=cursor.fetchall()
+        size=len(values)
+        if size==1:          
+            old_mdic=str(values[0][0])
+            old_idbra=str(values[0][1])
+            if old_mdic<>mdic_cod:
+                print "Changing MDIC code from {0} to {1} in IBGE cod {2}".format(old_mdic,mdic_cod,ibge_cod)
+                sql="select * from secex_yb where bra_id='{0}'".format(old_idbra)
+                cursor.execute(sql)
+                if len(cursor.fetchall())>0:
+                    print "Exports found for {0}".format(ibge_cod)
+                sql="update attrs_bra set id_mdic = {0} where id_ibge = {1}".format(mdic_cod,ibge_cod)
+                #cursor.execute(sql)
+        else:
+            print "Error finding a IBGE {0}: Found {1}".format(ibge_cod,size)
+
 
 def main(year):
     '''Initialize our data dictionaries'''
@@ -155,7 +191,7 @@ def main(year):
                     print "Error reading {0} ID on line {1}. Got value: '{2}'".format(var, i+1, data[var])
                     errors_dict[var].add(data[var])
                     errors = True
-                    sys.exit()
+                    #sys.exit()
                     continue
         
         if errors:
