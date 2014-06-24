@@ -2,32 +2,34 @@
 """
     Check all attrs used in SECEX
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+    Usage:
+    python -m scripts.secex.step_0_check /path/to/data/secex/MDICxIBGE.csv
 
 """
 
 
 ''' Import statements '''
-import csv, sys, os, argparse, MySQLdb, time, bz2
-from collections import defaultdict
-from os import environ
-from decimal import Decimal, ROUND_HALF_UP
+import csv,sys,os,MySQLdb,time,click
 from ..config import DATA_DIR
-from ..helpers import d, get_file, format_runtime
-from scripts import YEAR
+from ..helpers import get_file
 
 ''' Connect to DB '''
-db = MySQLdb.connect(host="localhost", user=environ["DATAVIVA_DB_USER"], 
-                        passwd=environ["DATAVIVA_DB_PW"], 
-                        db=environ["DATAVIVA_DB_NAME"])
+db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA_DB_USER"], 
+                        passwd=os.environ["DATAVIVA_DB_PW"], 
+                        db=os.environ["DATAVIVA_DB_NAME"])
 db.autocommit(1)
 cursor = db.cursor()
 
-def updateMDICxIBGE():
+@click.command()
+@click.argument('input_file', type=click.Path(exists=True))
+def updateMDICxIBGE(input_file):
     '''Open CSV file'''
-    raw_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', 'MDICxIBGE.csv'))
-    raw_file = get_file(raw_file_path)
+    click.echo(click.format_filename(input_file))
+    input_file = get_file(input_file)
     delim = ";"
-    csv_reader = csv.reader(raw_file, delimiter=delim)
+    csv_reader = csv.reader(input_file, delimiter=delim)
+    
     for i, line in enumerate(csv_reader):
         #7 = IBGE , 9 = MDIC
         ibge_cod=line[7].strip()
@@ -58,8 +60,6 @@ def updateMDICxIBGE():
 if __name__ == "__main__":
     start = time.time()
     
-    if not YEAR:
-        YEAR = raw_input("Year: ")
     updateMDICxIBGE()
     
     total_run_time = time.time() - start
