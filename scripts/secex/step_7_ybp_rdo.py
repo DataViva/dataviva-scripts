@@ -180,6 +180,7 @@ def main(year, delete_previous_file):
         
         # print rcas_dom_binary.shape, prox_dom.shape, pcis.shape
         opp_gain_wld = growth.opportunity_gain(rcas_wld_binary, prox_wld, pcis_wld)
+        opp_gain_dom = growth.opportunity_gain(rcas_dom_binary, prox_dom, pcis_wld)
         
         
         '''

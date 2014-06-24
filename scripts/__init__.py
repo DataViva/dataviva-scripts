@@ -7,6 +7,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-y", "--year", help=help_text_year)
 parser.add_argument("-t", "--table", help=help_text_table)
 parser.add_argument("-d", "--delete", action='store_true', default=False)
+parser.add_argument("-s", "--delimiter", default=',')
 args = parser.parse_args()
 
 '''Boolean flag of whether or not to delete previous file, defaults
@@ -15,9 +16,10 @@ DELETE_PREVIOUS_FILE = args.delete
 
 '''Need to know year to figure out which folder to use'''
 YEAR = args.year
-
+DELIMITER = args.delimiter
 TABLE = args.table
 
 print;
 print "Year:", YEAR
 print;
+print "Delimiter:", DELIMITER
