@@ -1,23 +1,22 @@
 # -*- coding: utf-8 -*-
 """
 
-python -m scripts.secex.step_4_eci -y 2012
+how to run this:
+python -m scripts.secex.step_4_eci \
+            -y 2000 \
+            data/secex/export/2000
 
 """
 
 ''' Import statements '''
-import csv, sys, os, argparse, bz2, time
+import csv, sys, os, bz2, time, click
 import pandas as pd
-from collections import defaultdict
-from os import environ
-from ..config import DATA_DIR
 from ..helpers import get_file, format_runtime
 from ..growth_lib import growth
-from scripts import YEAR, DELETE_PREVIOUS_FILE
 
-def get_ybp_rcas(year, geo_level):
+def get_ybp_rcas(data_dir, geo_level):
     
-    ybp_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'ybp.tsv'))
+    ybp_file_path = os.path.abspath(os.path.join(data_dir, 'ybp.tsv.bz2'))
     ybp_file = get_file(ybp_file_path)
     ybp = pd.read_csv(ybp_file, sep="\t", converters={"hs_id":str})
     
@@ -35,9 +34,9 @@ def get_ybp_rcas(year, geo_level):
     
     return rcas
 
-def get_yp_pcis(year):
+def get_yp_pcis(data_dir):
     
-    yp_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'yp_pcis.tsv'))
+    yp_file_path = os.path.abspath(os.path.join(data_dir, 'yp_pcis.tsv.bz2'))
     yp_file = get_file(yp_file_path)
     yp = pd.read_csv(yp_file, sep="\t", converters={"hs_id":str})
     
@@ -49,11 +48,15 @@ def get_yp_pcis(year):
     
     return yp.T
 
-def main(year, delete_previous_file):
+@click.command()
+@click.option('--year', '-y', help='The year of the data.', type=click.INT, required=True)
+@click.option('--delete', '-d', help='Delete the previous file?', is_flag=True, default=False)
+@click.argument('data_dir', type=click.Path(exists=True), required=True)
+def main(year, delete, data_dir):
     
-    pcis = get_yp_pcis(year)
+    pcis = get_yp_pcis(data_dir)
     
-    yb_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'yb.tsv'))
+    yb_file_path = os.path.abspath(os.path.join(data_dir, 'yb.tsv.bz2'))
     yb_file = get_file(yb_file_path)
     yb = pd.read_csv(yb_file, sep="\t", index_col=["bra_id"], converters={"year":str})
     
@@ -61,7 +64,7 @@ def main(year, delete_previous_file):
     for geo_level in [2, 4, 7, 8]:
         print "geo_level",geo_level
         
-        rcas = get_ybp_rcas(year, geo_level)
+        rcas = get_ybp_rcas(data_dir, geo_level)
         rcas = rcas.reindex(columns=pcis.columns)
         
         geo_level_pcis = pd.DataFrame([pcis.values[0]]*len(rcas.index), columns=pcis.columns, index=rcas.index)
@@ -76,21 +79,21 @@ def main(year, delete_previous_file):
     yb["eci"] = ecis
 
     # print out file
-    new_yb_file = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, "yb_ecis.tsv.bz2"))
+    new_yb_file = os.path.abspath(os.path.join(data_dir, "yb_ecis.tsv.bz2"))
     print ' writing file:', new_yb_file
     yb.to_csv(bz2.BZ2File(new_yb_file, 'wb'), sep="\t", index=True)
     
     '''
         delete old file
     '''
-    if delete_previous_file:
+    if delete:
         print "deleting previous files"
         os.remove(yb_file.name)
 
 if __name__ == "__main__":
     start = time.time()
     
-    main(YEAR, DELETE_PREVIOUS_FILE)
+    main()
     
     total_run_time = time.time() - start
     print; print;
