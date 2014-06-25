@@ -15,7 +15,7 @@
 """
 
 ''' Import statements '''
-import csv, sys, os, argparse, math, time, bz2, click
+import csv, sys, os, time, bz2, click
 import pandas as pd
 import numpy as np
 from ..helpers import get_file, format_runtime
