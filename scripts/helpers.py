@@ -36,7 +36,10 @@ def get_file(full_path):
         '.zip': zipfile.ZipFile,
     }
     
-    file = extensions[file_ext](full_path)
+    try:
+        file = extensions[file_ext](full_path)
+    except KeyError:
+        file = open(full_path)
     
     if file_ext == '.zip':
         file = zipfile.ZipFile.open(file, file_path_no_ext)
