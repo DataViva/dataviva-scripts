@@ -7,20 +7,19 @@
     and destinations (wld) that are found in each location (state, meso,
     planning region and municipality).
     
-    run this: python -m scripts.secex.step_5_diversity -y YEAR
+    run this:
+    python -m scripts.secex.step_5_diversity \
+                -y 2000 \
+                data/secex/export/2000
+    
 """
 
 ''' Import statements '''
-import csv, sys, os, argparse, math, time, bz2
-from collections import defaultdict
-from os import environ
-from os.path import basename
+import csv, sys, os, argparse, math, time, bz2, click
 import pandas as pd
 import numpy as np
 from ..helpers import get_file, format_runtime
-from ..config import DATA_DIR
 from ..growth_lib import growth
-from scripts import YEAR, DELETE_PREVIOUS_FILE
 
 def get_deepest(column):
     if column == "hs_id": return 6
@@ -64,26 +63,30 @@ def get_effective_diversity(file, index, column):
     
     return diversity_eff
 
-def main(year, delete_previous_file):
+@click.command()
+@click.option('--year', '-y', help='The year of the data.', type=click.INT, required=True)
+@click.option('--delete', '-d', help='Delete the previous file?', is_flag=True, default=False)
+@click.argument('data_dir', type=click.Path(exists=True), required=True)
+def main(year, delete, data_dir):
     
     '''
         YB Diversity
     '''
     # start with unique hs / bra
-    ybp_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'ybp.tsv'))
+    ybp_file_path = os.path.abspath(os.path.join(data_dir, 'ybp.tsv.bz2'))
     ybp_file = get_file(ybp_file_path)
     yb_hs_diversity = get_diversity(ybp_file, "bra_id", "hs_id")
     ybp_file.seek(0)
     yb_hs_effective_diversity = get_effective_diversity(ybp_file, "bra_id", "hs_id")
     
     # unique wld / bra
-    ybw_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'ybw.tsv'))
+    ybw_file_path = os.path.abspath(os.path.join(data_dir, 'ybw.tsv.bz2'))
     ybw_file = get_file(ybw_file_path)
     yb_wld_diversity = get_diversity(ybw_file, "bra_id", "wld_id")
     ybw_file.seek(0)
     yb_wld_effective_diversity = get_effective_diversity(ybw_file, "bra_id", "wld_id")
     
-    yb_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'yb_ecis.tsv'))
+    yb_file_path = os.path.abspath(os.path.join(data_dir, 'yb_ecis.tsv.bz2'))
     yb_file = get_file(yb_file_path)
     yb_diversity = pd.read_csv(yb_file, sep="\t", index_col=["bra_id"])
     
@@ -94,7 +97,7 @@ def main(year, delete_previous_file):
     
     # print out file
     print "writing yb file..."
-    new_yb_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'yb_ecis_diversity.tsv.bz2'))
+    new_yb_file_path = os.path.abspath(os.path.join(data_dir, 'yb_ecis_diversity.tsv.bz2'))
     yb_diversity.to_csv(bz2.BZ2File(new_yb_file_path, 'wb'), sep="\t", index=True)
     
     
@@ -102,7 +105,7 @@ def main(year, delete_previous_file):
     '''
         YP Diversity
     '''
-    ypw_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'ypw.tsv'))
+    ypw_file_path = os.path.abspath(os.path.join(data_dir, 'ypw.tsv.bz2'))
     ypw_file = get_file(ypw_file_path)
     
     
@@ -115,7 +118,7 @@ def main(year, delete_previous_file):
     yp_bra_effective_diversity = get_effective_diversity(ybp_file, "hs_id", "bra_id")
         
     # print out file
-    yp_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'yp_pcis.tsv'))
+    yp_file_path = os.path.abspath(os.path.join(data_dir, 'yp_pcis.tsv.bz2'))
     yp_file = get_file(yp_file_path)
     yp_diversity = pd.read_csv(yp_file, sep="\t", converters={"hs_id":str})
     yp_diversity = yp_diversity.set_index(["hs_id"])
@@ -126,7 +129,7 @@ def main(year, delete_previous_file):
     yp_diversity["bra_diversity_eff"] = yp_bra_effective_diversity
     
     print "writing yp file..."
-    new_yp_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'yp_pcis_diversity.tsv.bz2'))
+    new_yp_file_path = os.path.abspath(os.path.join(data_dir, 'yp_pcis_diversity.tsv.bz2'))
     yp_diversity.to_csv(bz2.BZ2File(new_yp_file_path, 'wb'), sep="\t", index=True)
     
     
@@ -145,7 +148,7 @@ def main(year, delete_previous_file):
     yw_bra_effective_diversity = get_effective_diversity(ybw_file, "wld_id", "bra_id")
     
     # print out file
-    yw_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'yw_ecis.tsv'))
+    yw_file_path = os.path.abspath(os.path.join(data_dir, 'yw_ecis.tsv.bz2'))
     yw_file = get_file(yw_file_path)
     yw_diversity = pd.read_csv(yw_file, sep="\t")
     yw_diversity = yw_diversity.set_index(["wld_id"])
@@ -156,10 +159,10 @@ def main(year, delete_previous_file):
     yw_diversity["bra_diversity_eff"] = yw_bra_effective_diversity
     
     print "writing yw file..."
-    new_yw_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'yw_ecis_diversity.tsv.bz2'))
+    new_yw_file_path = os.path.abspath(os.path.join(data_dir, 'yw_ecis_diversity.tsv.bz2'))
     yw_diversity.to_csv(bz2.BZ2File(new_yw_file_path, 'wb'), sep="\t", index=True)
     
-    if delete_previous_file:
+    if delete:
         print "deleting previous file"
         os.remove(yb_file.name)
         os.remove(yp_file.name)
@@ -168,7 +171,7 @@ def main(year, delete_previous_file):
 if __name__ == "__main__":
     start = time.time()
     
-    main(YEAR, DELETE_PREVIOUS_FILE)
+    main()
     
     total_run_time = time.time() - start
     print; print;
