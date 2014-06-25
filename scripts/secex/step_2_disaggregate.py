@@ -1,29 +1,28 @@
 # -*- coding: utf-8 -*-
 """
 
-    How to run this: python -m scripts.secex.step_2_disaggregate -y YEAR
+    How to run this:
+    python -m scripts.secex.step_2_disaggregate -y 2000 /path/to/data/secex/export/2000/ybpw.tsv.bz2
+    
+    * you can also pass an optional second argument of the path for the output
+      files to be created in.
 
 """
 
 ''' Import statements '''
-import csv, sys, os, argparse, MySQLdb, bz2, time
+import csv, sys, os, bz2, time, click
 from collections import defaultdict
-from os import environ
-from decimal import Decimal, ROUND_HALF_UP
-from ..config import DATA_DIR
 from ..helpers import d, get_file, format_runtime
-from scripts import YEAR
 
-def write(tables, year):
+def write(tables, year, output_dir):
     
     vals = ["val_usd"]
-    directory = os.path.abspath(os.path.join(DATA_DIR, 'secex'))
     index_lookup = {"b":"bra_id", "p":"hs_id", "w":"wld_id", "y": "year"}
     
     for tbl in tables.keys():
         
         new_file_name = tbl+".tsv.bz2"
-        new_file = os.path.abspath(os.path.join(directory, year, new_file_name))
+        new_file = os.path.abspath(os.path.join(output_dir, new_file_name))
         new_file_writer = csv.writer(bz2.BZ2File(new_file, 'wb'), delimiter='\t',
                                     quotechar='"', quoting=csv.QUOTE_MINIMAL)
         
@@ -46,7 +45,11 @@ def write(tables, year):
                     new_file_writer.writerow([year, var1, var2, \
                         d(tables[tbl][var1][var2]['val_usd']) ])
 
-def main(year):
+@click.command()
+@click.option('--year', '-y', help='The year of the data.', type=click.INT, required=True)
+@click.argument('input_file', type=click.Path(exists=True))
+@click.argument('output_dir', type=click.Path(exists=True), required=False)
+def disaggregate(year, input_file, output_dir):
     tables = {
         "yb": defaultdict(lambda: defaultdict(float)),
         "yp": defaultdict(lambda: defaultdict(float)),
@@ -57,10 +60,11 @@ def main(year):
     }
     
     '''Open CSV file'''
-    ybpw_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'ybpw.tsv'))
-    ybpw_file = get_file(ybpw_file_path)
+    click.echo(click.format_filename(input_file))
+    ybpw_file = get_file(input_file)
     
-    csv_reader = csv.reader(ybpw_file, delimiter="\t", quotechar='"')
+    delim = "\t"
+    csv_reader = csv.reader(ybpw_file, delimiter=delim, quotechar='"')
     header = [s.replace('\xef\xbb\xbf', '') for s in csv_reader.next()]
     
     '''Populate the data dictionaries'''
@@ -87,12 +91,16 @@ def main(year):
             tables["ypw"][line["hs_id"]][line["wld_id"]]["val_usd"] += float(line["val_usd"])
     
     print
-    write(tables, year)
+    
+    if not output_dir:
+        output_dir = os.path.dirname(input_file)
+    
+    write(tables, year, output_dir)
 
 if __name__ == "__main__":
     start = time.time()
     
-    main(YEAR)
+    disaggregate()
     
     total_run_time = time.time() - start
     print; print;
