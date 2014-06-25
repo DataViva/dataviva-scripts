@@ -1,30 +1,28 @@
 # -*- coding: utf-8 -*-
 """
 
-run this: python -m scripts.secex.step_7_ybp_rdo -y YEAR
+python -m scripts.secex.step_7_ybp_rdo \
+            -y 2000 \
+            data/secex/export/2000
 
 """
 
 ''' Import statements '''
-import csv, sys, os, argparse, MySQLdb, time, bz2
-from collections import defaultdict
-from os import environ
+import csv, sys, os, MySQLdb, time, bz2, click
 import pandas as pd
 import pandas.io.sql as sql
 import numpy as np
-from ..config import DATA_DIR
 from ..helpers import get_file, format_runtime
 from ..growth_lib import growth
-from scripts import YEAR, DELETE_PREVIOUS_FILE
 
 ''' Connect to DB '''
-db = MySQLdb.connect(host="localhost", user=environ["DATAVIVA_DB_USER"], 
-                        passwd=environ["DATAVIVA_DB_PW"], 
-                        db=environ["DATAVIVA_DB_NAME"])
+db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA_DB_USER"], 
+                        passwd=os.environ["DATAVIVA_DB_PW"], 
+                        db=os.environ["DATAVIVA_DB_NAME"])
 db.autocommit(1)
 cursor = db.cursor()
 
-def get_ybp_wld_rcas(geo_level, year):
+def get_ybp_wld_rcas(geo_level, year, data_dir):
     
     def rca(bra_tbl, wld_tbl):
         col_sums = bra_tbl.sum(axis=1)
@@ -38,7 +36,7 @@ def get_ybp_wld_rcas(geo_level, year):
         return rcas
 
     '''Get domestic values from TSV'''
-    ybp_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'ybp.tsv'))
+    ybp_file_path = os.path.abspath(os.path.join(data_dir, 'ybp.tsv.bz2'))
     ybp_file = get_file(ybp_file_path)
     ybp_dom = pd.read_csv(ybp_file, sep="\t", converters={"hs_id":str})
     hs_criterion = ybp_dom['hs_id'].map(lambda x: len(x) == 6)
@@ -59,8 +57,8 @@ def get_ybp_wld_rcas(geo_level, year):
     
     return mcp
 
-def get_ybp_domestic_rcas(geo_level, year):
-    ybp_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'ybp.tsv'))
+def get_ybp_domestic_rcas(geo_level, year, data_dir):
+    ybp_file_path = os.path.abspath(os.path.join(data_dir, 'ybp.tsv.bz2'))
     ybp_file = get_file(ybp_file_path)
     ybp = pd.read_csv(ybp_file, sep="\t", converters={"hs_id":str})
     
@@ -76,8 +74,8 @@ def get_ybp_domestic_rcas(geo_level, year):
     
     return rcas
 
-def get_pcis(geo_level, year):
-    yp_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'yp_pcis_diversity_rcas.tsv'))
+def get_pcis(geo_level, data_dir):
+    yp_file_path = os.path.abspath(os.path.join(data_dir, 'yp_pcis_diversity_rcas.tsv.bz2'))
     yp_file = get_file(yp_file_path)
     yp = pd.read_csv(yp_file, sep="\t", converters={"hs_id":str})
     
@@ -109,9 +107,13 @@ def get_wld_proximity(year):
 
     return prox
 
-def main(year, delete_previous_file):
+@click.command()
+@click.option('--year', '-y', help='The year of the data.', type=click.INT, required=True)
+@click.option('--delete', '-d', help='Delete the previous file?', is_flag=True, default=False)
+@click.argument('data_dir', type=click.Path(exists=True), required=True)
+def main(year, delete, data_dir):
     
-    ybp_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'ybp.tsv'))
+    ybp_file_path = os.path.abspath(os.path.join(data_dir, 'ybp.tsv.bz2'))
     ybp_file = get_file(ybp_file_path)
     ybp = pd.read_csv(ybp_file, sep="\t", converters={"hs_id":str})
     ybp = ybp.set_index(["year", "bra_id", "hs_id"])
@@ -126,9 +128,9 @@ def main(year, delete_previous_file):
             RCAS
         '''
     
-        rcas_dom = get_ybp_domestic_rcas(geo_level, year)
+        rcas_dom = get_ybp_domestic_rcas(geo_level, year, data_dir)
         rcas_dom = rcas_dom.reindex(columns=all_hs)
-        rcas_wld = get_ybp_wld_rcas(geo_level, year)
+        rcas_wld = get_ybp_wld_rcas(geo_level, year, data_dir)
         rcas_wld = rcas_wld.reindex(columns=all_hs)
     
         rcas_dom_binary = rcas_dom.copy()
@@ -162,7 +164,7 @@ def main(year, delete_previous_file):
         '''
         
         '''same PCIs for all since we are using world PCIs'''
-        pcis = get_pcis(geo_level, year)
+        pcis = get_pcis(geo_level, data_dir)
         
         # all_hs_dom = set(pcis.index).union(set(rcas_dom.columns))
         all_hs_dom = set(pcis.index).intersection(set(rcas_dom.columns))
@@ -226,18 +228,18 @@ def main(year, delete_previous_file):
     ybp["opp_gain_wld"] = ybp_rdo["opp_gain_wld"]
     
     # print out file
-    new_ybp_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', year, 'ybp_rcas_dist_opp.tsv.bz2'))
+    new_ybp_file_path = os.path.abspath(os.path.join(data_dir, 'ybp_rcas_dist_opp.tsv.bz2'))
     print ' writing file:', new_ybp_file_path
     ybp.to_csv(bz2.BZ2File(new_ybp_file_path, 'wb'), sep="\t", index=True)
     
-    if delete_previous_file:
+    if delete:
         print "deleting previous file"
         os.remove(ybp_file.name)
 
 if __name__ == "__main__":
     start = time.time()
     
-    main(YEAR, DELETE_PREVIOUS_FILE)
+    main()
     
     total_run_time = time.time() - start
     print; print;
