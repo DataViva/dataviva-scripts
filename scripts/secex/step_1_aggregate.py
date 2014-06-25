@@ -5,26 +5,27 @@
 
     The script is the first step in adding a new year of SECEX data to the 
     database. The script will output 1 bzipped TSV file that can then be 
-    consumed by step 2 for created the disaggregate tables.
+    consumed by step 2 for creating the disaggregate tables.
     
-    How to run this: python -m scripts.secex.step_1_aggregate -y YEAR
+    How to run this: 
+    python -m scripts.secex.step_1_aggregate -y 2010 /path/to/data/secex/export/MDIC_2000.csv.zip
+    
+    * you can also pass an optional second argument of the path for the output
+      file. This output file should end in .bz2 as the output is always bzipped.
 
 """
 
 
 ''' Import statements '''
-import csv, sys, os, argparse, MySQLdb, time, bz2
+import csv, sys, os, MySQLdb, time, bz2, click
 from collections import defaultdict
-from os import environ
-from decimal import Decimal, ROUND_HALF_UP
 from ..config import DATA_DIR
 from ..helpers import d, get_file, format_runtime
-from scripts import YEAR
 
 ''' Connect to DB '''
-db = MySQLdb.connect(host="localhost", user=environ["DATAVIVA_DB_USER"], 
-                        passwd=environ["DATAVIVA_DB_PW"], 
-                        db=environ["DATAVIVA_DB_NAME"])
+db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA_DB_USER"], 
+                        passwd=os.environ["DATAVIVA_DB_PW"], 
+                        db=os.environ["DATAVIVA_DB_NAME"])
 db.autocommit(1)
 cursor = db.cursor()
 
@@ -79,7 +80,25 @@ def add(ybpw, munic, isic, occ, val_usd):
     ybpw[munic][isic][occ]["val_usd"] += val_usd
     return ybpw
 
-def main(year):
+@click.command()
+@click.option('--year', '-y', help='The year of the data.', type=click.INT, required=True)
+@click.argument('input_file', type=click.Path(exists=True))
+@click.argument('output_file', type=click.File('wb'), required=False)
+def aggregate(year, input_file, output_file):
+    
+    if not output_file:
+        dirname = os.path.dirname(input_file)
+        year_dir = os.path.abspath(os.path.join(dirname, str(year)))
+        if not os.path.exists(year_dir):
+            os.makedirs(year_dir)
+        output_file = os.path.abspath(os.path.join(year_dir, "ybpw.tsv.bz2"))
+    
+    csv_output = csv.writer(bz2.BZ2File(output_file, 'wb'), delimiter='\t',
+                                quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    
+    header = ["year", "bra_id", "hs_id", "wld_id", "val_usd"]
+    csv_output.writerow(header)
+    
     '''Initialize our data dictionaries'''
     ybpw = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(float))))
     
@@ -93,18 +112,11 @@ def main(year):
                     "val_usd":["TransactionAmount_US$_FOB", float]}
     
     '''Open CSV file'''
-    raw_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', 'MDIC_{0}.csv'.format(year)))
-    raw_file = get_file(raw_file_path)
-    delim = "|"
-    if not raw_file:
-        raw_file_path = os.path.abspath(os.path.join(DATA_DIR, 'secex', 'MDIC_{0}.txt'.format(year)))
-        raw_file = get_file(raw_file_path)
-        delim = "|"
-        if not raw_file:
-            print "unable to find", raw_file_path
-            sys.exit()
+    click.echo(click.format_filename(input_file))
+    input_file = get_file(input_file)
     
-    csv_reader = csv.reader(raw_file, delimiter=delim)
+    delim = "|"
+    csv_reader = csv.reader(input_file, delimiter=delim)
     
     header = [s.replace('\xef\xbb\xbf', '') for s in csv_reader.next()]
     
@@ -200,43 +212,26 @@ def main(year):
             ybpw = add(ybpw, lookup["pr"][data["munic"]], data["hs"][:4], data["wld"], data["val_usd"])
             ybpw = add(ybpw, lookup["pr"][data["munic"]], data["hs"], data["wld"][:2], data["val_usd"])
             ybpw = add(ybpw, lookup["pr"][data["munic"]], data["hs"], data["wld"], data["val_usd"])
-        
-    print errors_dict
+    
+    print
+    if errors_dict <> defaultdict(set):
+        print "Errors:"
+        print errors_dict
     
     columns = {"y":"year", "b":"bra_id", "i":"isic_id", "o":"cbo_id"}
     
     print
     print "finished reading file, writing output..."
-    
-    secex_dir = os.path.abspath(os.path.join(DATA_DIR, 'secex'))
-    if not os.path.exists(secex_dir):
-        os.makedirs(secex_dir)
-    new_dir = os.path.abspath(os.path.join(DATA_DIR, 'secex', year))
-    if not os.path.exists(new_dir):
-        os.makedirs(new_dir)
-    
-    new_file = os.path.abspath(os.path.join(new_dir, "ybpw.tsv.bz2"))
-    print ' writing file: ', new_file
-    
-    '''Create header for CSV file'''
-    header = ["year", "bra_id", "hs_id", "wld_id", "val_usd"]
-    
-    '''Export to files'''
-    csv_writer = csv.writer(bz2.BZ2File(new_file, 'wb'), delimiter='\t',
-                                quotechar='"', quoting=csv.QUOTE_MINIMAL)
-    csv_writer.writerow(header)
-    
+
     for bra in ybpw.keys():
         for hs in ybpw[bra].keys():
             for wld in ybpw[bra][hs].keys():
-                csv_writer.writerow([year, bra, hs, wld, d(ybpw[bra][hs][wld]['val_usd']) ])
+                csv_output.writerow([year, bra, hs, wld, d(ybpw[bra][hs][wld]['val_usd']) ])
 
 if __name__ == "__main__":
     start = time.time()
     
-    if not YEAR:
-        YEAR = raw_input("Year: ")
-    main(YEAR)
+    aggregate()
     
     total_run_time = time.time() - start
     print; print;
