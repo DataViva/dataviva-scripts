@@ -2,7 +2,9 @@
 """
 
     How to run this:
-    python -m scripts.secex.step_2_disaggregate -y 2000 /path/to/data/secex/export/2000/ybpw.tsv.bz2
+    python -m scripts.secex.step_2_disaggregate \
+        -y 2000 \
+        data/secex/export/2000/ybpw.tsv.bz2
     
     * you can also pass an optional second argument of the path for the output
       files to be created in.

@@ -8,7 +8,9 @@
     consumed by step 2 for creating the disaggregate tables.
     
     How to run this: 
-    python -m scripts.secex.step_1_aggregate -y 2000 /path/to/data/secex/export/MDIC_2000.csv.zip
+    python -m scripts.secex.step_1_aggregate \
+        -y 2000 \
+        data/secex/export/MDIC_2000.csv.zip
     
     * you can also pass an optional second argument of the path for the output
       file. This output file should end in .bz2 as the output is always bzipped.
