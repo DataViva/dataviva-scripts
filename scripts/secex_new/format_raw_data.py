@@ -17,16 +17,25 @@
     
     Example Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    python \
+    -m scripts.secex_new.format_raw_data \
+    data/secex/export/MDIC_2004.csv.zip \
+    data/secex/import/MDIC_2004.csv.zip \
+    -y 2004 \
+    -e data/secex/observatory_ecis.csv \
+    -p data/secex/observatory_pcis.csv \
+    -o data/secex/2004 \
+    -g data/secex/2003 \
+    -d
 
 """
 
 ''' Import statements '''
-import os, sys, time, bz2, click, urllib, json
+import os, sys, time, bz2, click
 import pandas as pd
 import pandas.io.sql as sql
 import numpy as np
 
-from ..config import DATA_DIR
 from ..growth_lib import growth
 
 from _to_df import to_df
@@ -66,7 +75,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
     
     if debug:
         print; print '''STEP 3: \nReplace vals with DB IDs'''
-    secex_df = replace_vals(secex_df, debug)
+    secex_df = replace_vals(secex_df, None, debug)
     
     if debug:
         print; print '''STEP 4: \nAggregate'''

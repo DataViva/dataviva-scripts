@@ -1,7 +1,7 @@
 import os, MySQLdb
 import pandas as pd
 
-def replace_vals(secex_df, debug=False):
+def replace_vals(secex_df, missing=None, debug=False):
     ''' Connect to DB '''
     db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA_DB_USER"], 
                             passwd=os.environ["DATAVIVA_DB_PW"], 
@@ -39,9 +39,18 @@ def replace_vals(secex_df, debug=False):
         secex_df[r["col"]] = secex_df[r["col"]].astype(str).replace(r["lookup"])
         not_in_db = set(secex_df[r["col"]].unique()).difference(set(r["lookup"].values()))
         if not_in_db:
-            print; print "[WARNING]"; print "The following {0} IDs are not in the DB and will be dropped from the data.".format(r["col"]);
-            drop_criterion = secex_df[r["col"]].map(lambda x: x not in not_in_db)
-            secex_df = secex_df[drop_criterion]
-            print not_in_db; print "{0} rows deleted.".format(num_rows - secex_df.shape[0]); print;
+            if missing != None:
+                if r["col"] in missing:
+                    missing[r["col"]] = missing[r["col"]].union(not_in_db)
+                else:
+                    missing[r["col"]] = not_in_db
+            else:
+                print; print "[WARNING]"; print "The following {0} IDs are not in the DB and will be dropped from the data.".format(r["col"]);
+                drop_criterion = secex_df[r["col"]].map(lambda x: x not in not_in_db)
+                secex_df = secex_df[drop_criterion]
+                print not_in_db; print "{0} rows deleted.".format(num_rows - secex_df.shape[0]); print;
 
+    if missing != None:
+        return missing
+    
     return secex_df
