@@ -99,13 +99,13 @@ def growth(year, delete, table, data_dir, data_dir_prev, data_dir_prev_5):
         os.remove(current_file.name)
 
 @click.command()
+@click.argument('data_dir', type=click.Path(exists=True), required=True)
 @click.option('--year', '-y', help='The year of the data.', type=click.INT, required=True)
 @click.option('--delete', '-d', help='Delete the previous file?', is_flag=True, default=False)
 @click.option('--table', '-t', help='The year of the data.', type=click.Choice(['all', 'yb', 'ybp', 'ybpw', 'ybw', 'yp', 'ypw', 'yw']), required=True, prompt=True)
-@click.argument('data_dir', type=click.Path(exists=True), required=True)
-@click.argument('data_dir_prev', type=click.Path(exists=True), required=False)
-@click.argument('data_dir_prev_5', type=click.Path(exists=True), required=False)
-def main(year, delete, table, data_dir, data_dir_prev, data_dir_prev_5):
+@click.option('--data_dir_prev', '-g', type=click.Path(exists=True), required=False)
+@click.option('--data_dir_prev_5', '-g5', type=click.Path(exists=True), required=False)
+def main(data_dir, year, delete, table, data_dir_prev, data_dir_prev_5):
     
     if table == "all":
         for t in ['yb', 'ybp', 'ybpw', 'ybw', 'yp', 'ypw', 'yw']:

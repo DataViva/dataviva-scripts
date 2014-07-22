@@ -53,6 +53,9 @@ def wld_format(wld, lookup):
     return lookup[int(wld)]
 
 def munic_format(munic, lookup):
+    # Pinto Bandeira
+    if munic == "4314548":
+        return "rs030014"
     if munic == "9999999":
         return "xx000007"
     elif munic == "9400000":

@@ -40,11 +40,13 @@ def get_file(full_path):
         file = extensions[file_ext](full_path)
     except KeyError:
         file = open(full_path)
+    except IOError:
+        return None
     
     if file_ext == '.zip':
         file = zipfile.ZipFile.open(file, file_path_no_ext)
     
-    print "Reading from file", file_name
+    # print "Reading from file", file_name
     return file
 
 def format_runtime(x):
