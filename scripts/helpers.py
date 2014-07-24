@@ -7,6 +7,7 @@
 
 ''' Import statements '''
 import sys, bz2, gzip, zipfile,  os
+import rarfile
 from decimal import Decimal, ROUND_HALF_UP
 from os.path import splitext, basename, exists
 
@@ -34,6 +35,7 @@ def get_file(full_path):
         '.bz2': bz2.BZ2File,
         '.gz': gzip.open,
         '.zip': zipfile.ZipFile,
+        '.rar': rarfile.RarFile
     }
     
     try:
@@ -45,6 +47,8 @@ def get_file(full_path):
     
     if file_ext == '.zip':
         file = zipfile.ZipFile.open(file, file_path_no_ext)
+    elif file_ext == '.rar':
+        file = rarfile.RarFile.open(file, file_path_no_ext)
     
     # print "Reading from file", file_name
     return file
@@ -60,4 +64,4 @@ def format_runtime(x):
     if s < 1:
         return "< 1 second"
     return "{0} seconds".format(int(s))
-        
+
