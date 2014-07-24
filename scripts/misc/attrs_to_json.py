@@ -9,30 +9,20 @@ cursor = db.cursor()
 
 data = {}
 
-cursor.execute("select distinct cbo_id from rais_yo;")
-data["cbo"] = [x[0] for x in cursor.fetchall()]
+cursor.execute("select cbo_id, name_en, avg(num_emp) from rais_yo, attrs_cbo where id=cbo_id group by cbo_id;")
+data["cbo"] = [{"id":x[0], "name":x[1], "weight":float(x[2])} for x in cursor.fetchall()]
 
-cursor.execute("select distinct isic_id from rais_yi limit 0, 5;")
-data["isic"] = [x[0] for x in cursor.fetchall()]
+cursor.execute("select isic_id, name_en, avg(num_emp) from rais_yi, attrs_isic where id=isic_id group by isic_id;")
+data["isic"] = [{"id":x[0], "name":x[1], "weight":float(x[2])} for x in cursor.fetchall()]
 
-cursor.execute("select distinct bra_id from rais_yb;")
-data["bra"] = [x[0] for x in cursor.fetchall()]
+cursor.execute("select bra_id, name_en, avg(population) from attrs_yb, attrs_bra where id=bra_id group by bra_id")
+data["bra"] = [{"id":x[0], "name":x[1], "weight":float(x[2])} for x in cursor.fetchall()]
 
-cursor.execute("select distinct hs_id from secex_yp;")
-data["hs"] = [x[0] for x in cursor.fetchall()]
+cursor.execute("select hs_id, name_en, avg(val_usd) from secex_yp, attrs_hs where id=hs_id group by hs_id;")
+data["hs"] = [{"id":x[0], "name":x[1], "weight":float(x[2])} for x in cursor.fetchall()]
 
-cursor.execute("select distinct wld_id from secex_yw;")
-data["wld"] = [x[0] for x in cursor.fetchall()]
-
-cursor.execute("select distinct bra_id from secex_yb;")
-data["bra"] = list(set(data["bra"]).union([x[0] for x in cursor.fetchall()]))
-
-for a in data.keys():
-    q = 'SELECT id, name_en FROM attrs_{0} WHERE id IN (%s)'.format(a)
-    in_p = ', '.join(list(map(lambda x: '%s', data[a])))
-    q = q % in_p
-    cursor.execute(q, data[a])
-    data[a] = [{"id":x[0], "name":x[1]} for x in cursor.fetchall()]
+cursor.execute("select wld_id, name_en, avg(val_usd) from secex_yw, attrs_wld where id=wld_id group by wld_id;")
+data["wld"] = [{"id":x[0], "name":x[1], "weight":float(x[2])} for x in cursor.fetchall()]
 
 j = json.dumps(data, indent=4)
 f = open('dataviva_attrs.json', 'w')
