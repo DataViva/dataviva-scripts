@@ -59,12 +59,10 @@ def main(file_path, year, output_path, prev_path, prev5_path, debug):
 
     if debug:
         step+=1; print; print '''STEP {0}: \nShard'''.format(step)
-    [yb, ybi, ybo, yi, yio, yo] = shard(ybio)
-    print ybio.index.is_unique
+    [yb, yi, yo, ybi, ybo, yio, ybio] = shard(ybio)
     
     if debug:
         step+=1; print; print '''STEP {0}: \nRequired'''.format(step)
-    print ybio.index.is_unique
     ybio = required(ybio, ybi, yi, year)
 
     if debug:

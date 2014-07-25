@@ -24,24 +24,23 @@ def required(ybio, ybi, yi, year):
     # print "reset index", ybio.index.is_unique
     ybio = ybio.reset_index()
     ybio_data = ybio[["bra_id","cnae_id","cbo_id","num_emp"]]
-    cnae_criterion = ybio_data['cnae_id'].map(lambda x: len(x) == 7)
+    cnae_criterion = ybio_data['cnae_id'].map(lambda x: len(x) == 5)
     cbo_criterion = ybio_data['cbo_id'].map(lambda x: len(str(x)) == 4)
     ybio_data = ybio_data[cnae_criterion & cbo_criterion]
     
     ybi = ybi.reset_index()
-    cnae_criterion = ybi['cnae_id'].map(lambda x: len(x) == 7)
+    cnae_criterion = ybi['cnae_id'].map(lambda x: len(x) == 5)
     ybi = ybi[cnae_criterion]
     ybi = ybi[["bra_id", "cnae_id", "num_emp_est"]]
     
     yi = yi.reset_index()
-    cnae_criterion = yi['cnae_id'].map(lambda x: len(x) == 7)
+    cnae_criterion = yi['cnae_id'].map(lambda x: len(x) == 5)
     yi = yi[cnae_criterion]
     yi = yi[["cnae_id", "num_emp_est"]]
     yi = yi.set_index("cnae_id")["num_emp_est"]
     
     ybio_required = []
     for geo_level in [2, 4, 8]:
-        
         bra_criterion = ybio_data['bra_id'].map(lambda x: len(x) == geo_level)
         ybio_panel = ybio_data[bra_criterion]
         ybio_panel = ybio_panel.pivot_table(index=["bra_id", "cbo_id"], \

@@ -9,7 +9,7 @@ import growth
 def get_ybi_rcas(ybi, geo_level):
     ybi = ybi.reset_index()
     
-    cnae_criterion = ybi['cnae_id'].map(lambda x: len(x) == 7)
+    cnae_criterion = ybi['cnae_id'].map(lambda x: len(x) == 5)
     bra_criterion = ybi['bra_id'].map(lambda x: len(x) == geo_level)
     
     ybi = ybi[cnae_criterion & bra_criterion]
@@ -25,7 +25,7 @@ def get_ybi_rcas(ybi, geo_level):
 
 def ybio_to_panel(ybio):
     ybio = ybio.reset_index()
-    cnae_criterion = ybio['cnae_id'].map(lambda x: len(x) == 7)
+    cnae_criterion = ybio['cnae_id'].map(lambda x: len(x) == 5)
     cbo_criterion = ybio['cbo_id'].map(lambda x: len(x) == 4)
     bra_criterion = ybio['bra_id'].map(lambda x: len(x) == 8)
     ybio = ybio[cnae_criterion & cbo_criterion & bra_criterion]
