@@ -15,6 +15,7 @@
 ''' Import statements '''
 import csv, sys, os, math, time, bz2, click
 import pandas as pd
+import numpy as np
 from ..helpers import get_file, format_runtime
 from ..growth_lib import growth
 # from scripts import YEAR, DELETE_PREVIOUS_FILE, TABLE, help_text_table
@@ -88,6 +89,8 @@ def growth(year, delete, table, data_dir, data_dir_prev, data_dir_prev_5):
     
             print "calculating 5 year val_usd growth rate"
             current["val_usd_growth_rate_5"] = (current["val_usd"] / prev_5["val_usd"]) ** (1.0/5.0) - 1
+    
+    current[current == np.inf] = np.nan
     
     new_file_name = os.path.basename(file_lookup[table]).split(".")[0] + "_growth.tsv.bz2"
     print "writing new growth file..."
