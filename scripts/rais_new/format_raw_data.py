@@ -34,6 +34,7 @@ from _importance import importance
 from _calc_diversity import calc_diversity
 from _rdo import rdo
 from _growth import calc_growth
+from _column_lengths import add_column_length
 
 @click.command()
 @click.argument('file_path', type=click.Path(exists=True))
@@ -83,6 +84,12 @@ def main(file_path, year, output_path, prev_path, prev5_path, debug):
     ybi = rdo(ybi, yi, year)
     
     tables = {"yb": yb, "yi": yi, "yo": yo, "ybi": ybi, "ybio": ybio, "ybo": ybo, "yio": yio}
+
+    for table_name, table_data in tables.items():
+
+        table_data = add_column_length(table_name, table_data)
+        print table_data.head()
+        
     if prev_path:
         if debug:
             step+=1; print; print '''STEP {0}: \nCalculate 1 year growth'''.format(step)

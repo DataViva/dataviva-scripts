@@ -13,7 +13,7 @@ def aggregate(rais_df):
     rais_df = rais_df.drop(["color", "est_size"], axis=1)
     ybio = rais_df.groupby(["year", "munic", "cnae", "cbo"]) \
             .agg({"wage": np.sum, "num_emp": pd.Series.count, "num_est": pd.Series.count,\
-                    "age": pd.Series.median, "num_emp_m": np.sum, "wage_m": np.sum, "wage_f": np.sum})
+                    "age": np.sum, "num_emp_m": np.sum, "wage_m": np.sum, "wage_f": np.sum})
     ybio.index.names = ["year", "bra_id", "cnae_id", "cbo_id"]
     # print ybio.index.is_unique
     '''

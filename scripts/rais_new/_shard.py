@@ -11,5 +11,5 @@ def shard(ybio):
     for t in tbls:
         t["num_emp_est"] = t["num_emp"].astype(float) / t["num_est"].astype(float)
         t["wage_avg"] = t["wage"].astype(float) / t["num_emp"].astype(float)
-        
+        t["age"] = t["age"].asfloat(float) / t["num_emp"].astype(float)
     return tbls
