@@ -23,3 +23,6 @@ click
 
 # Read RAR files. In order to work properly you will also need the unrar tool
 rarfile
+
+# Helpful HTTP library
+requests
