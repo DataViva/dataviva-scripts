@@ -53,7 +53,7 @@ def get_ybp_wld_rcas(geo_level, year, data_dir):
     
     '''Get world values from database'''
     q = "select wld_id, hs_id, val_usd from comtrade_ypw where year = {0}".format(year)
-    ybp_wld = sql.read_frame(q, db)
+    ybp_wld = sql.read_sql(q, db)
     ybp_wld = ybp_wld.pivot(index="wld_id", columns="hs_id", values="val_usd")
     ybp_wld = ybp_wld.reindex(columns=ybp_dom.columns)
     ybp_wld = ybp_wld.fillna(0)
@@ -105,7 +105,7 @@ def get_wld_proximity(year):
     q = "select wld_id, hs_id, val_usd " \
         "from comtrade_ypw " \
         "where year = {0} and length(hs_id) = 6".format(year)
-    table = sql.read_frame(q, db)
+    table = sql.read_sql(q, db)
     table = table.pivot(index="wld_id", columns="hs_id", values="val_usd")
     table = table.fillna(0)
 
@@ -158,7 +158,7 @@ def main(year, delete, data_dir):
     
         '''domestic distances'''
         prox_dom = growth.proximity(rcas_dom_binary)
-        dist_dom = growth.distance(rcas_dom_binary, prox_dom).fillna(0)
+        dist_dom = growth.distance(rcas_dom_binary.fillna(0), prox_dom.fillna(0)).fillna(0)
         
         '''world distances'''
         prox_wld = get_wld_proximity(year)
@@ -192,9 +192,8 @@ def main(year, delete, data_dir):
         prox_wld = prox_wld.reindex(index = all_hs_wld, columns = all_hs_wld)
         
         # print rcas_dom_binary.shape, prox_dom.shape, pcis.shape
-        opp_gain_wld = growth.opportunity_gain(rcas_wld_binary, prox_wld, pcis_wld)
-        opp_gain_dom = growth.opportunity_gain(rcas_dom_binary, prox_dom, pcis_wld)
-        
+        opp_gain_wld = growth.opportunity_gain(rcas_wld_binary.fillna(0), prox_wld.fillna(0), pcis_wld.fillna(0))
+        opp_gain_dom = growth.opportunity_gain(rcas_dom_binary.fillna(0), prox_dom.fillna(0), pcis_wld.fillna(0))
         
         '''
             SET RCAS TO NULL
