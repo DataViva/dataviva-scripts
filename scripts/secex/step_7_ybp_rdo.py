@@ -45,6 +45,12 @@ def get_ybp_wld_rcas(geo_level, year, data_dir):
     ybp_dom = ybp_dom.drop(["year"], axis=1)
     ybp_dom = ybp_dom.pivot(index="bra_id", columns="hs_id", values="val_usd").fillna(0)
     
+    cursor.execute("select distinct year from comtrade_ypw order by year")
+    years_avail = [y[0] for y in cursor.fetchall()]
+    
+    if int(year) > int(years_avail[-1]):
+        year = int(years_avail[-1])
+    
     '''Get world values from database'''
     q = "select wld_id, hs_id, val_usd from comtrade_ypw where year = {0}".format(year)
     ybp_wld = sql.read_frame(q, db)
@@ -89,6 +95,11 @@ def get_pcis(geo_level, data_dir):
     return yp["pci"]
 
 def get_wld_proximity(year):
+    cursor.execute("select distinct year from comtrade_ypw order by year")
+    years_avail = [y[0] for y in cursor.fetchall()]
+    
+    if int(year) > int(years_avail[-1]):
+        year = int(years_avail[-1])
 
     '''Get values from database'''
     q = "select wld_id, hs_id, val_usd " \
@@ -157,7 +168,7 @@ def main(year, delete, data_dir):
         prox_wld = prox_wld.reindex(columns=hs_wld, index=hs_wld)
         rcas_wld_binary = rcas_wld_binary.reindex(columns=hs_wld)
         
-        dist_wld = growth.distance(rcas_wld_binary, prox_wld).fillna(0)
+        dist_wld = growth.distance(rcas_wld_binary.fillna(0), prox_wld.fillna(0)).fillna(0)
     
         '''
             OPP GAIN
