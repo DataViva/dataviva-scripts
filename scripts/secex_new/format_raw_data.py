@@ -49,6 +49,7 @@ from _calc_diversity import calc_diversity
 from _brazil_rca import brazil_rca
 from _rdo import rdo
 from _growth import calc_growth
+from _column_lengths import add_column_length
 
 @click.command()
 @click.argument('export_file_path', type=click.Path(exists=True))
@@ -111,6 +112,8 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
     ymbp = rdo(ymbp, ymp, year)
     
     tables = {"ymb": ymb, "ymp": ymp, "ymw": ymw, "ymbp": ymbp, "ymbpw": ymbpw, "ymbw": ymbw, "ympw": ympw}
+    
+
     if prev_path:
         if debug:
             print; print '''STEP 11: \nCalculate 1 year growth'''
@@ -136,6 +139,11 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
                 
                 t_prev = to_df(prev_file, t_name)
                 t = calc_growth(t, t_prev, 5)
+
+    if debug:
+        print "computing column lengths"
+    for table_name, table_data in tables.items():
+        table_data = add_column_length(table_name, table_data)
 
     if debug:
         print; print '''FINAL STEP: \nSave files to output path'''
