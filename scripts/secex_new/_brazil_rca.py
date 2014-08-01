@@ -17,6 +17,6 @@ def brazil_rca(ymp, year):
     bra_rcas["month"] = "00"
     bra_rcas = bra_rcas.set_index(["year", "month", "hs_id"])
     
-    ymp["rca"] = bra_rcas["rca"]
+    ymp["rca_wld"] = bra_rcas["rca"]
     
     return ymp
