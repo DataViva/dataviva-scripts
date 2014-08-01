@@ -121,7 +121,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
             prev_file = os.path.join(prev_path, "{0}.tsv.bz2".format(t_name))
             t_prev = to_df(prev_file, t_name)
             t_prev = t_prev.reset_index(level="year")
-            t_prev["year"] = year
+            t_prev["year"] = int(year)
             t_prev = t_prev.set_index("year", append=True)
             t_prev = t_prev.reorder_levels(["year"] + list(t_prev.index.names)[:-1])
             
@@ -133,7 +133,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
                 prev_file = os.path.join(prev5_path, "{0}.tsv.bz2".format(t_name))
                 t_prev = to_df(prev_file, t_name)
                 t_prev = t_prev.reset_index(level="year")
-                t_prev["year"] = year
+                t_prev["year"] = int(year)
                 t_prev = t_prev.set_index("year", append=True)
                 t_prev = t_prev.reorder_levels(["year"] + list(t_prev.index.names)[:-1])
                 
