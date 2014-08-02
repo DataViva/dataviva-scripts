@@ -103,7 +103,7 @@ fi
 
 
 DATA_DIR="/Users/alexandersimoes/Sites/dataviva/scripts/data/"
-file=$DATA_DIR"secex/$1/$file"
+file=$DATA_DIR"secex/export/$1/$file"
 sql_fields="("
 sql_set=""
 

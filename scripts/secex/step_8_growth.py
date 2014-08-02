@@ -47,6 +47,9 @@ def growth(year, delete, table, data_dir, data_dir_prev, data_dir_prev_5):
             sys.exit()
     current = pd.read_csv(current_file, sep="\t", converters=converters)
     current = current.set_index(index_cols)
+    print index_cols
+    if len(index_cols) > 1:
+        current = current.sortlevel()
     
     if data_dir_prev:
         print "loading previous year"
@@ -61,6 +64,12 @@ def growth(year, delete, table, data_dir, data_dir_prev, data_dir_prev_5):
                 sys.exit()
         prev = pd.read_csv(prev_file, sep="\t", converters=converters)
         prev = prev.set_index(index_cols)
+        if len(index_cols) > 1:
+            prev = prev.sortlevel()
+            
+        # print current.head()
+        # print prev.head()
+        # sys.exit()
     
         print "calculating 1 year val_usd growth value"
         s = time.time()
@@ -83,6 +92,8 @@ def growth(year, delete, table, data_dir, data_dir_prev, data_dir_prev_5):
             print "loading file for 5 years ago"
             prev_5 = pd.read_csv(prev_5_file, sep="\t", converters=converters)
             prev_5 = prev_5.set_index(index_cols)
+            if len(index_cols) > 1:
+                prev_5 = prev_5.sortlevel()
         
             print "calculating 5 year val_usd growth value"
             current["val_usd_growth_val_5"] = current["val_usd"] - prev_5["val_usd"]

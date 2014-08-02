@@ -1,4 +1,5 @@
-for i in `seq 2000 2013`;
+set -x
+for i in `seq 2002 2013`;
 do
   
   PREV_YEAR=`expr $i - 1`
@@ -10,7 +11,8 @@ do
 
   python -m scripts.secex.step_2_disaggregate \
       -y $i \
-      data/secex/export/$i/ybpw.tsv.bz2
+      data/secex/export/$i/ybpw.tsv.bz2 \
+      data/secex/export/$i/
 
   python -m scripts.secex.step_3_pci_wld_eci \
       -y $i \
