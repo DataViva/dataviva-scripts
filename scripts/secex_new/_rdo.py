@@ -34,7 +34,7 @@ def get_wld_rcas(geo_level, year, ymbp):
     
     '''Get world values from database'''
     q = "select wld_id, hs_id, val_usd from comtrade_ypw where year = {0}".format(year)
-    ybp_wld = sql.read_frame(q, db)
+    ybp_wld = sql.read_sql(q, db)
     ybp_wld = ybp_wld.rename(columns={"val_usd":"export_val"})
     ybp_wld = ybp_wld.pivot(index="wld_id", columns="hs_id", values="export_val")
     ybp_wld = ybp_wld.reindex(columns=ymbp.columns)
@@ -70,7 +70,7 @@ def get_wld_proximity(year):
     q = "select wld_id, hs_id, val_usd " \
         "from comtrade_ypw " \
         "where year = {0} and length(hs_id) = 6".format(year)
-    table = sql.read_frame(q, db)
+    table = sql.read_sql(q, db)
     table = table.rename(columns={"val_usd":"export_val"})
     table = table.pivot(index="wld_id", columns="hs_id", values="export_val")
     table = table.fillna(0)

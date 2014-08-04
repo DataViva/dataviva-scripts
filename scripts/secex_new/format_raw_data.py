@@ -117,6 +117,8 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
     if prev_path:
         if debug:
             print; print '''STEP 11: \nCalculate 1 year growth'''
+            if prev5_path:
+                print; print '''STEP 12: \nCalculate 5 year growth'''
         for t_name, t in tables.items():
             prev_file = os.path.join(prev_path, "{0}.tsv.bz2".format(t_name))
             t_prev = to_df(prev_file, t_name)
@@ -128,8 +130,6 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
             t = calc_growth(t, t_prev)
             
             if prev5_path:
-                if debug:
-                    print; print '''STEP 12: \nCalculate 5 year growth'''
                 prev_file = os.path.join(prev5_path, "{0}.tsv.bz2".format(t_name))
                 t_prev = to_df(prev_file, t_name)
                 t_prev = t_prev.reset_index(level="year")

@@ -9,27 +9,42 @@ def replace_vals(secex_df, missing=None, debug=False):
     db.autocommit(1)
     cursor = db.cursor()
     
-    def get_bra_lookup():
-        cursor.execute("select id_mdic, id from attrs_bra where id_mdic is not null and length(id) = 8;")
-        return {str(r[0]):r[1] for r in cursor.fetchall()}
-
-    def get_state_lookup():
-        cursor.execute("select id_mdic, id from attrs_bra where id_mdic is not null and length(id) = 2;")
-        return {str(r[0]):r[1] for r in cursor.fetchall()}
-
-    def get_hs_lookup():
-        cursor.execute("select substr(id, 3), id from attrs_hs where substr(id, 3) != '' and length(id) = 6;")
-        return {str(r[0]):r[1] for r in cursor.fetchall()}
-
-    def get_wld_lookup():
-        cursor.execute("select id_mdic, id from attrs_wld where id_mdic is not null and length(id) = 5;")
-        return {str(r[0]):r[1] for r in cursor.fetchall()}
+    def get_lookup(type="bra"):
+        if type == "bra":
+            cursor.execute("select id_mdic, id from attrs_bra where id_mdic is not null and length(id) = 8;")
+            lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
+            lookup["4314548"] = "rs030014"
+            lookup["9999999"] = "xx000007"
+            lookup["9400000"] = "xx000002"
+        elif type == "state":
+            cursor.execute("select id_mdic, id from attrs_bra where id_mdic is not null and length(id) = 2;")
+            lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
+            lookup["94"] = "xx"
+            lookup["95"] = "xx"
+            lookup["96"] = "xx"
+            lookup["97"] = "xx"
+            lookup["98"] = "xx"
+            lookup["99"] = "xx"
+        elif type == "hs":
+            cursor.execute("select substr(id, 3), id from attrs_hs where substr(id, 3) != '' and length(id) = 6;")
+            lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
+            lookup["9991"] = "229999"
+            lookup["9992"] = "229999"
+            lookup["9998"] = "229999"
+            lookup["9997"] = "229999"
+        elif type == "wld":
+            cursor.execute("select id_mdic, id from attrs_wld where id_mdic is not null and length(id) = 5;")
+            lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
+            lookup["695"] = "nakna"
+            lookup["423"] = "asmys"
+            lookup["152"] = "euchi"
+        return lookup
     
     replacements = [
-        {"col":"munic", "lookup":get_bra_lookup()},
-        {"col":"state", "lookup":get_state_lookup()},
-        {"col":"hs", "lookup":get_hs_lookup()},
-        {"col":"wld", "lookup":get_wld_lookup()}
+        {"col":"munic", "lookup":get_lookup("bra")},
+        {"col":"state", "lookup":get_lookup("state")},
+        {"col":"hs", "lookup":get_lookup("hs")},
+        {"col":"wld", "lookup":get_lookup("wld")}
     ]
     
     secex_df = secex_df.reset_index()

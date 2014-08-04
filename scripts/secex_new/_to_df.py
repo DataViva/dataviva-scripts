@@ -13,7 +13,7 @@ def to_df(input_file_path, index=False, debug=False):
         cols = ["year", "month", "wld", "state", "customs", "munic", "unit", \
                 "quantity", "val_kg", "val_usd", "hs"]
         delim = "|"
-        secex_df = pd.read_csv(input_file, header=0, sep=delim, converters={"month":str, "hs":str}, names=cols)    
+        secex_df = pd.read_csv(input_file, header=0, sep=delim, converters={"munic":str, "month":str, "hs":str}, names=cols)    
         secex_df = secex_df[["year", "month", "state", "munic", "hs", "wld", "val_usd"]]
 
     
