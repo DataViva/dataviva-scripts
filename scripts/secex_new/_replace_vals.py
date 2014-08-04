@@ -38,6 +38,7 @@ def replace_vals(secex_df, missing=None, debug=False):
             lookup["695"] = "nakna"
             lookup["423"] = "asmys"
             lookup["152"] = "euchi"
+            lookup["997"] = "xxxxd"
         return lookup
     
     replacements = [

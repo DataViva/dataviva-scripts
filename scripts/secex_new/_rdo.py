@@ -104,7 +104,7 @@ def rdo(ymbp, ymp, year):
     all_hs = [hs for hs in ymbp.index.levels[3] if len(hs) == 6]
     
     rca_dist_opp = []
-    for geo_level in [2, 4, 8]:
+    for geo_level in [2, 4, 7, 8]:
         # print "geo_level",geo_level
 
         '''

@@ -1,5 +1,5 @@
 set -x
-for i in `seq 2000 2013`;
+for i in `seq 2005 2013`;
 do
   PREV_YEAR=`expr $i - 1`
   PREV_YEAR_FIVE=`expr $i - 5`
