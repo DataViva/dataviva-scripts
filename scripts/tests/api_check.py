@@ -13,7 +13,7 @@ def replace_params(url, params):
 def get_data(full_url):
     req = requests.get(full_url)
     if req.status_code != 200:
-        raise BadHTTPStatusError("%s returned a status code of %s" % (url, req.status_code))
+        raise BadHTTPStatusError("%s returned a status code of %s" % (full_url, req.status_code))
     else:
         json_data = req.json()
         if not "data" in json_data or not json_data["data"]:
@@ -60,20 +60,20 @@ if __name__ == "__main__":
          '/rais/<year>/all/<cnae_id>/<cbo_id>/',
          '/rais/all/<bra_id>/<cnae_id>/<cbo_id>/',
          '/rais/<year>/<bra_id>/<cnae_id>/<cbo_id>/',
-         '/secex/all/<month>/<bra_id>/all/all/',
-         '/secex/<year>/<month>/<bra_id>/all/all/',
-         '/secex/all/<month>/all/<hs_id>/all/',
-         '/secex/<year>/<month>/all/<hs_id>/all/',
-         '/secex/all/<month>/all/all/<wld_id>/',
-         '/secex/<year>/<month>/all/all/<wld_id>/',
-         '/secex/all/<month>/<bra_id>/all/<wld_id>/',
-         '/secex/<year>/<month>/<bra_id>/all/<wld_id>/',
-         '/secex/all/<month>/<bra_id>/<hs_id>/all/',
-         '/secex/<year>/<month>/<bra_id>/<hs_id>/all/',
-         '/secex/all/<month>/all/<hs_id>/<wld_id>/',
-         '/secex/<year>/<month>/all/<hs_id>/<wld_id>/',
-         '/secex/all/<month>/<bra_id>/<hs_id>/<wld_id>/',
-         '/secex/<year>/<month>/rj/01/af/'
+         '/secex/all/<bra_id>/all/all/',
+         '/secex/<year>/<bra_id>/all/all/',
+         '/secex/all/all/<hs_id>/all/',
+         '/secex/<year>/all/<hs_id>/all/',
+         '/secex/all/all/all/<wld_id>/',
+         '/secex/<year>/all/all/<wld_id>/',
+         '/secex/all/<bra_id>/all/<wld_id>/',
+         '/secex/<year>/<bra_id>/all/<wld_id>/',
+         '/secex/all/<bra_id>/<hs_id>/all/',
+         '/secex/<year>/<bra_id>/<hs_id>/all/',
+         '/secex/all/all/<hs_id>/<wld_id>/',
+         '/secex/<year>/all/<hs_id>/<wld_id>/',
+         '/secex/all/<bra_id>/<hs_id>/<wld_id>/',
+         '/secex/<year>/rj/01/af/'
     ]
 
 
