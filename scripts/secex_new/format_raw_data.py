@@ -72,7 +72,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
     
     if debug:
         print; print '''STEP 2: \nMerge imports and exports'''
-    secex_df = merge(secex_imports, secex_exports, debug)
+    secex_df = merge(secex_exports, secex_imports, debug)
     
     if debug:
         print; print '''STEP 3: \nReplace vals with DB IDs'''
