@@ -13,39 +13,37 @@ def replace_vals(df, missing={}, debug=False):
         cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 8;")
         return {str(r[0]):r[1] for r in cursor.fetchall()}
     
-    def get_course_lookup():
-        cursor.execute("select CAST(id AS UNSIGNED) as id_raw, id from attrs_course;")
-        courses = {str(r[0]):r[1] for r in cursor.fetchall()}
-        courses[''] = "00000"
-        return courses
-    
     replacements = [
-        {"col":"munic", "lookup":get_bra_lookup()},
-        {"col":"course_id", "lookup":get_course_lookup()}
+        {"col":"munic", "lookup":get_bra_lookup()}
     ]
     
     df = df.set_index([r["col"] for r in replacements])
-    index_as_tuples = list(df.index)
-    
-    for i, raw_tuple in enumerate(index_as_tuples):
-        new_tuple = list(raw_tuple)
-        
+    indexes = list(df.index)
+
+    for i, index in enumerate(indexes):
+        if type(index) == tuple: index = list(index)
+        else: index = [index]
         for ri, r in enumerate(replacements):
             try:
-                replacement = r["lookup"][str(raw_tuple[ri])]
+                replacement = r["lookup"][str(index[ri])]
             except KeyError:
-                replacement = str(raw_tuple[ri])
+                replacement = str(index[ri])
                 if missing and r["col"] in missing:
-                    missing[r["col"]].add(str(raw_tuple[ri]))
+                    missing[r["col"]].add(str(index[ri]))
                 else:
-                    missing[r["col"]] = set([str(raw_tuple[ri])])
-            new_tuple[ri] = replacement
-        
-        index_as_tuples[i] = tuple(new_tuple)
-    
-    new_index = pd.MultiIndex.from_tuples(index_as_tuples, names=[r["col"] for r in replacements])
-    df.index = new_index
-    
+                    missing[r["col"]] = set([str(index[ri])])
+            index[ri] = replacement
+
+        if len(replacements) > 1: indexes[i] = tuple(index)
+        else: indexes[i] = index[0]
+
+    if len(replacements) > 1:
+        indexes = pd.MultiIndex.from_tuples(indexes, names=[r["col"] for r in replacements])
+        df.index = indexes
+    else:
+        df.index = indexes
+        df.index.name = r["col"]
+
     df = df.reset_index()
     
     if missing:
