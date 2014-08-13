@@ -13,8 +13,14 @@ def replace_vals(df, missing={}, debug=False):
         cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 8;")
         return {str(r[0]):r[1] for r in cursor.fetchall()}
     
+    def get_course_lookup():
+        cursor.execute("select id, id from attrs_course_hedu;")
+        courses = {str(r[0]):r[1] for r in cursor.fetchall()}
+        return courses
+    
     replacements = [
-        {"col":"munic", "lookup":get_bra_lookup()}
+        {"col":"munic", "lookup":get_bra_lookup()},
+        {"col":"course_id", "lookup":get_course_lookup()}
     ]
     
     df = df.set_index([r["col"] for r in replacements])

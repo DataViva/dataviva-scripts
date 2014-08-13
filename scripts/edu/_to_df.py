@@ -18,7 +18,7 @@ import numpy as np
 12: School_ID
 13: Municipality
 14: Location
-15: Adm_Dependency
+15: Adm_Dependency (federal, state or municipal)
 '''
 
 def floatvert(x):
@@ -42,8 +42,9 @@ def to_df(input_file_path, index=False, debug=False):
     else:
         cols = ["year", "enroll_id", "student_id", "age", "gender", "color", "edu_mode", "edu_level", "edu_level_new", "edu", "class_id", "course_id", "school_id", "munic", "loc", "adm_dep"]
         delim = ";"
-        coerce_cols = {"course_id":str, "class_id":str}
-        rais_df = pd.read_csv(input_file, header=1, sep=delim, names=cols, converters=coerce_cols)
-        rais_df = rais_df[["year", "enroll_id", "student_id", "age", "gender", "class_id", "course_id", "school_id", "munic"]]
+        # coerce_cols = {"course_id":str, "class_id":str}
+        coerce_cols = {"course_id":str}
+        rais_df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
+        rais_df = rais_df[["year", "enroll_id", "gender", "color", "edu_level_new", "school_id", "class_id", "munic", "age"]]
     
     return rais_df

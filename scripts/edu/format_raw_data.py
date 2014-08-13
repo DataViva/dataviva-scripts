@@ -53,37 +53,37 @@ def pre_check():
 def main(file_path, year, output_path):
     step = 0
     pre_check()
+    output_path = os.path.join(output_path, str(year))
     
+    if not os.path.exists(output_path): os.makedirs(output_path)
     d = pd.HDFStore(os.path.abspath(os.path.join(output_path,'edu_data.h5')))
-    if "ybsc" in d:
-        ybsc = d["ybsc"]
+    if "ybge" in d:
+        df = d["ybge"]
     else:
         step+=1; print; print '''STEP {0}: \nImport file to pandas dataframe'''.format(step)
         df = to_df(file_path, False)
     
         step+=1; print; print '''STEP {0}: \nReplace vals with DB IDs'''.format(step)
         df = replace_vals(df, {})
+        d["ybge"] = df
     
-        step+=1; print; print '''STEP {0}: \nAggregate'''.format(step)
-        ybsc = aggregate(df)
-        
-        d["ybsc"] = ybsc
+    step+=1; print; print '''STEP {0}: \nAggregate'''.format(step)
+    ybge = aggregate(df)
     
-    step+=1; print; print '''STEP {0}: \nShard'''.format(step)
-    [yb, ys, yc, ybs, ybc, ysc, ybsc] = shard(ybsc)
+    # print ybge.head()
+    # sys.exit()
     
-    print yb.head()
-    sys.exit()
+    # step+=1; print; print '''STEP {0}: \nShard'''.format(step)
+    # [yb, ys, yc, ybs, ybc, ysc, ybsc] = shard(ybsc)
     
-    step+=1; print; print '''STEP {0}: \nCalc RCA'''.format(step)
-    ybc = calc_rca(ybc, year)
+    # step+=1; print; print '''STEP {0}: \nCalc RCA'''.format(step)
+    # ybg = calc_rca(ybg, year)
 
-    tables = {"yb": yb, "ys": ys, "yc": yc, "ybs": ybs, "ybc": ybc, "ysc": ysc, "ybsc": ybsc}
+    # tables = {"yb": yb, "ys": ys, "yc": yc, "ybs": ybs, "ybc": ybc, "ysc": ysc, "ybsc": ybsc}
+    tables = {"ybge": ybge}
     
     print; print '''FINAL STEP: \nSave files to output path'''
     for t_name, t in tables.items():
-        if not os.path.exists(output_path):
-            os.makedirs(output_path)
         new_file_path = os.path.abspath(os.path.join(output_path, "{0}.tsv.bz2".format(t_name)))
         t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
