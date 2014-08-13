@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 def get_deepest(column):
-    if column == "cnae_id": return 7
+    if column == "cnae_id": return 5
     if column == "bra_id": return 8
     if column == "cbo_id": return 4
 
