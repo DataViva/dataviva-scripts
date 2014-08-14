@@ -123,7 +123,7 @@ def main(file_path, year, output_path, prev_path, prev5_path, debug):
         if not os.path.exists(output_path):
             os.makedirs(output_path)
         new_file_path = os.path.abspath(os.path.join(output_path, "{0}.tsv.bz2".format(t_name)))
-        t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+        t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.2f")
     
 
 if __name__ == "__main__":
