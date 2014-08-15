@@ -1,6 +1,4 @@
-import requests
-import json
-from api_check import check_urls
+from _helper import check_urls
 
 if __name__ == "__main__":
     parameters = {"year": 2013, "bra1":'mg030000', "bra2":'mg030000', "cnae1": "43991",
