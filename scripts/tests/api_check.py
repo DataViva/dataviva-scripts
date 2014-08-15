@@ -1,5 +1,6 @@
 import requests
 import json
+import time
 
 class NoDataError(Exception): pass
 class BadHTTPStatusError(Exception): pass
@@ -11,29 +12,43 @@ def replace_params(url, params):
     return url
 
 def get_data(full_url):
+    start = time.time()
     req = requests.get(full_url)
+    end = time.time()
     if req.status_code != 200:
         raise BadHTTPStatusError("%s returned a status code of %s" % (full_url, req.status_code))
     else:
         json_data = req.json()
         if not "data" in json_data or not json_data["data"]:
-            raise NoDataError("No data in response from %s" % url)
+            raise NoDataError("No data in response from %s" % full_url)
+    return end - start
 
 def check_urls(urls, params, base_url='http://127.0.0.1:5000'):
     failures = 0
+
+    max_call, max_time = "Endpoint", 0
+    times = []
 
     for url in urls:
         url_with_params = replace_params(url, params)
 
         try:
             print "Checking", url_with_params, "..."
-            get_data(base_url + url_with_params)
+            time_taken = get_data(base_url + url_with_params)
+            times.append(time_taken)
+            if time_taken > max_time:
+                max_call = url_with_params
+                max_time = time_taken
             print "OK"
         except (NoDataError, BadHTTPStatusError) as e:
             print "** API Endpoint Failure occured with endpoint", url, e
             failures += 1
 
+    avg_time = sum(times) / float(len(times))
+
     print "\nSummary:"
+    print "Longest call: %s took %s seconds" % (max_call, max_time)
+    print "Average time: %.2f seconds" % (avg_time)
     if not failures:
         print "No failures!"
     else:
