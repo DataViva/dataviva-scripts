@@ -18,7 +18,7 @@ def replace_vals(rais_df, missing={}, debug=False):
         return {r[0]:r[1] for r in cursor.fetchall()}
     
     def get_cnae_lookup():
-        cursor.execute("select id, id from attrs_cnae where length(id) = 5;")
+        cursor.execute("select substr(id, 2), id from attrs_cnae where length(id) = 6;")
         return {r[0]:r[1] for r in cursor.fetchall()}
     
     replacements = [
