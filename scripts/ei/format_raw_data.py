@@ -27,7 +27,12 @@ hs_lookup["9991"] = "229999"
 hs_lookup["9992"] = "229999"
 hs_lookup["9998"] = "229999"
 hs_lookup["9997"] = "229999"
+
+cursor.execute("select substr(id,2,6), id from attrs_cnae;")
+print "Getting CNAE data from DB..."
+cnae_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
 cursor.close()
+
 
 def lookup_location(x):
     if x == '-1':
@@ -36,6 +41,11 @@ def lookup_location(x):
 
 def update_hs_id(old_hs_id):
 	return hs_lookup[str(old_hs_id)]
+
+def lookup_cnae(x):
+	if x == '1' or x == '2':
+		return x
+	return cnae_lookup[str(x)]
 
 @click.command()
 @click.option('--fname', prompt='file name',
@@ -55,7 +65,7 @@ def main(fname, odir):
 	converters = {"TransactedProduct_ID_HS": update_hs_id, "Municipality_ID_Sender":lookup_location, "Municipality_ID_Receiver":lookup_location} 
 	for c in cols:
 	    if "CNAE" in c:
-	        converters[c] = str
+	        converters[c] = lookup_cnae
 	ei_df = pd.read_csv(fname, header=0, sep=delim, converters=converters, names=cols, quotechar="'", decimal=",")    
 	
 	print "Processing..."

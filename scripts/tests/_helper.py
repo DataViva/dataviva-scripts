@@ -39,7 +39,7 @@ def check_urls(urls, params, base_url='http://127.0.0.1:5000'):
             if time_taken > max_time:
                 max_call = url_with_params
                 max_time = time_taken
-            print "OK"
+            print "OK", "took", time_taken, "seconds"
         except (NoDataError, BadHTTPStatusError) as e:
             print "** API Endpoint Failure occured with endpoint", url, e
             failures += 1
