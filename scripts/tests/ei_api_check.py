@@ -1,8 +1,8 @@
 from _helper import check_urls
 
 if __name__ == "__main__":
-    parameters = {"year": 2013, "bra1":'mg030000', "bra2":'mg030000', "cnae1": "43991",
-                  "cnae2": "01113", "hs_id": "010101", "hs_id2": "052508", "hs_id3":"020713",
+    parameters = {"year": 2013, "bra1":'mg030000', "bra2":'mg030000', "cnae1": "f43991",
+                  "cnae2": "a01113", "hs_id": "010101", "hs_id2": "052508", "hs_id3":"020713",
                   "hs_id4": "062918"  }
 
     endpoints = [

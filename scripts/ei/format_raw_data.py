@@ -5,7 +5,7 @@ import pandas as pd
 import MySQLdb
 import numpy as np
 
-from table_aggregator import make_small_table
+from table_aggregator import make_table
 
 # -- Load in metadata from DB
 print "Getting municipal data from DB..."
@@ -33,18 +33,23 @@ print "Getting CNAE data from DB..."
 cnae_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
 cursor.close()
 
+BRA_UNREPORTED = 'XX000007'
+CNAE_NO_INFO = 'x00001'
+CNAE_DNA = 'x00002'
 
 def lookup_location(x):
     if x == '-1':
-        return x
+        return BRA_UNREPORTED
     return lookup[x]
 
 def update_hs_id(old_hs_id):
 	return hs_lookup[str(old_hs_id)]
 
 def lookup_cnae(x):
-	if x == '1' or x == '2':
-		return x
+	if x == '1':
+		return CNAE_NO_INFO
+	if x == '2':
+		return CNAE_DNA
 	return cnae_lookup[str(x)]
 
 @click.command()
@@ -76,23 +81,24 @@ def main(fname, odir):
 	primary_key =  ['Year', 'Monthly', 'Municipality_ID_Sender', 'EconomicAtivity_ID_CNAE_Sender', 
 					'Municipality_ID_Receiver', 'EconomicAtivity_ID_CNAE_Receiver',
 					'TransactedProduct_ID_HS'] # -- TODO: receive confirmation
-	ymbibip = ei_df.groupby(primary_key).aggregate(np.sum)
-
-	print "Saving to file..."
+	#ymbibip = ei_df.groupby(primary_key).aggregate(np.sum)
+	# print "Saving to file..."
 	output_values = ["Product_Value", "tax", "icms_tax", "Cost_Value"]
-
 	output_name = ntpath.basename(fname).replace(".csv", "")
-	output_path = os.path.join(odir, "output_ymsrp_%s.csv" % output_name)
-	ymbibip.to_csv(output_path, delim, columns = output_values)
+	#output_path = os.path.join(odir, "output_ymsrp_%s.csv" % output_name)
+	# ymbibip.to_csv(output_path, delim, columns = output_values)
 
 	print "Making smaller tables..."
 	# make_small_tables(ymbibip, output_name)
-	make_small_table(ei_df, "yms", output_values, odir, output_name)
-	make_small_table(ei_df, "ymr", output_values, odir, output_name)
-	make_small_table(ei_df, "ymp", output_values, odir, output_name)
-	make_small_table(ei_df, "ymsr", output_values, odir, output_name)
-	make_small_table(ei_df, "ymsp", output_values, odir, output_name)
-	make_small_table(ei_df, "ymrp", output_values, odir, output_name)
+
+	make_table(ei_df, "yms", output_values, odir, output_name)
+	make_table(ei_df, "ymr", output_values, odir, output_name)
+	make_table(ei_df, "ymp", output_values, odir, output_name)
+	make_table(ei_df, "ymsr", output_values, odir, output_name)
+	make_table(ei_df, "ymsp", output_values, odir, output_name)
+	make_table(ei_df, "ymrp", output_values, odir, output_name)
+	make_table(ei_df, "ymsrp", output_values, odir, output_name)
+
 
 if __name__ == '__main__':
     main()
