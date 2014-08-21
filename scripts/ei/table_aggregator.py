@@ -11,29 +11,39 @@ def agg_depth(table, table_name, column_dict, aggtable, pk_cols, depth):
             # print search_letter, table_name
             # print aggtable.head()
             aggtable[colname] = aggtable[colname].apply(lambda x: x[:depth])
+
     if not aggtable.empty:
         aggtable = aggtable.groupby(pk_cols).aggregate(np.sum)
         return aggtable
+
     return pd.DataFrame()
 
 def bra_aggregations(table, table_name, pk_cols):
     bra_dict = {'s' : 'Municipality_ID_Sender', 'r': 'Municipality_ID_Receiver' }
     table_meso = agg_depth(table, table_name, bra_dict, pd.DataFrame(), pk_cols, 4)
-    table_state = agg_depth(table_meso, table_name, bra_dict, pd.DataFrame(), pk_cols, 2)
+    table_state = agg_depth(table, table_name, bra_dict, pd.DataFrame(), pk_cols, 2)
     return table_meso, table_state
 
 def cnae_aggregations(table, table_name, pk_cols):
     cnae_dict = {'s' : 'EconomicAtivity_ID_CNAE_Sender', 'r': 'EconomicAtivity_ID_CNAE_Receiver' }
     table_l3= agg_depth(table, table_name, cnae_dict, pd.DataFrame(), pk_cols, 3)
-    table_l1 = agg_depth(table, table_l3, cnae_dict, pd.DataFrame(), pk_cols, 1)
+    table_l1 = agg_depth(table, table_name, cnae_dict, pd.DataFrame(), pk_cols, 1)
     return table_l1, table_l3
 
 def hs_aggregations(table, table_name, pk_cols):
     hs_dict = {'p' : 'TransactedProduct_ID_HS' }
     table_l4= agg_depth(table, table_name, hs_dict, pd.DataFrame(), pk_cols, 4)
-    table_l2 = agg_depth(table_l4, table_name, hs_dict, pd.DataFrame(), pk_cols, 2)
+    table_l2 = agg_depth(table, table_name, hs_dict, pd.DataFrame(), pk_cols, 2)
     return table_l2, table_l4
 
+def year_aggregation(table_data, table_name, pk_cols):
+    year_cols = [col for col in pk_cols if col != 'Monthly']
+    yearly = table_data.groupby(year_cols).sum()
+    yearly["month"] = "00"
+    yearly = yearly.set_index("Monthly", append=True)
+    yearly = yearly.reorder_levels(pk_cols)
+    
+    return yearly
 
 def add_column_length(table_data, table_name):
     col_lookup = [ ('s', ['Municipality_ID_Sender', 'EconomicAtivity_ID_CNAE_Sender'] ), 
@@ -68,8 +78,9 @@ def make_table(ymbibip, table_name, output_values, odir, output_name):
     table_meso, table_state = bra_aggregations(ymbibip, table_name, pk_cols)
     cnae_l1, cnae_l3 = cnae_aggregations(ymbibip, table_name, pk_cols)
     hs_l2, hs_l4 = hs_aggregations(ymbibip, table_name, pk_cols)
+    yearly = year_aggregation(ymbibip, table_name, pk_cols)
 
-    big_table = pd.concat([table, table_meso, table_state, cnae_l1, cnae_l3, hs_l2, hs_l4])
+    big_table = pd.concat([table, table_meso, table_state, cnae_l1, cnae_l3, hs_l2, hs_l4, yearly])
 
     print "Adding column lengths..."
     big_table, len_cols = add_column_length(big_table, table_name)
