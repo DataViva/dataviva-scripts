@@ -36,10 +36,10 @@ data["inst"] = [{"id":x[0], "name":x[1], "weight":float(x[2])} for x in cursor.f
 cursor.execute("select research_id, name_en, sum(people) from lattes_bri, attrs_research where id=research_id group by research_id")
 data["research"] = [{"id":x[0], "name":x[1], "weight":float(x[2])} for x in cursor.fetchall()]
 
-cursor.execute("select grade, name_en, sum(enrolled) from edu_ybge, attrs_grade where id=grade and year = 2012 group by grade")
+cursor.execute("select grade_id, name_en, sum(enrolled) from sc_ybge, attrs_grade where id=grade_id and year = 2012 group by grade_id")
 data["grade"] = [{"id":x[0], "name":x[1], "weight":float(x[2])} for x in cursor.fetchall()]
 
-cursor.execute("select ethnicity, name_en, sum(enrolled) from edu_ybge, attrs_ethnicity where id=ethnicity and year = 2012 group by ethnicity")
+cursor.execute("select ethnicity_id, name_en, sum(enrolled) from sc_ybge, attrs_ethnicity where id=ethnicity_id and year = 2012 group by ethnicity_id")
 data["ethnicity"] = [{"id":x[0], "name":x[1], "weight":float(x[2])} for x in cursor.fetchall()]
 
 cursor.execute("select course_id, name_en, sum(enrolled) from hedu_ybuc, attrs_course where id=course_id and year = 2012 group by course_id")
