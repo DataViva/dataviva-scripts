@@ -30,10 +30,10 @@ do
     # -- Take the first line of the tsv and convert tabs to commas so we can map tsv fields -> mysql columns
     fields=`head -1 $tsvpath | tr '\t' ','`
     echo $fields;
-    mysql -uroot $DATAVIVA_DB_NAME -e "LOAD DATA LOCAL INFILE '$tsvpath' INTO TABLE $tablename FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' IGNORE 1 LINES ($fields);";
+    mysql -uroot $DATAVIVA2_DB_NAME -e "LOAD DATA LOCAL INFILE '$tsvpath' INTO TABLE $tablename FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' IGNORE 1 LINES ($fields);";
 
     # -- Clean up tmp file
-    #rm $FOLDER/$tsvname;
+    rm $FOLDER/$tsvname;
     echo "Completed import to $tablename";
 
 done
