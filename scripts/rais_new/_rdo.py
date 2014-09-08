@@ -16,7 +16,7 @@ def rdo(ybi, yi, year):
         ybi_data = ybi.reset_index()
         
         bra_criterion = ybi_data["bra_id"].map(lambda x: len(x) == geo_level)
-        cnae_criterion = ybi_data["cnae_id"].map(lambda x: len(x) == 5)
+        cnae_criterion = ybi_data["cnae_id"].map(lambda x: len(x) == 6)
         ybi_data = ybi_data[bra_criterion & cnae_criterion]
         
         # ybi_data = ybi_data.reindex(index=ybi_index)

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 def aggregate(rais_df):
-    rais_df["cbo"] = rais_df["cbo"].apply(lambda x: str(x)[:4])
+    rais_df = rais_df.drop(["age"], axis=1)
     
     rais_df['wage_m'] = rais_df['wage'] * rais_df['gender']
     rais_df['wage_f'] = rais_df['wage'] * ((rais_df['gender']+1)%2)
@@ -11,10 +11,9 @@ def aggregate(rais_df):
     rais_df = rais_df.rename(columns = {"gender":"num_emp_m", "emp_id":"num_emp", "est_id":"num_est"})
 
     rais_df = rais_df.drop(["color", "est_size"], axis=1)
-    ybio = rais_df.groupby(["year", "munic", "cnae", "cbo"]) \
+    ybio = rais_df.groupby(["year", "bra_id", "cnae_id", "cbo_id"]) \
             .agg({"wage": np.sum, "num_emp": pd.Series.count, "num_est": pd.Series.count,\
-                    "age": np.sum, "num_emp_m": np.sum, "wage_m": np.sum, "wage_f": np.sum})
-    ybio.index.names = ["year", "bra_id", "cnae_id", "cbo_id"]
+                    "num_emp_m": np.sum, "wage_m": np.sum, "wage_f": np.sum})
     # print ybio.index.is_unique
     '''
         BRA AGGREGATIONS
@@ -32,11 +31,15 @@ def aggregate(rais_df):
     '''
        CNAE AGGREGATIONS
     '''
-    ybio_cnae2 = ybio.reset_index()
-    ybio_cnae2["cnae_id"] = ybio_cnae2["cnae_id"].apply(lambda x: str(x)[:2])
-    ybio_cnae2 = ybio_cnae2.groupby(["year", "bra_id", "cnae_id", "cbo_id"]).sum()
+    ybio_cnae1 = ybio.reset_index()
+    ybio_cnae1["cnae_id"] = ybio_cnae1["cnae_id"].apply(lambda x: str(x)[:1])
+    ybio_cnae1 = ybio_cnae1.groupby(["year", "bra_id", "cnae_id", "cbo_id"]).sum()
+    
+    ybio_cnae3 = ybio.reset_index()
+    ybio_cnae3["cnae_id"] = ybio_cnae3["cnae_id"].apply(lambda x: str(x)[:3])
+    ybio_cnae3 = ybio_cnae3.groupby(["year", "bra_id", "cnae_id", "cbo_id"]).sum()
 
-    ybio = pd.concat([ybio, ybio_cnae2])
+    ybio = pd.concat([ybio, ybio_cnae1, ybio_cnae3])
     # print ybio.index.is_unique
     '''
        CBO AGGREGATIONS
