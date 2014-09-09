@@ -7,7 +7,8 @@ import numpy as np
 
 from table_aggregator import make_table
 
-DEVOLUTION_OR_RETURN = [13, 24, 35, 46, 57, 68, 20, 31, 53, 64]
+RETURNS = [20, 31, 53, 64]
+DEVOLUTION_OR_RETURN = [13, 24, 35, 46, 57, 68] + RETURNS
 ICMS_CREDIT_OR_TRANSFER = [12, 19, 23, 30, 45, 52, 56, 63]
 # -- Load in metadata from DB
 print "Getting municipal data from DB..."
@@ -85,6 +86,11 @@ def main(fname, odir):
 
 	print "Adjusting values..."
 	ei_df["Product_Value"][ei_df["CFOP_Reclassification"].isin(DEVOLUTION_OR_RETURN)] = -ei_df["Product_Value"]
+
+	# print "Computing retuned value totals..."
+	# ei_df["returned_value"] = 0
+	# ei_df["returned_value"][ei_df["CFOP_Reclassification"].isin(RETURNS)] = ei_df["Product_Value"]
+
 
 	print "Aggregating..."
 	primary_key =  ['Year', 'Monthly', 'Municipality_ID_Sender', 'EconomicAtivity_ID_CNAE_Sender', 
