@@ -29,8 +29,5 @@ def shard(ybio, raw):
         
         t["age_med"] = temp["age"]
         t["wage_med"] = temp["wage"]
-        
-    print tbls["yb"].head(20)
-    sys.exit()
     
     return tbls
