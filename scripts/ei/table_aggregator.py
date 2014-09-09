@@ -39,7 +39,7 @@ def hs_aggregations(table, table_name, pk_cols):
 def year_aggregation(table_data, table_name, pk_cols):
     year_cols = [col for col in pk_cols if col != 'Monthly']
     yearly = table_data.groupby(year_cols).sum()
-    yearly["month"] = "00"
+    yearly["Monthly"] = "00"
     yearly = yearly.set_index("Monthly", append=True)
     yearly = yearly.reorder_levels(pk_cols)
     
@@ -73,14 +73,7 @@ def make_table(ymbibip, table_name, output_values, odir, output_name):
         pk_cols += lookup[letter]
     print "PK_cols" , pk_cols
     table = ymbibip.groupby(pk_cols).aggregate(np.sum)
-
-    # -- BRA ID aggregations
-    table_meso, table_state = bra_aggregations(ymbibip, table_name, pk_cols)
-    cnae_l1, cnae_l3 = cnae_aggregations(ymbibip, table_name, pk_cols)
-    hs_l2, hs_l4 = hs_aggregations(ymbibip, table_name, pk_cols)
-    yearly = year_aggregation(ymbibip, table_name, pk_cols)
-
-    big_table = pd.concat([table, table_meso, table_state, cnae_l1, cnae_l3, hs_l2, hs_l4, yearly])
+    big_table = table
 
     print "Adding column lengths..."
     big_table, len_cols = add_column_length(big_table, table_name)
