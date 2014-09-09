@@ -7,6 +7,8 @@ import numpy as np
 
 from table_aggregator import make_table
 
+DEVOLUTION_OR_RETURN = [13, 24, 35, 46, 57, 68, 20, 31, 53, 64]
+ICMS_CREDIT_OR_TRANSFER = [12, 19, 23, 30, 45, 52, 56, 63]
 # -- Load in metadata from DB
 print "Getting municipal data from DB..."
 db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA_DB_USER"], 
@@ -73,9 +75,16 @@ def main(fname, odir):
 	        converters[c] = lookup_cnae
 	ei_df = pd.read_csv(fname, header=0, sep=delim, converters=converters, names=cols, quotechar="'", decimal=",")    
 	
+	# -- Filter out any rows that are ICMS Credits transactions or transfers
+	print "Filtering ICMS credits and transfers"
+	ei_df = ei_df[~ei_df["CFOP_Reclassification"].isin(ICMS_CREDIT_OR_TRANSFER)] 
+
 	print "Processing..."
-	ei_df['icms_tax'] = ei_df.ICMS_ST_Value + ei_df.ICMS_ST_RET_Value + ei_df.ICMS_Value 
+	ei_df['icms_tax'] = ei_df.ICMS_ST_Value + ei_df.ICMS_Value 
 	ei_df['tax'] = ei_df.icms_tax + ei_df.IPI_Value + ei_df.PIS_Value + ei_df.COFINS_Value + ei_df.II_Value + ei_df.ISSQN_Value
+
+	print "Adjusting values..."
+	ei_df["Product_Value"][ei_df["CFOP_Reclassification"].isin(DEVOLUTION_OR_RETURN)] = -ei_df["Product_Value"]
 
 	print "Aggregating..."
 	primary_key =  ['Year', 'Monthly', 'Municipality_ID_Sender', 'EconomicAtivity_ID_CNAE_Sender', 
@@ -85,12 +94,8 @@ def main(fname, odir):
 	# print "Saving to file..."
 	output_values = ["Product_Value", "tax", "icms_tax", "Cost_Value"]
 	output_name = ntpath.basename(fname).replace(".csv", "")
-	#output_path = os.path.join(odir, "output_ymsrp_%s.csv" % output_name)
-	# ymbibip.to_csv(output_path, delim, columns = output_values)
 
-	print "Making smaller tables..."
-	# make_small_tables(ymbibip, output_name)
-
+	print "Making tables..."
 	make_table(ei_df, "yms", output_values, odir, output_name)
 	make_table(ei_df, "ymr", output_values, odir, output_name)
 	make_table(ei_df, "ymp", output_values, odir, output_name)
