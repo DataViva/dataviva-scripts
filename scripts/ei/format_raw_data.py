@@ -4,11 +4,13 @@ import ntpath
 import pandas as pd
 import MySQLdb
 import numpy as np
+from pandas.tools.pivot import pivot_table
 
 from table_aggregator import make_table
 
-RETURNS = [20, 31, 53, 64]
-DEVOLUTION_OR_RETURN = [13, 24, 35, 46, 57, 68] + RETURNS
+REMITS = [20, 31, 53, 64]
+DEVOLUTIONS = [13, 24, 35, 46, 57, 68] 
+DEVOLUTION_OR_REMIT = DEVOLUTIONS + REMITS
 ICMS_CREDIT_OR_TRANSFER = [12, 19, 23, 30, 45, 52, 56, 63]
 # -- Load in metadata from DB
 print "Getting municipal data from DB..."
@@ -38,7 +40,7 @@ cursor.close()
 
 BRA_UNREPORTED = 'XX000007'
 CNAE_NO_INFO = 'x00001'
-CNAE_DNA = 'x00002'
+#CNAE_DNA = 'x00002'
 
 def lookup_location(x):
     if x == '-1':
@@ -52,8 +54,10 @@ def lookup_cnae(x):
 	if x == '1':
 		return CNAE_NO_INFO
 	if x == '2':
-		return CNAE_DNA
+		return CNAE_NO_INFO
 	return cnae_lookup[str(x)]
+
+
 
 @click.command()
 @click.option('--fname', prompt='file name',
@@ -62,54 +66,58 @@ def lookup_cnae(x):
 			  help='Directory for script output.')
 def main(fname, odir):
 	print "Reading data frame..."
-	cols = ["TransactedProduct_ID_NCM", "TransactedProduct_ID_HS",
-			"EconomicAtivity_ID_CNAE_Receiver", "EconomicAtivity_ID_CNAE_Sender", "CFOP_ID",
+	cols = ["ncm", "hs_id",
+			"cnae_id_r", "cnae_id_s", "CFOP_ID",
 			"CFOP_Reclassification", "CFOP_Flow", "Receiver_Type", "Sender_Type",
-			"Municipality_ID_Receiver", "Municipality_ID_Sender", "Year", "Monthly",
-			"Receiver_Situation", "Sender_Situation", "Cost_Value", "ICMS_ST_Value",
+			"bra_id_r", "bra_id_s", "year", "month",
+			"Receiver_Situation", "Sender_Situation", "transportation_cost", "ICMS_ST_Value",
 			"ICMS_ST_RET_Value", "ICMS_Value", "IPI_Value", "PIS_Value", "COFINS_Value", "II_Value",
-			"Product_Value", "ISSQN_Value", "Origin"]
-	delim = ";"
-	converters = {"TransactedProduct_ID_HS": update_hs_id, "Municipality_ID_Sender":lookup_location, "Municipality_ID_Receiver":lookup_location} 
-	for c in cols:
-	    if "CNAE" in c:
-	        converters[c] = lookup_cnae
-	ei_df = pd.read_csv(fname, header=0, sep=delim, converters=converters, names=cols, quotechar="'", decimal=",")    
-	
+			"product_value", "ISSQN_Value", "Origin"]
+
+
+	converters = {"hs_id": update_hs_id, "Municipality_ID_Sender":lookup_location, "Municipality_ID_Receiver":lookup_location, "EconomicAtivity_ID_CNAE_Receiver": lookup_cnae, 
+				"EconomicAtivity_ID_CNAE_Sender":lookup_cnae} 
+
+	ei_df = pd.read_csv(fname, header=0, sep=";", converters=converters, names=cols, quotechar="'", decimal=",")    
+
 	# -- Filter out any rows that are ICMS Credits transactions or transfers
 	print "Filtering ICMS credits and transfers"
-	ei_df = ei_df[~ei_df["CFOP_Reclassification"].isin(ICMS_CREDIT_OR_TRANSFER)] 
+	ei_df = ei_df[~ei_df.CFOP_Reclassification.isin(ICMS_CREDIT_OR_TRANSFER)] 
 
 	print "Processing..."
 	ei_df['icms_tax'] = ei_df.ICMS_ST_Value + ei_df.ICMS_Value 
 	ei_df['tax'] = ei_df.icms_tax + ei_df.IPI_Value + ei_df.PIS_Value + ei_df.COFINS_Value + ei_df.II_Value + ei_df.ISSQN_Value
 
-	print "Adjusting values..."
-	ei_df["Product_Value"][ei_df["CFOP_Reclassification"].isin(DEVOLUTION_OR_RETURN)] = -ei_df["Product_Value"]
+	ei_df["remit_value"] = 0
+	ei_df["devolved_value"] = 0
 
-	# print "Computing retuned value totals..."
-	# ei_df["returned_value"] = 0
-	# ei_df["returned_value"][ei_df["CFOP_Reclassification"].isin(RETURNS)] = ei_df["Product_Value"]
+	ei_df["remit_value"][ei_df["CFOP_Reclassification"].isin(REMITS)] = ei_df["product_value"]
+	ei_df["devolved_value"][ei_df["CFOP_Reclassification"].isin(DEVOLUTIONS)] = ei_df["product_value"]
 
+	# print "Adjusting values..."
+	ei_df["product_value"][ei_df["CFOP_Reclassification"].isin(DEVOLUTION_OR_REMIT)] = -ei_df["product_value"]
+
+
+	#ei_df['value_returned'] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_Reclassification"] in REMMITANCES else 0, axis=1)
+	#ei_df['value_devolved'] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_Reclassification"] in DEVOLUTIONS else 0, axis=1)
 
 	print "Aggregating..."
-	primary_key =  ['Year', 'Monthly', 'Municipality_ID_Sender', 'EconomicAtivity_ID_CNAE_Sender', 
-					'Municipality_ID_Receiver', 'EconomicAtivity_ID_CNAE_Receiver',
-					'TransactedProduct_ID_HS'] # -- TODO: receive confirmation
+	primary_key =  ['year', 'month', 'bra_id_s', 'cnae_id_s', 
+					'bra_id_r', 'cnae_id_r',
+					'hs_id'] 
 	#ymbibip = ei_df.groupby(primary_key).aggregate(np.sum)
 	# print "Saving to file..."
-	output_values = ["Product_Value", "tax", "icms_tax", "Cost_Value"]
+	output_values = ["product_value", "tax", "icms_tax", "transportation_cost", "remit_value", "devolved_value"]
 	output_name = ntpath.basename(fname).replace(".csv", "")
 
 	print "Making tables..."
-	make_table(ei_df, "yms", output_values, odir, output_name)
-	make_table(ei_df, "ymr", output_values, odir, output_name)
-	make_table(ei_df, "ymp", output_values, odir, output_name)
-	make_table(ei_df, "ymsr", output_values, odir, output_name)
-	make_table(ei_df, "ymsp", output_values, odir, output_name)
-	make_table(ei_df, "ymrp", output_values, odir, output_name)
-	make_table(ei_df, "ymsrp", output_values, odir, output_name)
-
-
+	ymsrp = make_table(ei_df, "ymsrp", output_values, odir, output_name)
+	ymsr = make_table(ymsrp, "ymsr", output_values, odir, output_name)
+	ymsp = make_table(ymsrp, "ymsp", output_values, odir, output_name)
+	ymrp = make_table(ymsrp, "ymrp", output_values, odir, output_name)
+	yms = make_table(ymsp, "yms", output_values, odir, output_name)
+	ymr = make_table(ymrp, "ymr", output_values, odir, output_name)
+	ymp = make_table(ymsp, "ymp", output_values, odir, output_name)
+	
 if __name__ == '__main__':
     main()
