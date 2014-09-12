@@ -18,10 +18,14 @@ import os, sys, fnmatch
 import re
 
 pattern = re.compile('output_(\w+)_\d+_\d+.csv')
+pattern2 = re.compile('output_(\w+)_(ten_percent|supersmall).csv')
 
 
 def parse_table(t):
     m = pattern.search(t)
+    if m:
+        return "ei_" + m.group(1)
+    m = pattern2.search(t)
     return "ei_" + m.group(1)
 
 # via http://stackoverflow.com/questions/13299731/python-need-to-loop-through-directories-looking-for-txt-files
