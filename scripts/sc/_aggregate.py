@@ -23,11 +23,7 @@ def aggregate(df):
     ybge_state["bra_id"] = ybge_state["bra_id"].apply(lambda x: x[:2])
     ybge_state = ybge_state.groupby(["year", "bra_id", "grade", "ethnicity"]).sum()
 
-    ybge_meso = ybge.reset_index()
-    ybge_meso["bra_id"] = ybge_meso["bra_id"].apply(lambda x: x[:4])
-    ybge_meso = ybge_meso.groupby(["year", "bra_id", "grade", "ethnicity"]).sum()
-
-    ybge = pd.concat([ybge, ybge_state, ybge_meso])
+    ybge = pd.concat([ybge, ybge_state])
     
     ybge["age"] = ybge["age"] / ybge["enrolled"]
 
