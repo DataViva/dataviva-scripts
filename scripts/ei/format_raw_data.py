@@ -8,10 +8,16 @@ from pandas.tools.pivot import pivot_table
 
 from table_aggregator import make_table
 
-REMITS = [20, 31, 53, 64]
+
+PURCHASES = [11, 22, 33, 44, 55, 66, 18, 29,40, 51, 62, 73]
+TRANSFERS = [12, 23, 34, 45, 56, 67]
 DEVOLUTIONS = [13, 24, 35, 46, 57, 68] 
-DEVOLUTION_OR_REMIT = DEVOLUTIONS + REMITS
-ICMS_CREDIT_OR_TRANSFER = [12, 19, 23, 30, 45, 52, 56, 63]
+SERVICES = [14, 25, 36, 47, 58, 69, 15, 26, 37, 48, 59, 70, 16, 27, 38, 49, 60, 71]
+FIXED_ASSETS = [17, 28, 39, 50, 61, 72]
+ICMS_CREDITS = [19, 30, 41, 52, 63, 74]
+REMITS = [20, 31, 42, 53, 64, 75]
+OTHERS = [21, 32, 43, 54, 65, 76]
+
 # -- Load in metadata from DB
 print "Getting municipal data from DB..."
 db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA_DB_USER"], 
@@ -57,7 +63,35 @@ def lookup_cnae(x):
 		return CNAE_NO_INFO
 	return cnae_lookup[str(x)]
 
+PURCHASE_ID = 1
+TRANSFER_ID = 2
+DEVOLUTION_ID = 3
+SERVICE_ID = 4
+FIXED_ASSET_ID = 5
+ICMS_CREDIT_ID = 6
+REMIT_ID = 7
+OTHER_ID = 8
 
+def look_cfop(x):
+	x = int(x)
+
+	if x in PURCHASES:
+		return PURCHASE_ID
+	elif x in TRANSFERS:
+		return DEVOLUTION_ID
+	elif x in DEVOLUTIONS:
+		return DEVOLUTION_ID
+	elif x in SERVICES:
+		return SERVICE_ID
+	elif x in FIXED_ASSETS:
+		return FIXED_ASSET_ID
+	elif x in ICMS_CREDITS:
+		return ICMS_CREDIT_ID
+	elif x in REMITS:
+		return REMIT_ID
+	elif x in OTHERS:
+		return OTHER_ID
+	raise Exception("Invalid or unknown transaction ID. What is (%s)?" % x)
 
 @click.command()
 @click.option('--fname', prompt='file name',
@@ -76,38 +110,42 @@ def main(fname, odir):
 
 
 	converters = {"hs_id": update_hs_id, "Municipality_ID_Sender":lookup_location, "Municipality_ID_Receiver":lookup_location, "EconomicAtivity_ID_CNAE_Receiver": lookup_cnae, 
-				"EconomicAtivity_ID_CNAE_Sender":lookup_cnae} 
+				"EconomicAtivity_ID_CNAE_Sender":lookup_cnae, "CFOP_Reclassification":look_cfop} 
 
 	ei_df = pd.read_csv(fname, header=0, sep=";", converters=converters, names=cols, quotechar="'", decimal=",")    
 
 	# -- Filter out any rows that are ICMS Credits transactions or transfers
-	print "Filtering ICMS credits and transfers"
-	ei_df = ei_df[~ei_df.CFOP_Reclassification.isin(ICMS_CREDIT_OR_TRANSFER)] 
-
+	# print "Filtering ICMS credits and transfers"
 	print "Processing..."
 	ei_df['icms_tax'] = ei_df.ICMS_ST_Value + ei_df.ICMS_Value 
 	ei_df['tax'] = ei_df.icms_tax + ei_df.IPI_Value + ei_df.PIS_Value + ei_df.COFINS_Value + ei_df.II_Value + ei_df.ISSQN_Value
 
-	ei_df["remit_value"] = 0
-	ei_df["devolved_value"] = 0
+	ei_df['purchase_value'] = 0
+	ei_df['transfer_value'] = 0
+	ei_df['devolution_value'] = 0
+	ei_df['service_value'] = 0
+	ei_df['fixed_asset_value'] = 0
+	ei_df['icms_credit_value'] = 0
+	ei_df['remit_value'] = 0
+	ei_df['other_value'] = 0
 
-	ei_df["remit_value"][ei_df["CFOP_Reclassification"].isin(REMITS)] = ei_df["product_value"]
-	ei_df["devolved_value"][ei_df["CFOP_Reclassification"].isin(DEVOLUTIONS)] = ei_df["product_value"]
 
-	# print "Adjusting values..."
-	ei_df["product_value"][ei_df["CFOP_Reclassification"].isin(DEVOLUTION_OR_REMIT)] = -ei_df["product_value"]
-
-
-	#ei_df['value_returned'] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_Reclassification"] in REMMITANCES else 0, axis=1)
-	#ei_df['value_devolved'] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_Reclassification"] in DEVOLUTIONS else 0, axis=1)
+	ei_df['purchase_value'][ei_df["CFOP_Reclassification"] == PURCHASE_ID] = ei_df["product_value"]
+	ei_df['transfer_value'][ei_df["CFOP_Reclassification"] == TRANSFER_ID] = ei_df["product_value"]
+	ei_df['devolution_value'][ei_df["CFOP_Reclassification"] == DEVOLUTION_ID] = ei_df["product_value"]
+	ei_df['service_value'][ei_df["CFOP_Reclassification"] == SERVICE_ID] = ei_df["product_value"]
+	ei_df['fixed_asset_value'][ei_df["CFOP_Reclassification"] == FIXED_ASSET_ID] = ei_df["product_value"]
+	ei_df['icms_credit_value'][ei_df["CFOP_Reclassification"] == ICMS_CREDIT_ID] = ei_df["product_value"]
+	ei_df['remit_value'][ei_df["CFOP_Reclassification"] == REMIT_ID] = ei_df["product_value"]
+	ei_df['other_value'][ei_df["CFOP_Reclassification"] == OTHER_ID] = ei_df["product_value"]
 
 	print "Aggregating..."
 	primary_key =  ['year', 'month', 'bra_id_s', 'cnae_id_s', 
 					'bra_id_r', 'cnae_id_r',
-					'hs_id'] 
-	#ymbibip = ei_df.groupby(primary_key).aggregate(np.sum)
-	# print "Saving to file..."
-	output_values = ["product_value", "tax", "icms_tax", "transportation_cost", "remit_value", "devolved_value"]
+					'hs_id']
+
+	output_values = ["purchase_value", "transfer_value", "devolution_value", "service_value", "fixed_asset_value", "icms_credit_value", "remit_value", "other_value", "tax", "icms_tax", "transportation_cost"]
+
 	output_name = ntpath.basename(fname).replace(".csv", "")
 
 	print "Making tables..."

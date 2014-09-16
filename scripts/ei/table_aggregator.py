@@ -4,6 +4,8 @@ import pandas as pd
 import os
 from pandas.tools.pivot import pivot_table
 
+BIGGEST_TABLE = 'ymsrp'
+
 def pk(table_name):
     ''' Determine which columns are part of the primary key, based on table name'''
     lookup = {
@@ -11,7 +13,8 @@ def pk(table_name):
         "m" : ["month"],
         "s" : ['bra_id_s', 'cnae_id_s'],
         "r" : ['bra_id_r', 'cnae_id_r'],
-        "p" : ["hs_id"]
+        "p" : ["hs_id"],
+        "c" : ["cfop_class"]
     }
     pk_cols = []
     for letter in table_name:
@@ -28,19 +31,16 @@ def year_aggregation(table_data, table_name, pk_cols):
     
     return yearly
 
-def make_table(ymbibip, table_name, output_values, odir, output_name, ignore_list=[]): #'value_returned', 'value_devolved']):
+def make_table(ymbibip, table_name, output_values, odir, output_name, ignore_list=[]):
     pk_cols = pk(table_name)
     
-    if table_name == 'ymsrp':
+    if table_name == BIGGEST_TABLE:
         table = ymbibip.groupby(pk_cols).aggregate(np.sum)
     else:
         table = ymbibip.groupby(level=pk_cols).aggregate(np.sum)
 
-    
-    ignore_list = ['remit_value', 'devolved_value']
-    output_values = filter(lambda x: x not in ignore_list, output_values)
-    table["devolution_rate"] = table["devolved_value"] / table["product_value"]
-    output_values.append("devolution_rate")
+    table["net_value"] = table["purchase_value"] + table["service_value"] + table["fixed_asset_value"] + table["other_value"] - table["devolution_value"]
+    output_values.append("net_value")
 
     yearly = year_aggregation(table, table_name, pk_cols)
 
