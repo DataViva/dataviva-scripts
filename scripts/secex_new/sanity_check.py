@@ -97,10 +97,9 @@ class SecexTests(unittest.TestCase):
         expected_df = expected_df.reset_index(level="hs_id")
         expected_df = expected_df[expected_df["hs_id"].str.len()==6]
         expected_df = expected_df.groupby(level=["year", "month", "bra_id"]).agg({"hs_id":pd.Series.count})
-        # print expected_df.shape
-        # diversity_df["hs_diversity"].dropna(0).to_csv('asdldfkjdkj.csv')
-        # print diversity_df["hs_diversity"].dropna(0).shape
-        return assert_series_equal(diversity_df["hs_diversity"].astype(int), expected_df["hs_id"])
+        expected_df = expected_df["hs_id"]
+        diversity_df = diversity_df["hs_diversity"][diversity_df["hs_diversity"]>0].astype(int)
+        return assert_series_equal(diversity_df, expected_df)
     
     '''The point of this test is to make sure RCA is present IF export val is
         present for the given row. It does not test for correctness.'''
