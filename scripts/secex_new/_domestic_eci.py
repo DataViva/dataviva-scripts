@@ -1,6 +1,10 @@
-import sys
+import sys, os
 import pandas as pd
-from ..growth_lib import growth
+
+file_path = os.path.dirname(os.path.realpath(__file__))
+growth_lib_path = os.path.abspath(os.path.join(file_path, "..", "growth_lib"))
+sys.path.insert(0, growth_lib_path)
+import growth
 
 def get_ybp_rcas(ymbp, geo_level):
     
@@ -33,7 +37,7 @@ def domestic_eci(ymp, ymb, ymbp):
     pcis = ymp.T
     
     ecis = []
-    for geo_level in [2, 4, 7, 8]:
+    for geo_level in [2, 7, 8]:
     # for geo_level in [2, 4, 8]:
         # print "geo_level",geo_level
 

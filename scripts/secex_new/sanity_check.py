@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
 ''' Import statements '''
 import os, sys, time, bz2, click, unittest, logging
 import pandas as pd
 import numpy as np
-from pandas.util.testing import assert_frame_equal
+from pandas.util.testing import assert_frame_equal, assert_series_equal
 
 '''
     Run w/ the following:
@@ -24,6 +23,8 @@ class SecexTests(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.index_cols, self.tbl = get_tbl(TABLE, FILE_PATH)
+        if TABLE == "ymbp":
+            self.complexity_tbl = get_tbl("ymp", FILE_PATH)[1]
     
     def test_col_year(self):
         test_tbl = self.tbl.reset_index()
@@ -38,30 +39,142 @@ class SecexTests(unittest.TestCase):
     
     def test_col_bra_id(self):
         test_tbl = self.tbl.reset_index()
-        if "bra_id" not in test_tbl.columns and "bra_id" not in self.index_cols:
+        if "bra_id" not in test_tbl.columns or "bra_id" not in self.index_cols:
             self.skipTest('no bra_id column')
         states = test_tbl["bra_id"][test_tbl["bra_id"].str.len()==2].unique()
         munics = test_tbl["bra_id"][test_tbl["bra_id"].str.len()==8].unique()
         munics = [m[:2] for m in munics]
         return self.assertItemsEqual(states, set(munics))
     
+    def test_col_bra_id_len(self):
+        test_tbl = self.tbl.reset_index()
+        if "bra_id_len" not in test_tbl.columns or "bra_id" not in self.index_cols:
+            self.skipTest('no bra_id column')
+        test_tbl["calculated_len"] = test_tbl["bra_id"].str.len()
+        return assert_series_equal(test_tbl["calculated_len"], test_tbl["bra_id_len"])
+    
     def test_col_hs_id(self):
         test_tbl = self.tbl.reset_index()
-        if "hs_id" not in test_tbl.columns and "hs_id" not in self.index_cols:
+        if "hs_id" not in test_tbl.columns or "hs_id" not in self.index_cols:
             self.skipTest('no hs_id column')
         hs2 = test_tbl["hs_id"][test_tbl["hs_id"].str.len()==2].unique()
         hs4 = test_tbl["hs_id"][test_tbl["hs_id"].str.len()==6].unique()
         hs4 = [p[:2] for p in hs4]
         return self.assertItemsEqual(hs2, set(hs4))
-        
+    
+    def test_col_hs_id_len(self):
+        test_tbl = self.tbl.reset_index()
+        if "hs_id_len" not in test_tbl.columns or "hs_id" not in self.index_cols:
+            self.skipTest('no hs_id column')
+        test_tbl["calculated_len"] = test_tbl["hs_id"].str.len()
+        return assert_series_equal(test_tbl["calculated_len"], test_tbl["hs_id_len"])
+    
     def test_col_wld_id(self):
         test_tbl = self.tbl.reset_index()
-        if "wld_id" not in test_tbl.columns and "wld_id" not in self.index_cols:
+        if "wld_id" not in test_tbl.columns or "wld_id" not in self.index_cols:
             self.skipTest('no wld_id column')
         continents = test_tbl["wld_id"][test_tbl["wld_id"].str.len()==2].unique()
         countries = test_tbl["wld_id"][test_tbl["wld_id"].str.len()==5].unique()
         countries = [c[:2] for c in countries]
         return self.assertItemsEqual(continents, set(countries))
+    
+    def test_col_wld_id_len(self):
+        test_tbl = self.tbl.reset_index()
+        if "wld_id_len" not in test_tbl.columns or "wld_id" not in self.index_cols:
+            self.skipTest('no wld_id column')
+        test_tbl["calculated_len"] = test_tbl["wld_id"].str.len()
+        return assert_series_equal(test_tbl["calculated_len"], test_tbl["wld_id_len"])
+    
+    def test_calc_hs_diversity(self):
+        test_tbl = self.tbl
+        if "hs_diversity" not in test_tbl.columns:
+            self.skipTest('no HS diversity column')
+        ymbp = get_tbl("ymbp", FILE_PATH)[1]
+        diversity_df = test_tbl.reindex(index=["00"], level="month")
+        # print expected_df.head()
+        expected_df = ymbp.reindex(index=["00"], level="month")
+        expected_df = expected_df.dropna(how="any", subset=["export_val"])
+        expected_df = expected_df.reset_index(level="hs_id")
+        expected_df = expected_df[expected_df["hs_id"].str.len()==6]
+        expected_df = expected_df.groupby(level=["year", "month", "bra_id"]).agg({"hs_id":pd.Series.count})
+        # print expected_df.shape
+        # diversity_df["hs_diversity"].dropna(0).to_csv('asdldfkjdkj.csv')
+        # print diversity_df["hs_diversity"].dropna(0).shape
+        return assert_series_equal(diversity_df["hs_diversity"].astype(int), expected_df["hs_id"])
+    
+    '''The point of this test is to make sure RCA is present IF export val is
+        present for the given row. It does not test for correctness.'''
+    def test_calc_rca(self):
+        test_tbl = self.tbl.reset_index()
+        if "rca" not in test_tbl.columns:
+            self.skipTest('no RCA columns')
+        # only care for year values NOT month
+        month_criterion = test_tbl["month"]=="00"
+        # only care if HS is deepest level
+        hs_criterion = test_tbl["hs_id"].str.len()==6
+        # only care if export_val is not null
+        export_val_criterion = test_tbl["export_val"]
+        expected_df = test_tbl[month_criterion & hs_criterion & export_val_criterion]
+        # only the columns with RCA
+        rca_df = test_tbl.dropna(how="any", subset=["rca"])
+        return assert_frame_equal(expected_df, rca_df, check_names=True)
+    
+    '''The point of this test is to make sure RCD is present IF import val is
+        present for the given row. It does not test for correctness.'''
+    def test_calc_rcd(self):
+        test_tbl = self.tbl.reset_index()
+        if "rcd" not in test_tbl.columns:
+            self.skipTest('no RCD column')
+        # only care for year values NOT month
+        month_criterion = test_tbl["month"]=="00"
+        # only care if HS is deepest level
+        hs_criterion = test_tbl["hs_id"].str.len()==6
+        # only care if import_val is not null
+        import_val_criterion = test_tbl["import_val"]
+        expected_df = test_tbl[month_criterion & hs_criterion & import_val_criterion]
+        # only the columns with RCA
+        rcd_df = test_tbl.dropna(how="any", subset=["rcd"])
+        return assert_frame_equal(expected_df, rcd_df, check_names=True)
+    
+    '''The point of this test is to make sure domestic distance values are present 
+        IF month == 0 (year values) and hs_id length == 6 (full HS product) and
+        the given hs_id shows up with export value at least once for that year. 
+        It does not test for correctness.'''
+    def test_calc_distance(self):
+        # test_tbl = self.tbl.reset_index()
+        test_tbl = self.tbl
+        if "rcd" not in test_tbl.columns:
+            self.skipTest('no distance column')
+        # find hs_ids with export data
+        hs_w_export = test_tbl.groupby(level=["hs_id"]).agg({"export_val":np.sum}).dropna()
+        hs_w_export = hs_w_export.index
+        hs_w_export = [hs for hs in hs_w_export if len(hs) == 6]
+        expected_df = test_tbl.reindex(index=hs_w_export, level="hs_id")
+        # only care for year values NOT month
+        expected_df = expected_df.reindex(index=["00"], level="month")
+        # only the columns with distance
+        distance_df = test_tbl.dropna(how="any", subset=["distance"])
+        return assert_frame_equal(expected_df, distance_df, check_names=True)
+    
+    '''Testing for opp gain (need ymp table to find out which hs_ids have PCI).'''
+    def test_calc_opp_gain(self):
+        test_tbl = self.tbl
+        if "opp_gain_wld" not in test_tbl.columns:
+            self.skipTest('no world opportunity gain column')
+        pci_tbl = self.complexity_tbl
+        # find non planning region bra_ids
+        bras_non_plr = test_tbl.index.get_level_values('bra_id')
+        bras_non_plr = [bra for bra in bras_non_plr if len(bra) != 7]
+        expected_df = test_tbl.reindex(index=bras_non_plr, level="bra_id")
+        # find hs_ids with PCI data
+        hs_w_pci = pci_tbl.groupby(level=["hs_id"]).agg({"pci":np.sum}).dropna()
+        hs_w_pci = hs_w_pci.index
+        expected_df = expected_df.reindex(index=hs_w_pci, level="hs_id")
+        # only care for year values NOT month
+        expected_df = expected_df.reindex(index=["00"], level="month")
+        # only the columns with opp gain
+        opp_gain_wld_df = test_tbl.dropna(how="any", subset=["opp_gain", "opp_gain_wld"])
+        return assert_frame_equal(expected_df, opp_gain_wld_df, check_names=True)
     
     def test_months_year(self):
         # only testing export value for now

@@ -17,16 +17,14 @@
     
     Example Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    python \
-    -m scripts.secex_new.format_raw_data \
-    data/secex/export/MDIC_2004.csv.zip \
-    data/secex/import/MDIC_2004.csv.zip \
-    -y 2004 \
+    python scripts/secex_new/format_raw_data.py \
+    data/secex/export/MDIC_2002.rar \
+    data/secex/import/MDIC_2002.rar \
+    -y 2002 \
     -e data/secex/observatory_ecis.csv \
     -p data/secex/observatory_pcis.csv \
-    -o data/secex/2004 \
-    -g data/secex/2003 \
-    -d
+    -o data/secex/2002 \
+    -g data/secex/2001 \
 
 """
 
@@ -36,11 +34,9 @@ import pandas as pd
 import pandas.io.sql as sql
 import numpy as np
 
-from ..growth_lib import growth
-
 from _to_df import to_df
-from _replace_vals import replace_vals
 from _merge import merge
+from _val_per_unit import val_per_unit
 from _aggregate import aggregate
 from _shard import shard
 from _pci_wld_eci import pci_wld_eci
@@ -60,65 +56,63 @@ from _column_lengths import add_column_length
 @click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
 @click.option('prev_path', '--prev', '-g', help='Path to files from the previous year for calculating growth.', type=click.Path(exists=True), required=False)
 @click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.', type=click.Path(exists=True), required=False)
-@click.option('-d', '--debug', is_flag=True)
-def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path, output_path, prev_path, prev5_path, debug):
+def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path, output_path, prev_path, prev5_path):
+    step = 0
+    # d = pd.HDFStore(os.path.abspath(os.path.join(output_path,'ymp.h5')))
     
-    if debug:
-        print; print '''STEP 1: \nImport file to pandas dataframe'''
-    secex_exports = to_df(export_file_path, False, debug)
-    secex_imports = to_df(import_file_path, False, debug)
+    step += 1; print '''\nSTEP {0}: \nImport file to pandas dataframe'''.format(step)
+    secex_exports = to_df(export_file_path, False)
+    secex_imports = to_df(import_file_path, False)
     # secex_exports = secex_exports.head(1000)
     # secex_imports = secex_imports.head(1000)
-    
-    if debug:
-        print; print '''STEP 2: \nMerge imports and exports'''
-    secex_df = merge(secex_exports, secex_imports, debug)
-    
-    if debug:
-        print; print '''STEP 3: \nReplace vals with DB IDs'''
-    secex_df = replace_vals(secex_df, None, debug)
-    
-    if debug:
-        print; print '''STEP 4: \nAggregate'''
+
+    step += 1; print '''\nSTEP {0}: \nMerge imports and exports'''.format(step)
+    secex_df = merge(secex_exports, secex_imports)
+
+    step += 1; print '''\nSTEP {0}: \nAggregate'''.format(step)
     ymbpw = aggregate(secex_df)
-    
-    if debug:
-        print; print '''STEP 5: \nShard'''
+
+    step += 1; print '''\nSTEP {0}: \nShard'''.format(step)
     [ymb, ymbp, ymbw, ymp, ympw, ymw] = shard(ymbpw)
-    
-    if debug:
-        print; print '''STEP 6: \nCalculate PCI & ECI'''
+
+    step += 1; print '''\nSTEP {0}: \nPrice / unit'''.format(step)
+    ymp = val_per_unit(ymp, secex_exports, "export")
+    ymp = val_per_unit(ymp, secex_imports, "import")
+
+    step += 1; print '''\nSTEP {0}: \nCalculate PCI & ECI'''.format(step)
     [ymp, ymw] = pci_wld_eci(eci_file_path, pci_file_path, ymp, ymw)
 
-    if debug:
-        print; print '''STEP 7: \nCalculate domestic ECI'''
+    step += 1; print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
     ymb = domestic_eci(ymp, ymb, ymbp)
-    
-    if debug:
-        print; print '''STEP 8: \nCalculate diversity'''
+
+    step += 1; print '''\nSTEP {0}: \nCalculate diversity'''.format(step)
     ymb = calc_diversity(ymbp, ymb, "bra_id", "hs_id")
     ymb = calc_diversity(ymbw, ymb, "bra_id", "wld_id")
     ymp = calc_diversity(ymbp, ymp, "hs_id", "bra_id")
     ymp = calc_diversity(ympw, ymp, "hs_id", "wld_id")
     ymw = calc_diversity(ymbw, ymw, "wld_id", "bra_id")
     ymw = calc_diversity(ympw, ymw, "wld_id", "hs_id")
-    
-    if debug:
-        print; print '''STEP 9: \nCalculate Brazilian RCA'''
+
+    step += 1; print '''\nSTEP {0}: \nCalculate Brazilian RCA'''.format(step)
     ymp = brazil_rca(ymp, year)
     
-    if debug:
-        print; print '''STEP 10: \nCalculate RCA, diversity and opp_gain aka RDO'''
+    # d["ymp"] = ymp
+    # d["ymbp"] = ymbp
+    # sys.exit()
+    # ymp = d["ymp"]
+    # ymbp = d["ymbp"]
+    
+    step += 1; print '''\nSTEP {0}: \nCalculate RCA, diversity and opp_gain aka RDO'''.format(step)
     ymbp = rdo(ymbp, ymp, year)
+    # ymbp.to_csv('ymbp_temp.csv')
+    # print ymbp.head(); sys.exit();
     
     tables = {"ymb": ymb, "ymp": ymp, "ymw": ymw, "ymbp": ymbp, "ymbpw": ymbpw, "ymbw": ymbw, "ympw": ympw}
     
-
     if prev_path:
-        if debug:
-            print; print '''STEP 11: \nCalculate 1 year growth'''
-            if prev5_path:
-                print; print '''STEP 12: \nCalculate 5 year growth'''
+        step += 1; print '''\nSTEP {0}: \nCalculate 1 year growth'''.format(step)
+        if prev5_path:
+            step += 1; print '''\nSTEP {0}: \nCalculate 5 year growth'''.format(step)
         for t_name, t in tables.items():
             prev_file = os.path.join(prev_path, "{0}.tsv.bz2".format(t_name))
             t_prev = to_df(prev_file, t_name)
@@ -140,13 +134,11 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
                 t_prev = to_df(prev_file, t_name)
                 t = calc_growth(t, t_prev, 5)
 
-    if debug:
-        print "computing column lengths"
+    print "computing column lengths"
     for table_name, table_data in tables.items():
         table_data = add_column_length(table_name, table_data)
 
-    if debug:
-        print; print '''FINAL STEP: \nSave files to output path'''
+    print '''\nFINAL STEP: \nSave files to output path'''
     for t_name, t in tables.items():
         if not os.path.exists(output_path):
             os.makedirs(output_path)
