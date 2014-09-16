@@ -45,6 +45,6 @@ def to_df(input_file_path, index=False, debug=False):
         # coerce_cols = {"course_id":str, "class_id":str}
         coerce_cols = {"course_id":str}
         rais_df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
-        rais_df = rais_df[["year", "enroll_id", "gender", "color", "edu_level_new", "school_id", "class_id", "munic", "age"]]
+        rais_df = rais_df[["year", "enroll_id", "gender", "color", "edu_level_new", "school_id", "class_id", "munic", "age", "loc"]]
     
     return rais_df
