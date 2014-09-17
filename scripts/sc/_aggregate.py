@@ -2,7 +2,7 @@ import sys
 import pandas as pd
 import numpy as np
 
-URBAN, RURAL = 1, 2
+URBAN= 1
 
 def aggregate(df):
     # split by gender
@@ -10,14 +10,12 @@ def aggregate(df):
                             "edu_level_new":"grade", "school_id":"schools", \
                             "class_id":"classes", "color":"ethnicity"})
     
-    df["num_urban"] = 0
-    df["num_rural"] = 0
-    df["num_urban"][df["loc"] == URBAN] = 1
-    df["num_rural"][df["loc"] == RURAL] = 1
+    df["enrolled_urban"] = 0
+    df["enrolled_urban"][df["loc"] == URBAN] = 1
 
     df_f = df[df["gender"]==1]
         
-    df = df.groupby(["year", "bra_id", "grade", "ethnicity"]).agg({"schools": pd.Series.nunique, "classes": pd.Series.nunique, "enrolled": pd.Series.nunique, "age":np.sum, "num_rural": np.sum, "num_urban":np.sum})
+    df = df.groupby(["year", "bra_id", "grade", "ethnicity"]).agg({"schools": pd.Series.nunique, "classes": pd.Series.nunique, "enrolled": pd.Series.nunique, "age":np.sum, "enrolled_urban":np.sum})
     df_f = df_f.groupby(["year", "bra_id", "grade", "ethnicity"]).agg({"enrolled": pd.Series.nunique})
     df_f = df_f.rename(columns={"enrolled":"enrolled_f"})
     
