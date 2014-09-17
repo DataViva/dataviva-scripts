@@ -40,7 +40,7 @@ def required(ybio, ybi, yi, year):
     yi = yi.set_index("cnae_id")["num_emp_est"]
     
     ybio_required = []
-    for geo_level in [2, 4, 8]:
+    for geo_level in [2, 8]:
         bra_criterion = ybio_data['bra_id'].map(lambda x: len(x) == geo_level)
         ybio_panel = ybio_data[bra_criterion]
         ybio_panel = ybio_panel.pivot_table(index=["bra_id", "cbo_id"], \

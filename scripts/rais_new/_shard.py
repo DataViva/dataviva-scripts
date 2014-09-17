@@ -13,7 +13,7 @@ def shard(ybio, raw):
     tbls = {"yb": yb, "yi": yi, "yo": yo, "ybi": ybi, "ybio": ybio, "ybo": ybo, "yio": yio}
     # tbls = {"yio":yio}
     lookup = {"b":"bra_id", "i":"cnae_id", "o":"cbo_id"}
-    nestings = {"b":[8,4,2], "i":[5,3,1], "o":[4,2,1]}
+    nestings = {"b":[8,2], "i":[5,1], "o":[4,1]}
     for t_name, t in tbls.items():
         print t_name
         temp = pd.DataFrame()

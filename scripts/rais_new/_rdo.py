@@ -10,7 +10,7 @@ import growth
 def rdo(ybi, yi, year):
     
     rca_dist_opp = []
-    for geo_level in [2, 4, 7, 8]:
+    for geo_level in [2, 8]:
         print "geo level:", geo_level
         
         ybi_data = ybi.reset_index()
