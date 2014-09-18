@@ -19,7 +19,7 @@ def aggregate(rais_df):
         BRA AGGREGATIONS
     '''
     ybio_state = ybio.reset_index()
-    ybio_state["bra_id"] = ybio_state["bra_id"][:2]
+    ybio_state["bra_id"] = ybio_state["bra_id"].apply(lambda x: str(x)[:2])
     ybio_state = ybio_state.groupby(["year", "bra_id", "cnae_id", "cbo_id"]).sum()
    
     ybio = pd.concat([ybio, ybio_state])
@@ -28,7 +28,7 @@ def aggregate(rais_df):
        CNAE AGGREGATIONS
     '''
     ybio_cnae1 = ybio.reset_index()
-    ybio_cnae1["cnae_id"] = ybio_cnae1["cnae_id"][:1]
+    ybio_cnae1["cnae_id"] = ybio_cnae1["cnae_id"].apply(lambda x: str(x)[:1])
     ybio_cnae1 = ybio_cnae1.groupby(["year", "bra_id", "cnae_id", "cbo_id"]).sum()
     
     ybio = pd.concat([ybio, ybio_cnae1])
@@ -37,7 +37,7 @@ def aggregate(rais_df):
        CBO AGGREGATIONS
     '''
     ybio_cbo1 = ybio.reset_index()
-    ybio_cbo1["cbo_id"] = ybio_cbo1["cbo_id"][:1]
+    ybio_cbo1["cbo_id"] = ybio_cbo1["cbo_id"].apply(lambda x: str(x)[:1])
     ybio_cbo1 = ybio_cbo1.groupby(["year", "bra_id", "cnae_id", "cbo_id"]).sum()
         
     ybio = pd.concat([ybio, ybio_cbo1])
