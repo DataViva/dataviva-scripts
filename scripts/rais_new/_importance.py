@@ -30,9 +30,9 @@ def ybio_to_panel(ybio):
     bra_criterion = ybio['bra_id'].map(lambda x: len(x) == 8)
     ybio = ybio[cnae_criterion & cbo_criterion & bra_criterion]
     
-    ybio = ybio[["cnae_id", "cbo_id", "bra_id", "num_emp"]]
+    ybio = ybio[["cnae_id", "cbo_id", "bra_id", "num_jobs"]]
     print "pivoting YBIO..."
-    ybio = ybio.pivot_table(index=["cnae_id", "cbo_id"], columns="bra_id", values="num_emp")
+    ybio = ybio.pivot_table(index=["cnae_id", "cbo_id"], columns="bra_id", values="num_jobs")
     ybio = ybio.fillna(0)
     
     panel = ybio.to_panel()
@@ -59,13 +59,13 @@ def importance(ybio, ybi, yio, yo, year):
     for cbo in all_cbo:
         
         try:
-            num_emp = ybio[cbo].fillna(0)
+            num_jobs = ybio[cbo].fillna(0)
         except:
             continue
-        numerators = num_emp * rcas
+        numerators = num_jobs * rcas
         numerators = numerators.fillna(0)
         
-        '''convert nominal num_emp values to 0s and 1s'''
+        '''convert nominal num_jobs values to 0s and 1s'''
         numerators[numerators >= 1] = 1
         numerators[numerators < 1] = 0
         

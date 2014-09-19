@@ -17,7 +17,7 @@ def calc_diversity(diversity_tbl, return_tbl, index_col, diversity_col, year):
     '''
         GET DIVERSITY
     '''
-    diversity = diversity_tbl.pivot(index=index_col, columns=diversity_col, values="num_emp").fillna(0)
+    diversity = diversity_tbl.pivot(index=index_col, columns=diversity_col, values="num_jobs").fillna(0)
     diversity[diversity >= 1] = 1
     diversity[diversity < 1] = 0
     diversity = diversity.sum(axis=1)
@@ -25,7 +25,7 @@ def calc_diversity(diversity_tbl, return_tbl, index_col, diversity_col, year):
     '''
         GET EFFECTIVE DIVERSITY
     '''
-    entropy = diversity_tbl.pivot(index=index_col, columns=diversity_col, values="num_emp").fillna(0)
+    entropy = diversity_tbl.pivot(index=index_col, columns=diversity_col, values="num_jobs").fillna(0)
     entropy = entropy.T / entropy.T.sum()
     entropy = entropy * np.log(entropy)
     

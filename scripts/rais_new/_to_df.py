@@ -82,12 +82,12 @@ def to_df(input_file_path, index=False, debug=False):
         rais_df = rais_df.set_index(index_cols)
     else:
         orig_cols = ['BrazilianOcupation_ID', 'EconomicAtivity_ID_CNAE', 'Literacy', 'Age', 'Establishment_ID', 'Simple', 'Municipality_ID', 'Employee_ID', 'Color', 'WageReceived', 'AverageMonthlyWage', 'Gender', 'Establishment_Size', 'Year', 'Establishment_ID_len']
-        cols = ["cbo_id", "cnae_id", "edu_mode", "age", "est_id", "simple", "bra_id", "emp_id", "color", "wage_dec", "wage", "gender", "est_size", "year"]
+        cols = ["cbo_id", "cnae_id", "literacy", "age", "est_id", "simple", "bra_id", "num_emp", "color", "wage_dec", "wage", "gender", "est_size", "year"]
         delim = ";"
         coerce_cols = {"bra_id": bra_replace, "cnae_id":cnae_replace, "cbo_id":cbo_replace, \
                         "wage":floatvert, "emp_id":str, "est_id": str}
         rais_df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
-        rais_df = rais_df[["year", "bra_id", "cnae_id", "cbo_id", "wage", "emp_id", "est_id", "age", "color", "gender", "est_size", "edu_mode"]]
+        rais_df = rais_df[["year", "bra_id", "cnae_id", "cbo_id", "wage", "num_emp", "est_id", "age", "color", "gender", "est_size", "literacy"]]
         
         for col, missings in missing.items():
             if not len(missings): continue
