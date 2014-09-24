@@ -1,14 +1,8 @@
 import itertools, sys
 import pandas as pd
 
-from _aggregate import agg_rules
+from _aggregate import agg_rules, median_rules
 
-median_rules = {
-    "wage_med" : pd.Series.median,
-    "age_med" : pd.Series.median,
-    "edu_mode" : pd.Series.mode,
-    "num_emp" : pd.Series.nunique
-}
 
 
 def shard(ybio, raw):
@@ -58,3 +52,4 @@ def shard(ybio, raw):
         tbls[t_name] = mynewtable
         print tbls[t_name].head()
     return tbls
+

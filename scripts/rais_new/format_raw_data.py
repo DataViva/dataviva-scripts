@@ -26,7 +26,7 @@ import pandas.io.sql as sql
 import numpy as np
 
 from _to_df import to_df
-from _aggregate import aggregate
+from _aggregate import aggregate, aggregate_demographics
 from _shard import shard
 from _required import required
 from _importance import importance
@@ -53,12 +53,15 @@ def main(file_path, year, output_path, prev_path, prev5_path):
         step+=1; print; print '''STEP {0}: \nImport file to pandas dataframe'''.format(step)
         rais_df = to_df(file_path, False)
 
-        step+=1; print; print '''STEP {0}: \nAggregate'''.format(step)
+        step+=1; print; print '''STEP {0}: \nAggregate with Demographics'''.format(step)
+        dtables = aggregate_demographics(rais_df)
+        
+        step+=1; print; print '''STEP {0}: \nAggregate without Demographics'''.format(step)
         ybio = aggregate(rais_df)
-
         step+=1; print; print '''STEP {0}: \nShard'''.format(step)
         tables = shard(ybio, rais_df)
-        
+        for k,v in dtables.items():
+            tables[k] = v
         # sys.exit()
         
         # for t_name, t in tables.items():

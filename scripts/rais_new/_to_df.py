@@ -44,6 +44,32 @@ missing = {
     "cbo_id": defaultdict(int)
 }
 
+def map_gender(x):
+    MALE, FEMALE = 0, 1
+    gender_dict = {MALE: 1, FEMALE: 2}
+    if x in gender_dict:
+        return str(gender_dict[x])
+    return str(3)
+
+def map_color(color):
+    INDIAN, WHITE, BLACK, ASIAN, MULTI, UNKNOWN = 1,2,4,6,8,9
+    color_dict = {INDIAN:1, WHITE:2, BLACK:3, ASIAN:4, MULTI:5, 9:UNKNOWN, -1:UNKNOWN }
+    return str(color_dict[int(color)])
+
+def map_age(age):
+    age_bucket = int(np.floor( int(age) / 10 ))
+    if age_bucket == 0: 
+        age_bucket = 1
+    elif age_bucket > 6:
+        age_bucket = 6
+    return str(age_bucket)
+
+def map_literacy(lit):
+    ILLITERATE, BASIC, HIGHSCHOOL, COLLEGE, UNKNOWN = 1, 2, 3, 4, 9
+    lit_dict = {1:ILLITERATE, 2:ILLITERATE, 3:BASIC, 4:BASIC, 5:BASIC, 6:BASIC, 7:HIGHSCHOOL, 
+                8:HIGHSCHOOL, 9:COLLEGE, -1:UNKNOWN }
+    return str(lit_dict[int(lit)])
+
 def floatvert(x):
     x = x.replace(',', '.')
     try:
@@ -89,6 +115,14 @@ def to_df(input_file_path, index=False, debug=False):
         rais_df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
         rais_df = rais_df[["year", "bra_id", "cnae_id", "cbo_id", "wage", "num_emp", "est_id", "age", "color", "gender", "est_size", "literacy"]]
         
+        print "generating demographic codes..."
+        rais_df["d_id"] = rais_df.apply(lambda x:'%s%s%s%s' % (
+                                map_gender(x['gender']), map_age(x['age']), 
+                                map_color(x['color']), map_literacy(x['literacy'])
+                            ), axis=1)
+
+        #map_gender(rais_df["gender"]) + map_age(rais_df["age"]) + map_color(rais_df["color"]) + map_literacy(rais_df["literacy"]) 
+
         for col, missings in missing.items():
             if not len(missings): continue
             num_rows = rais_df.shape[0]
