@@ -102,7 +102,7 @@ def to_df(input_file_path, index=False, debug=False, calc_d_id=False):
     input_file = get_file(input_file_path)
     
     if index:
-        index_lookup = {"y":"year", "b":"bra_id", "i":"cnae_id", "o":"cbo_id"}
+        index_lookup = {"y":"year", "b":"bra_id", "i":"cnae_id", "o":"cbo_id", "d": "d_id"}
         index_cols = [index_lookup[i] for i in index]
         rais_df = pd.read_csv(input_file, sep="\t", converters={"cbo_id":str, "cnae_id":str})
         rais_df = rais_df.set_index(index_cols)
