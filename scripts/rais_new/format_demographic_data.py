@@ -61,20 +61,21 @@ def main(file_path, year, output_path, prev_path, prev5_path):
         step+=1; print; print '''STEP {0}: \nCalculate 1 year growth'''.format(step)
         for t_name, t in tables.items():
             prev_file = os.path.join(prev_path, "{0}.tsv.bz2".format(t_name))
-            t_prev = to_df(prev_file, t_name)
+            t_prev = to_df(prev_file, t_name, calc_d_id=True)
             t_prev = t_prev.reset_index(level="year")
             t_prev["year"] = int(year)
             t_prev = t_prev.set_index("year", append=True)
             t_prev = t_prev.reorder_levels(["year"] + list(t_prev.index.names)[:-1])
             
-            t = calc_growth(t, t_prev)
-            # print t.head()
+            tables[t_name] = calc_growth(t, t_prev)
+
+            print tables[t_name].head()
             # sys.exit()
             
             if prev5_path:
                 step+=1; print; print '''STEP {0}: \nCalculate 5 year growth'''.format(step)
                 prev_file = os.path.join(prev5_path, "{0}.tsv.bz2".format(t_name))
-                t_prev = to_df(prev_file, t_name)
+                t_prev = to_df(prev_file, t_name, calc_d_id=True)
                 t_prev = t_prev.reset_index(level="year")
                 t_prev["year"] = int(year)
                 t_prev = t_prev.set_index("year", append=True)
