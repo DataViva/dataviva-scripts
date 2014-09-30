@@ -52,20 +52,6 @@ def main(file_path, year, output_path, prev_path, prev5_path):
 
     step+=1; print; print '''STEP {0}: \nAggregate with Demographics'''.format(step)
     tables = aggregate_demographics(rais_df)
-    
-    step+=1; print; print 'STEP {0}: \nImportance'.format(step)
-    # yio = importance(tables["ybio"], tables["ybi"], tables["yio"], tables["yo"], year)
-
-    step+=1; print; print 'STEP {0}: \nDiversity'.format(step)
-    # yb = calc_diversity(tables["ybi"], tables["yb"], "bra_id", "cnae_id", year)
-    # yb = calc_diversity(tables["ybo"], tables["yb"], "bra_id", "cbo_id", year)
-    # yi = calc_diversity(tables["ybi"], tables["yi"], "cnae_id", "bra_id", year)
-    # yi = calc_diversity(tables["yio"], tables["yi"], "cnae_id", "cbo_id", year)
-    # yo = calc_diversity(tables["ybo"], tables["yo"], "cbo_id", "bra_id", year)
-    # yo = calc_diversity(tables["yio"], tables["yo"], "cbo_id", "cnae_id", year)
-
-    # step+=1; print; print 'STEP {0}: \nCalculate RCA, diversity and opportunity gain aka RDO'.format(step)
-    # ybi = rdo(tables["ybi"], tables["yi"], year)
 
     for table_name, table_data in tables.items():
         table_data = add_column_length(table_name, table_data)

@@ -6,8 +6,6 @@ from _aggregate import agg_rules, median_rules
 
 
 def shard(ybio, raw):
-    raw = raw[raw["wage"] > 0]
-
     ybio_raw =  ybio.reset_index()
 
     deepestB = ybio_raw['bra_id'].str.len() == 8    
