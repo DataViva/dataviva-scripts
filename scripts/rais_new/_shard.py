@@ -26,6 +26,10 @@ def shard(ybio, raw):
     lookup = {"b":"bra_id", "i":"cnae_id", "o":"cbo_id"}
     nestings = {"b":[8,2], "i":[6,1], "o":[4, 1]}
 
+    raw["wage_med"] = raw["wage"]
+    raw["age_med"] = raw["age"]
+    raw["edu_mode"] = raw["literacy"]
+
     for t_name, t in tbls.items():
         print t_name
         raw_data_for_median = pd.DataFrame()
@@ -33,17 +37,14 @@ def shard(ybio, raw):
         my_nesting_cols = [lookup[i] for i in t_name if i is not "y"]
 
         for depths in itertools.product(*my_nesting):
-            my_raw = raw.copy()
-            my_raw["wage_med"] = my_raw["wage"]
-            my_raw["age_med"] = my_raw["age"]
-            my_raw["edu_mode"] = my_raw["literacy"]
+            my_pks = [raw["year"]]
+            
             print depths
 
             for col_name, d in zip(my_nesting_cols, depths):
-                my_raw[col_name] = my_raw[col_name].apply(lambda x: x[:d])
+                my_pks.append( raw[col_name].str.slice(0, d) )
 
-            pk = ["year"] + my_nesting_cols
-            temp = my_raw.groupby(pk).agg(median_rules)
+            temp = raw.groupby(my_pks).agg(median_rules)
             raw_data_for_median = pd.concat([raw_data_for_median, temp])
 
         mynewtable = pd.merge(t, raw_data_for_median, how='left', left_index=True, right_index=True)

@@ -6,20 +6,18 @@ import bottleneck
 
 agg_rules = {"wage": np.sum, 
              "num_jobs": np.sum,
-             "num_est": pd.Series.nunique,
 }            
 
 median_rules = {
     "wage_med" : bottleneck.median,
     "age_med" : bottleneck.median,
     "edu_mode" : bottleneck.median,
-    "num_emp" : pd.Series.nunique
+    "num_emp" : pd.Series.nunique,
+    "num_est": pd.Series.nunique
 }
 
-median_rules_d = {"wage_med" : pd.Series.median, "age_med" : pd.Series.median, "num_emp" : pd.Series.nunique}
-
-
-agg_rules_d = { "wage": np.sum, "num_est": pd.Series.nunique, "num_jobs": np.sum }            
+median_rules_d = {"wage_med" :bottleneck.median, "age_med" : bottleneck.median, "num_emp" : pd.Series.nunique, "num_est": pd.Series.nunique, "edu_mode": bottleneck.median}
+agg_rules_d = { "wage": np.sum, "num_jobs": np.sum }            
 
 joint = dict(median_rules_d.items() + agg_rules_d.items() )
 
@@ -81,7 +79,7 @@ def aggregate_demographics(rais_df):
     rais_df['wage_med'] = rais_df['wage']
     rais_df['num_jobs'] = 1
 
-    rais_df = rais_df.rename(columns = {"est_id":"num_est", "age": "age_med", "literacy": "edu_mode"})
+    rais_df = rais_df.rename(columns = {"age": "age_med", "literacy": "edu_mode"})
     rais_df = rais_df.drop(["color", "gender", "est_size"], axis=1)
 
     print "Aggregating demographic tables, from raw data..."
@@ -98,8 +96,6 @@ def aggregate(rais_df):
 
     # rais_df['wage_m'] = rais_df['wage'] * rais_df['gender']
     # rais_df['wage_f'] = rais_df['wage'] * ((rais_df['gender']+1)%2)
-    
-    rais_df = rais_df.rename(columns = {"est_id":"num_est"})
 
     rais_df = rais_df.drop(["color", "est_size"], axis=1)
     pk = ["year", "bra_id", "cnae_id", "cbo_id"]

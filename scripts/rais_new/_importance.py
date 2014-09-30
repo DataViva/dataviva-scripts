@@ -9,8 +9,8 @@ import growth
 def get_ybi_rcas(ybi, geo_level):
     ybi = ybi.reset_index()
     
-    cnae_criterion = ybi['cnae_id'].map(lambda x: len(x) == 6)
-    bra_criterion = ybi['bra_id'].map(lambda x: len(x) == geo_level)
+    cnae_criterion = ybi['cnae_id'].str.len() == 6
+    bra_criterion = ybi['bra_id'].str.len() == geo_level
     
     ybi = ybi[cnae_criterion & bra_criterion]
     ybi = ybi[["bra_id", "cnae_id", "wage"]]
@@ -81,8 +81,9 @@ def importance(ybio, ybi, yio, yo, year):
             yio_importance.append([year, cnae, cbo, imp])
         
         # print year, cbo, time.time() - start
-        sys.stdout.write('\r ' + year + ' CBO id: ' + cbo + ' '*10)
-        sys.stdout.flush() # important
+        # sys.stdout.write('\r ' + year + ' CBO id: ' + cbo + ' '*10)
+        print year, cbo
+        # sys.stdout.flush() # important
     
     # now time to merge!
     print

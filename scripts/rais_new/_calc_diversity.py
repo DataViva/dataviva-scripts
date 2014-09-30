@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 
 def get_deepest(column):
-    if column == "cnae_id": return 5
+    if column == "cnae_id": return 6
     if column == "bra_id": return 8
     if column == "cbo_id": return 4
 
@@ -11,7 +11,8 @@ def calc_diversity(diversity_tbl, return_tbl, index_col, diversity_col, year):
     
     # filter table by deepest length
     diversity_tbl = diversity_tbl.reset_index()
-    deepest_criterion = diversity_tbl[diversity_col].map(lambda x: len(x) == get_deepest(diversity_col))
+    max_depth = get_deepest(diversity_col)
+    deepest_criterion = diversity_tbl[diversity_col].str.len() == max_depth
     diversity_tbl = diversity_tbl[deepest_criterion]
     
     '''

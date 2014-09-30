@@ -132,5 +132,7 @@ def to_df(input_file_path, index=False, debug=False, calc_d_id=False):
             # rais_df = rais_df[drop_criterion]
             rais_df = rais_df.dropna(subset=[col])
             print; print "{0} rows deleted.".format(num_rows - rais_df.shape[0]); print;
-    
+
+    rais_df = rais_df.rename(columns = {"est_id":"num_est"})
+
     return rais_df
