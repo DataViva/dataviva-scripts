@@ -48,7 +48,7 @@ def main(file_path, year, output_path, prev_path, prev5_path):
     d = pd.HDFStore(os.path.abspath(os.path.join(output_path,'rais.h5')))
 
     step+=1; print; print '''STEP {0}: \nImport file to pandas dataframe'''.format(step)
-    rais_df = to_df(file_path, False)
+    rais_df = to_df(file_path, False, calc_d_id=True)
 
     step+=1; print; print '''STEP {0}: \nAggregate with Demographics'''.format(step)
     tables = aggregate_demographics(rais_df)

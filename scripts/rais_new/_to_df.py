@@ -98,7 +98,7 @@ def cbo_replace(raw):
         missing["cbo_id"][raw] += 1
         return None
 
-def to_df(input_file_path, index=False, debug=False):
+def to_df(input_file_path, index=False, debug=False, calc_d_id=False):
     input_file = get_file(input_file_path)
     
     if index:
@@ -115,11 +115,11 @@ def to_df(input_file_path, index=False, debug=False):
         rais_df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
         rais_df = rais_df[["year", "bra_id", "cnae_id", "cbo_id", "wage", "num_emp", "est_id", "age", "color", "gender", "est_size", "literacy"]]
         
-        print "generating demographic codes..."
-        rais_df["d_id"] = rais_df.apply(lambda x:'%s%s%s%s' % (
+        if calc_d_id:
+            print "generating demographic codes..."
+            rais_df["d_id"] = rais_df.apply(lambda x:'%s%s%s%s' % (
                                 map_gender(x['gender']), map_age(x['age']), 
-                                map_color(x['color']), map_literacy(x['literacy'])
-                            ), axis=1)
+                                map_color(x['color']), map_literacy(x['literacy'])), axis=1)
 
         #map_gender(rais_df["gender"]) + map_age(rais_df["age"]) + map_color(rais_df["color"]) + map_literacy(rais_df["literacy"]) 
 
