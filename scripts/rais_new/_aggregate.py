@@ -2,23 +2,24 @@ import sys
 import pandas as pd
 import numpy as np
 import itertools
+import bottleneck
 
 agg_rules = {"wage": np.sum, 
              "num_jobs": np.sum,
-             "num_est": pd.Series.count,
+             "num_est": pd.Series.nunique,
 }            
 
 median_rules = {
-    "wage_med" : pd.Series.median,
-    "age_med" : pd.Series.median,
-    "edu_mode" : pd.Series.mode,
+    "wage_med" : bottleneck.median,
+    "age_med" : bottleneck.median,
+    "edu_mode" : bottleneck.median,
     "num_emp" : pd.Series.nunique
 }
 
-median_rules_d = {"wage_med" : pd.Series.median, "age_med" : pd.Series.median, "num_emp" : pd.Series.nunique} #, "num_jobs": np.sum}
+median_rules_d = {"wage_med" : pd.Series.median, "age_med" : pd.Series.median, "num_emp" : pd.Series.nunique}
 
 
-agg_rules_d = { "wage": np.sum, "num_est": pd.Series.count, "num_jobs": np.sum }            
+agg_rules_d = { "wage": np.sum, "num_est": pd.Series.nunique, "num_jobs": np.sum }            
 
 joint = dict(median_rules_d.items() + agg_rules_d.items() )
 
@@ -40,8 +41,7 @@ def strmask(x,d):
         i+=1
     return "".join(tmp)
 
-def medians_dempgraphics(rais_df, t_name):
-    my_raw = rais_df.copy()
+def medians_demographics(rais_df, t_name):
     mynewtable = pd.DataFrame() 
 
     all_demo_zeroes = ["1000", "0100", "0010", "0001"]
@@ -57,18 +57,16 @@ def medians_dempgraphics(rais_df, t_name):
 
     for depths in itertools.product(*my_nesting):
         print "Processing", my_nesting_cols, "at depths", depths
-        my_raw["bra_id"] = rais_df["bra_id"].copy()
-        my_raw["cnae_id"] = rais_df["cnae_id"].copy()
-        my_raw["cbo_id"] = rais_df["cbo_id"].copy()
-        my_raw["d_id"] = rais_df["d_id"].copy()
+
+        my_pk = [rais_df["year"]]
 
         for col_name, d in zip(my_nesting_cols, depths):
             if col_name == "d_id":
-                my_raw[col_name] = my_raw[col_name].str.get(d)
+                my_pk.append( rais_df[col_name].str.get(d) )
             else:
-                my_raw[col_name] = my_raw[col_name].str.slice(0, d)
+                my_pk.append( rais_df[col_name].str.slice(0, d) )
 
-        moi = my_raw.groupby(pk).agg( joint )
+        moi = rais_df.groupby(my_pk, sort=False).agg( joint )
         # print moi.head()
         mynewtable = pd.concat([mynewtable, moi])
         print "done ", depths , " table"
@@ -81,18 +79,16 @@ def medians_dempgraphics(rais_df, t_name):
 
 def aggregate_demographics(rais_df):
     rais_df['wage_med'] = rais_df['wage']
-    rais_df["age_med"] = rais_df["age"]
-    rais_df["edu_mode"] = rais_df["literacy"]
     rais_df['num_jobs'] = 1
 
-    rais_df = rais_df.rename(columns = {"est_id":"num_est"})
-    rais_df = rais_df.drop(["color", "est_size"], axis=1)
+    rais_df = rais_df.rename(columns = {"est_id":"num_est", "age": "age_med", "literacy": "edu_mode"})
+    rais_df = rais_df.drop(["color", "gender", "est_size"], axis=1)
 
     print "Aggregating demographic tables, from raw data..."
-    dtables = ["ybid", "ybod", "ybd", "yod", "yid", "yd"]
+    dtables = ["ybid", "ybod", "ybd", "yod", "yid"]
     dtbls = {}
     for t_name in dtables:
-        table = medians_dempgraphics(rais_df, t_name)
+        table = medians_demographics(rais_df, t_name)
         dtbls[t_name] = table
     return dtbls
 
@@ -100,10 +96,10 @@ def aggregate(rais_df):
     rais_df['wage_med'] = rais_df['wage']
     rais_df['num_jobs'] = 1
 
-    rais_df['wage_m'] = rais_df['wage'] * rais_df['gender']
-    rais_df['wage_f'] = rais_df['wage'] * ((rais_df['gender']+1)%2)
+    # rais_df['wage_m'] = rais_df['wage'] * rais_df['gender']
+    # rais_df['wage_f'] = rais_df['wage'] * ((rais_df['gender']+1)%2)
     
-    rais_df = rais_df.rename(columns = {"gender":"num_emp_m", "est_id":"num_est"})
+    rais_df = rais_df.rename(columns = {"est_id":"num_est"})
 
     rais_df = rais_df.drop(["color", "est_size"], axis=1)
     pk = ["year", "bra_id", "cnae_id", "cbo_id"]

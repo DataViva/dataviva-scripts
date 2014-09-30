@@ -26,3 +26,6 @@ rarfile
 
 # Helpful HTTP library
 requests
+
+# speed up median calculations
+bottleneck

@@ -46,14 +46,14 @@ missing = {
 
 def map_gender(x):
     MALE, FEMALE = 0, 1
-    gender_dict = {MALE: 1, FEMALE: 2}
+    gender_dict = {MALE: 'A', FEMALE: 'B'}
     if x in gender_dict:
         return str(gender_dict[x])
-    return str(3)
+    return 'z'
 
 def map_color(color):
     INDIAN, WHITE, BLACK, ASIAN, MULTI, UNKNOWN = 1,2,4,6,8,9
-    color_dict = {INDIAN:1, WHITE:2, BLACK:3, ASIAN:4, MULTI:5, 9:UNKNOWN, -1:UNKNOWN }
+    color_dict = {INDIAN:'C', WHITE:'D', BLACK:'E', ASIAN:'F', MULTI:'G', 9:'H', -1:'H' }
     return str(color_dict[int(color)])
 
 def map_age(age):
@@ -66,8 +66,8 @@ def map_age(age):
 
 def map_literacy(lit):
     ILLITERATE, BASIC, HIGHSCHOOL, COLLEGE, UNKNOWN = 1, 2, 3, 4, 9
-    lit_dict = {1:ILLITERATE, 2:ILLITERATE, 3:BASIC, 4:BASIC, 5:BASIC, 6:BASIC, 7:HIGHSCHOOL, 
-                8:HIGHSCHOOL, 9:COLLEGE, -1:UNKNOWN }
+    lit_dict = {1:'I', 2:'I', 3:'J', 4:'J', 5:'J', 6:'J', 7:'K', 
+                8:'K', 9:'L', -1:'M' }
     return str(lit_dict[int(lit)])
 
 def floatvert(x):
