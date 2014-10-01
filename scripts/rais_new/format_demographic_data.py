@@ -81,7 +81,7 @@ def main(file_path, year, output_path, prev_path, prev5_path):
                 t_prev = t_prev.set_index("year", append=True)
                 t_prev = t_prev.reorder_levels(["year"] + list(t_prev.index.names)[:-1])
                 
-                t_prev = to_df(prev_file, t_name)
+                # t_prev = to_df(prev_file, t_name)
                 tables[t_name] = calc_growth(t, t_prev, 5)
     
     
