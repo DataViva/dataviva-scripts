@@ -45,7 +45,7 @@ def main(file_path, year, output_path, prev_path, prev5_path):
     start = time.time()
     step = 0
     
-    d = pd.HDFStore(os.path.abspath(os.path.join(output_path,'rais.h5')))
+    d = {} #pd.HDFStore(os.path.abspath(os.path.join(output_path,'rais.h5')))
     if "ybio" in d:
         tables = {}
         tables["yb"] = d["yb"]; tables["yi"] = d["yi"]; tables["yo"] = d["yo"]; tables["ybi"] = d["ybi"]; tables["ybo"] = d["ybo"]; tables["yio"] = d["yio"]; tables["ybio"] = d["ybio"]
