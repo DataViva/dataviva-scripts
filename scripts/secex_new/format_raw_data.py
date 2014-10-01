@@ -18,13 +18,13 @@
     Example Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     python scripts/secex_new/format_raw_data.py \
-    data/secex/export/MDIC_2002.rar \
-    data/secex/import/MDIC_2002.rar \
-    -y 2002 \
+    data/secex/export/MDIC_2001.rar \
+    data/secex/import/MDIC_2001.rar \
+    -y 2001 \
     -e data/secex/observatory_ecis.csv \
     -p data/secex/observatory_pcis.csv \
-    -o data/secex/2002 \
-    -g data/secex/2001 \
+    -o data/secex/2001 \
+    -g data/secex/2000
 
 """
 
@@ -136,7 +136,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
 
     print "computing column lengths"
     for table_name, table_data in tables.items():
-        table_data = add_column_length(table_name, table_data)
+        tables[table_name] = add_column_length(table_name, table_data)
 
     print '''\nFINAL STEP: \nSave files to output path'''
     for t_name, t in tables.items():

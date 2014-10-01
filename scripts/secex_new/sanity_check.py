@@ -6,7 +6,7 @@ from pandas.util.testing import assert_frame_equal, assert_series_equal
 
 '''
     Run w/ the following:
-    python scripts/secex_new/sanity_check/sanity_check.py  -f data/secex/2000/ -t ympw
+    python scripts/secex_new/sanity_check.py  -f data/secex/2000/ -t ympw
 '''
 
 def get_tbl(tbl, file_path):
@@ -29,14 +29,14 @@ class SecexTests(unittest.TestCase):
     def test_col_year(self):
         test_tbl = self.tbl.reset_index()
         return self.assertEqual(test_tbl.year.nunique(), 1)
-    
+
     def test_col_month(self):
         test_tbl = self.tbl.reset_index()
         months = list(test_tbl.month.value_counts().index)
         months = [int(m) for m in months]
         expected_months = range(0, 13)
         return self.assertItemsEqual(months, expected_months)
-    
+
     def test_col_bra_id(self):
         test_tbl = self.tbl.reset_index()
         if "bra_id" not in test_tbl.columns or "bra_id" not in self.index_cols:
@@ -45,14 +45,14 @@ class SecexTests(unittest.TestCase):
         munics = test_tbl["bra_id"][test_tbl["bra_id"].str.len()==8].unique()
         munics = [m[:2] for m in munics]
         return self.assertItemsEqual(states, set(munics))
-    
+
     def test_col_bra_id_len(self):
         test_tbl = self.tbl.reset_index()
         if "bra_id_len" not in test_tbl.columns or "bra_id" not in self.index_cols:
             self.skipTest('no bra_id column')
         test_tbl["calculated_len"] = test_tbl["bra_id"].str.len()
         return assert_series_equal(test_tbl["calculated_len"], test_tbl["bra_id_len"])
-    
+
     def test_col_hs_id(self):
         test_tbl = self.tbl.reset_index()
         if "hs_id" not in test_tbl.columns or "hs_id" not in self.index_cols:
@@ -61,14 +61,14 @@ class SecexTests(unittest.TestCase):
         hs4 = test_tbl["hs_id"][test_tbl["hs_id"].str.len()==6].unique()
         hs4 = [p[:2] for p in hs4]
         return self.assertItemsEqual(hs2, set(hs4))
-    
+
     def test_col_hs_id_len(self):
         test_tbl = self.tbl.reset_index()
         if "hs_id_len" not in test_tbl.columns or "hs_id" not in self.index_cols:
             self.skipTest('no hs_id column')
         test_tbl["calculated_len"] = test_tbl["hs_id"].str.len()
         return assert_series_equal(test_tbl["calculated_len"], test_tbl["hs_id_len"])
-    
+
     def test_col_wld_id(self):
         test_tbl = self.tbl.reset_index()
         if "wld_id" not in test_tbl.columns or "wld_id" not in self.index_cols:
@@ -77,29 +77,104 @@ class SecexTests(unittest.TestCase):
         countries = test_tbl["wld_id"][test_tbl["wld_id"].str.len()==5].unique()
         countries = [c[:2] for c in countries]
         return self.assertItemsEqual(continents, set(countries))
-    
+
     def test_col_wld_id_len(self):
         test_tbl = self.tbl.reset_index()
         if "wld_id_len" not in test_tbl.columns or "wld_id" not in self.index_cols:
             self.skipTest('no wld_id column')
         test_tbl["calculated_len"] = test_tbl["wld_id"].str.len()
         return assert_series_equal(test_tbl["calculated_len"], test_tbl["wld_id_len"])
-    
+
     def test_calc_hs_diversity(self):
         test_tbl = self.tbl
         if "hs_diversity" not in test_tbl.columns:
             self.skipTest('no HS diversity column')
-        ymbp = get_tbl("ymbp", FILE_PATH)[1]
+        if TABLE == "ymb":
+            diversity_tbl = get_tbl("ymbp", FILE_PATH)[1]
+            agg_id = "bra_id"
+        elif TABLE == "ymw":
+            diversity_tbl = get_tbl("ympw", FILE_PATH)[1]
+            agg_id = "wld_id"
         diversity_df = test_tbl.reindex(index=["00"], level="month")
-        # print expected_df.head()
-        expected_df = ymbp.reindex(index=["00"], level="month")
+        
+        expected_df = diversity_tbl.reindex(index=["00"], level="month")
         expected_df = expected_df.dropna(how="any", subset=["export_val"])
         expected_df = expected_df.reset_index(level="hs_id")
         expected_df = expected_df[expected_df["hs_id"].str.len()==6]
-        expected_df = expected_df.groupby(level=["year", "month", "bra_id"]).agg({"hs_id":pd.Series.count})
+        expected_df = expected_df[expected_df["export_val"]>0]
+        expected_df = expected_df.groupby(level=["year", "month", agg_id]).agg({"hs_id":pd.Series.count})
         expected_df = expected_df["hs_id"]
         diversity_df = diversity_df["hs_diversity"][diversity_df["hs_diversity"]>0].astype(int)
         return assert_series_equal(diversity_df, expected_df)
+
+    def test_calc_wld_diversity(self):
+        test_tbl = self.tbl
+        if "wld_diversity" not in test_tbl.columns:
+            self.skipTest('no WLD diversity column')
+        if TABLE == "ymb":
+            diversity_tbl = get_tbl("ymbw", FILE_PATH)[1]
+            agg_id = "bra_id"
+        elif TABLE == "ymp":
+            diversity_tbl = get_tbl("ympw", FILE_PATH)[1]
+            agg_id = "hs_id"
+        diversity_df = test_tbl.reindex(index=["00"], level="month")
+        
+        expected_df = diversity_tbl.reindex(index=["00"], level="month")
+        expected_df = expected_df.dropna(how="any", subset=["export_val"])
+        expected_df = expected_df.reset_index(level="wld_id")
+        expected_df = expected_df[expected_df["wld_id"].str.len()==5]
+        expected_df = expected_df[expected_df["export_val"]>0]
+        expected_df = expected_df.groupby(level=["year", "month", agg_id]).agg({"wld_id":pd.Series.count})
+        expected_df = expected_df["wld_id"].astype(int)
+        diversity_df = diversity_df["wld_diversity"][diversity_df["wld_diversity"]>0].astype(int)
+        return assert_series_equal(diversity_df, expected_df)
+
+    def test_calc_bra_diversity(self):
+        test_tbl = self.tbl
+        if "bra_diversity" not in test_tbl.columns:
+            self.skipTest('no BRA diversity column')
+        if TABLE == "ymw":
+            diversity_tbl = get_tbl("ymbw", FILE_PATH)[1]
+            agg_id = "wld_id"
+        elif TABLE == "ymp":
+            diversity_tbl = get_tbl("ymbp", FILE_PATH)[1]
+            agg_id = "hs_id"
+        diversity_df = test_tbl.reindex(index=["00"], level="month")
+        
+        expected_df = diversity_tbl.reindex(index=["00"], level="month")
+        expected_df = expected_df.dropna(how="any", subset=["export_val"])
+        expected_df = expected_df.reset_index(level="bra_id")
+        expected_df = expected_df[expected_df["bra_id"].str.len()==8]
+        expected_df = expected_df[expected_df["export_val"]>0]
+        expected_df = expected_df.groupby(level=["year", "month", agg_id]).agg({"bra_id":pd.Series.count})
+        expected_df = expected_df["bra_id"].astype(int)
+        diversity_df = diversity_df["bra_diversity"][diversity_df["bra_diversity"]>0].astype(int)
+        return assert_series_equal(diversity_df, expected_df)
+
+    '''To test the domestic ECI values we are checking to make sure all the bra_ids
+         with product exports of any of the HS products with PCI values have ECIs.
+         ECIs for a location are calculated by averaging the PCIs of all the products
+         exported w/ RCA > 1 in that location.'''
+    def test_calc_domestic_eci(self):
+        test_tbl = self.tbl.reset_index()
+        if "eci" not in test_tbl.columns or TABLE != "ymb":
+            self.skipTest('no ECI columns')
+        
+        ymp = get_tbl("ymp", FILE_PATH)[1]
+        ymp = ymp[ymp["pci"].notnull()]
+        hs_w_pci = list(ymp.reset_index()["hs_id"])
+        
+        ymbp = get_tbl("ymbp", FILE_PATH)[1]
+        ymbp = ymbp[ymbp["rca"]>=1]
+        ymbp = ymbp.reset_index()
+        ymbp = ymbp[["bra_id", "hs_id"]]
+        ymbp = ymbp[ymbp["hs_id"].isin(hs_w_pci)]
+        expected_bras = pd.Series(ymbp["bra_id"].unique())
+        
+        bras_w_eci = test_tbl[test_tbl["eci"].notnull()]
+        bras_w_eci = bras_w_eci["bra_id"].reset_index()["bra_id"]
+        
+        return assert_series_equal(bras_w_eci, expected_bras)
     
     '''The point of this test is to make sure RCA is present IF export val is
         present for the given row. It does not test for correctness.'''
@@ -117,7 +192,7 @@ class SecexTests(unittest.TestCase):
         # only the columns with RCA
         rca_df = test_tbl.dropna(how="any", subset=["rca"])
         return assert_frame_equal(expected_df, rca_df, check_names=True)
-    
+
     '''The point of this test is to make sure RCD is present IF import val is
         present for the given row. It does not test for correctness.'''
     def test_calc_rcd(self):
@@ -134,10 +209,10 @@ class SecexTests(unittest.TestCase):
         # only the columns with RCA
         rcd_df = test_tbl.dropna(how="any", subset=["rcd"])
         return assert_frame_equal(expected_df, rcd_df, check_names=True)
-    
-    '''The point of this test is to make sure domestic distance values are present 
+
+    '''The point of this test is to make sure domestic distance values are present
         IF month == 0 (year values) and hs_id length == 6 (full HS product) and
-        the given hs_id shows up with export value at least once for that year. 
+        the given hs_id shows up with export value at least once for that year.
         It does not test for correctness.'''
     def test_calc_distance(self):
         # test_tbl = self.tbl.reset_index()
@@ -154,7 +229,7 @@ class SecexTests(unittest.TestCase):
         # only the columns with distance
         distance_df = test_tbl.dropna(how="any", subset=["distance"])
         return assert_frame_equal(expected_df, distance_df, check_names=True)
-    
+
     '''Testing for opp gain (need ymp table to find out which hs_ids have PCI).'''
     def test_calc_opp_gain(self):
         test_tbl = self.tbl
@@ -174,7 +249,7 @@ class SecexTests(unittest.TestCase):
         # only the columns with opp gain
         opp_gain_wld_df = test_tbl.dropna(how="any", subset=["opp_gain", "opp_gain_wld"])
         return assert_frame_equal(expected_df, opp_gain_wld_df, check_names=True)
-    
+
     def test_months_year(self):
         # only testing export value for now
         test_tbl = self.tbl[["export_val"]]
@@ -193,7 +268,7 @@ class SecexTests(unittest.TestCase):
         tbl_wo_year_total = tbl_wo_year_total.dropna()
         tbl_year_total = tbl_year_total.dropna()
         return assert_frame_equal(tbl_wo_year_total, tbl_year_total, check_names=True)
-    
+
     def test_null_cols(self):
         test_tbl = self.tbl.reset_index()
         ''' USE THIS TO MAKE TEST FAIL:
