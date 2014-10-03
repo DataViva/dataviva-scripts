@@ -35,6 +35,7 @@ from _replace_vals import replace_vals
 # from _aggregate import aggregate
 # from _shard import shard
 from _calc_rca import calc_rca
+from _demographic_calc import compute_demographics
 
 def pre_check():
     failed = []
@@ -64,7 +65,7 @@ def get_years(year):
 def main(file_path, year, output_path):
     pre_check()
     years = get_years(year)
-    
+
     for y in years:
         print "\nYEAR: {0}\n".format(y)
         this_output_path = os.path.join(output_path, str(y))
@@ -73,17 +74,16 @@ def main(file_path, year, output_path):
         step = 0
         step+=1; print '''STEP {0}: Import file to pandas dataframe'''.format(step)
         df = to_df(file_path, y)
-
+        print df.head()
         step+=1; print '''STEP {0}: Replace vals with DB IDs'''.format(step)
-        df = replace_vals(df, {})
-    
-        df = df.rename(columns={"munic":"bra_id"})
+
+        ybucd = compute_demographics(df)
         ybuc = df.groupby(["year", "bra_id", "university_id", "course_id"]).sum()
         
         step+=1; print '''STEP {0}: Calculating RCAs'''.format(step)
         ybc = calc_rca(ybuc, y)
     
-        tables = {"ybuc":ybuc, "ybc":ybc}
+        tables = {"ybuc":ybuc, "ybc":ybc, "ybucd": ybucd}
         print '''FINAL STEP: Save files to output path'''
         for t_name, t in tables.items():
             new_file_path = os.path.abspath(os.path.join(this_output_path, "{0}.tsv.bz2".format(t_name)))
