@@ -42,7 +42,7 @@ from _column_lengths import add_column_length
 @click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
 @click.option('prev_path', '--prev', '-g', help='Path to files from the previous year for calculating growth.', type=click.Path(exists=True), required=False)
 @click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.', type=click.Path(exists=True), required=False)
-@click.option('-dm', '--demographic_mode', prompt='Mode', help='Demographic or regular', type=bool, required=True)
+@click.option('-dm', '--demographic_mode', prompt='Demographic Mode?', help='Demographic or regular', type=bool, required=True)
 def main(cur_path, year, output_path, prev_path, prev5_path, demographic_mode):
     start = time.time()
     step = 0
