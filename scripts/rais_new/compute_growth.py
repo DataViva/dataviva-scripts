@@ -42,44 +42,51 @@ from _column_lengths import add_column_length
 @click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
 @click.option('prev_path', '--prev', '-g', help='Path to files from the previous year for calculating growth.', type=click.Path(exists=True), required=False)
 @click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.', type=click.Path(exists=True), required=False)
-def main(cur_path, year, output_path, prev_path, prev5_path):
+@click.option('-dm', '--demographic_mode', prompt='Mode', help='Demographic or regular', type=bool, required=True)
+def main(cur_path, year, output_path, prev_path, prev5_path, demographic_mode):
     start = time.time()
     step = 0
    
     tables_reg = ["yb", "yi", "yo", "ybi", "ybo", "yio", "ybio"]
-    
+    if demographic_mode:
+        tables_reg = ["ybd", "yid", "yod", "ybid", "ybod" ]
+
     for t_name in tables_reg:
         cur_file = os.path.join(cur_path, "{0}.tsv.bz2".format(t_name))
-        t = to_df(cur_file, t_name)
+        print cur_file
+        t = to_df(cur_file, t_name, calc_d_id=demographic_mode)
 
     
         step+=1; print; print '''STEP {0}: \nCalculate 1 year growth'''.format(step)
     
         prev_file = os.path.join(prev_path, "{0}.tsv.bz2".format(t_name))
-        t_prev = to_df(prev_file, t_name)
+        t_prev = to_df(prev_file, t_name, calc_d_id=demographic_mode)
         t_prev = t_prev.reset_index(level="year")
         t_prev["year"] = int(year)
         t_prev = t_prev.set_index("year", append=True)
         t_prev = t_prev.reorder_levels(["year"] + list(t_prev.index.names)[:-1])
             
         t = calc_growth(t, t_prev)
-            
+        print t.head()
+
         if prev5_path:
             step+=1; print; print '''STEP {0}: \nCalculate 5 year growth'''.format(step)
             prev_file = os.path.join(prev5_path, "{0}.tsv.bz2".format(t_name))
-            t_prev = to_df(prev_file, t_name)
+            t_prev = to_df(prev_file, t_name, calc_d_id=demographic_mode)
             t_prev = t_prev.reset_index(level="year")
             t_prev["year"] = int(year)
             t_prev = t_prev.set_index("year", append=True)
             t_prev = t_prev.reorder_levels(["year"] + list(t_prev.index.names)[:-1])
-                
-            t_prev = to_df(prev_file, t_name)
+            
+            print t_prev.head()
+
             t = calc_growth(t, t_prev, 5)
 
-        print t.head()
-        
+            print t.head()
+
         if not os.path.exists(output_path):
             os.makedirs(output_path)
+        print "Saving!"
         new_file_path = os.path.abspath(os.path.join(output_path, "{0}_with_growth.tsv.bz2".format(t_name)))
         t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.2f")
     
