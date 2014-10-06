@@ -42,6 +42,7 @@ def ybio_to_panel(ybio):
     return panel
 
 def importance(ybio, ybi, yio, yo, year):
+    year = int(year)
     yo = yo.reset_index(level="year")
     all_cbo = [cbo for cbo in list(yo.index) if len(cbo) == 4]
     
@@ -91,8 +92,7 @@ def importance(ybio, ybi, yio, yo, year):
     yio_importance = pd.DataFrame(yio_importance, columns=["year", "cnae_id", "cbo_id", "importance"])
     yio_importance = yio_importance.set_index(["year", "cnae_id", "cbo_id"])
     
-    yio["importance"] = yio_importance["importance"]
-    
+    yio = pd.merge(yio, yio_importance, how='left', left_index=True, right_index=True)
     # print yio.head()
     # yio.to_csv("imp_test.csv")
     
