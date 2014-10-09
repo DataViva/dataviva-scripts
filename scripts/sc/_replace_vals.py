@@ -12,9 +12,26 @@ def replace_vals(df, missing={}, debug=False):
     def get_bra_lookup():
         cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 8;")
         return {str(r[0]):r[1] for r in cursor.fetchall()}
-    
+
+    # def get_distances():
+    #     print "Getting distances..."
+    #     cursor.execute("select bra_id_origin, bra_id_dest, distance from attrs_bb;")
+    #     data = {}
+    #     for r in cursor.fetchall():
+    #         src = str(r[0])
+    #         target = str(r[1])
+    #         dist = float(r[2])
+    #         if not src in data:
+    #             data[src] = {}
+    #         data[src][target] = dist
+    #     print "Finished distances"
+    #     return data
+
+
+    b_lookup = get_bra_lookup()
     replacements = [
-        {"col":"munic", "lookup":get_bra_lookup()}
+        {"col":"munic", "lookup": b_lookup},
+        # {"col":"munic_lives", "lookup": b_lookup},
     ]
     
     df = df.set_index([r["col"] for r in replacements])
@@ -55,4 +72,18 @@ def replace_vals(df, missing={}, debug=False):
             df = df[drop_criterion]
             print; print "{0} rows deleted.".format(num_rows - df.shape[0]); print;
     
+
+
+    # bra_distances = get_distances()
+
+    # def compute_distance(row):
+    #     src = row['munic']
+    #     target = row['munic_lives']
+    #     if not src in bra_distances or not target in bra_distances[src]:
+    #         return -1 # bad data
+    #     return bra_distances[src][target]
+    
+    # rais_df['distance'] = rais_df.apply(compute_distance)
+
+
     return df

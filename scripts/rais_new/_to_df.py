@@ -98,6 +98,13 @@ def cbo_replace(raw):
         missing["cbo_id"][raw] += 1
         return None
 
+def convertint(x):
+    if not x:
+        return -999
+    elif "\r" in str(x):
+        return -999
+    return int(x)
+
 def to_df(input_file_path, index=False, debug=False, calc_d_id=False):
     input_file = get_file(input_file_path)
     
@@ -111,11 +118,18 @@ def to_df(input_file_path, index=False, debug=False, calc_d_id=False):
         cols = ["cbo_id", "cnae_id", "literacy", "age", "est_id", "simple", "bra_id", "num_emp", "color", "wage_dec", "wage", "gender", "est_size", "year"]
         delim = ";"
         coerce_cols = {"bra_id": bra_replace, "cnae_id":cnae_replace, "cbo_id":cbo_replace, \
-                        "wage":floatvert, "emp_id":str, "est_id": str}
+                        "wage":floatvert, "emp_id":str, "est_id": str, "age": convertint}
         rais_df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
         rais_df = rais_df[["year", "bra_id", "cnae_id", "cbo_id", "wage", "num_emp", "est_id", "age", "color", "gender", "est_size", "literacy"]]
-        
+
+        print "first remove rows with empty ages, if any..."
+        count = rais_df[ rais_df.age == -999 ].age.count()
+        if count > 0:
+            print "** REMOVED", count, "rows due to empty ages"
+        rais_df = rais_df[ rais_df.age != -999 ]
+
         if calc_d_id:
+
             print "generating demographic codes..."
             rais_df["d_id"] = rais_df.apply(lambda x:'%s%s%s%s' % (
                                 map_gender(x['gender']), map_age(x['age']), 
