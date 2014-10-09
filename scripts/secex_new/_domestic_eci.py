@@ -24,7 +24,7 @@ def get_ybp_rcas(ymbp, geo_level):
     
     return rcas
 
-def domestic_eci(ymp, ymb, ymbp):
+def domestic_eci(ymp, ymb, ymbp, geo_depths):
     ymp = ymp.reset_index()
     year = ymp['year'][0]
     
@@ -37,9 +37,8 @@ def domestic_eci(ymp, ymb, ymbp):
     pcis = ymp.T
     
     ecis = []
-    for geo_level in [2, 7, 8]:
-    # for geo_level in [2, 4, 8]:
-        # print "geo_level",geo_level
+    for geo_level in geo_depths:
+        print "geo_level:",geo_level
 
         rcas = get_ybp_rcas(ymbp, geo_level)
         

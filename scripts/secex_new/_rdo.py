@@ -105,7 +105,7 @@ def get_pcis(geo_level, ymp):
     
     return ymp["pci"]
 
-def rdo(ymbp, ymp, year):
+def rdo(ymbp, ymp, year, geo_depths):
     
     export_hs = ymp[["export_val"]].groupby(level=["hs_id"]).sum().dropna()
     export_hs = [hs for hs in export_hs.index if len(hs) == 6]
@@ -114,7 +114,7 @@ def rdo(ymbp, ymp, year):
     import_hs = [hs for hs in import_hs.index if len(hs) == 6]
     
     rca_dist_opp = []
-    for geo_level in [2, 7, 8]:
+    for geo_level in geo_depths:
         print "geo_level",geo_level
 
         '''

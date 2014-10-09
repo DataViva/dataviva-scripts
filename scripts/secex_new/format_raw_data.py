@@ -60,6 +60,8 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
     step = 0
     # d = pd.HDFStore(os.path.abspath(os.path.join(output_path,'ymp.h5')))
     
+    geo_depths = [2, 4, 6, 7, 8]
+    
     step += 1; print '''\nSTEP {0}: \nImport file to pandas dataframe'''.format(step)
     secex_exports = to_df(export_file_path, False)
     secex_imports = to_df(import_file_path, False)
@@ -83,7 +85,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
     [ymp, ymw] = pci_wld_eci(eci_file_path, pci_file_path, ymp, ymw)
 
     step += 1; print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
-    ymb = domestic_eci(ymp, ymb, ymbp)
+    ymb = domestic_eci(ymp, ymb, ymbp, geo_depths)
 
     step += 1; print '''\nSTEP {0}: \nCalculate diversity'''.format(step)
     ymb = calc_diversity(ymbp, ymb, "bra_id", "hs_id")
@@ -103,7 +105,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
     # ymbp = d["ymbp"]
     
     step += 1; print '''\nSTEP {0}: \nCalculate RCA, diversity and opp_gain aka RDO'''.format(step)
-    ymbp = rdo(ymbp, ymp, year)
+    ymbp = rdo(ymbp, ymp, year, geo_depths)
     # ymbp.to_csv('ymbp_temp.csv')
     # print ymbp.head(); sys.exit();
     
@@ -131,7 +133,6 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
                 t_prev = t_prev.set_index("year", append=True)
                 t_prev = t_prev.reorder_levels(["year"] + list(t_prev.index.names)[:-1])
                 
-                t_prev = to_df(prev_file, t_name)
                 t = calc_growth(t, t_prev, 5)
 
     print "computing column lengths"
