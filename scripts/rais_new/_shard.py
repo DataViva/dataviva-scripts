@@ -5,10 +5,11 @@ from _aggregate import agg_rules, median_rules
 
 
 
-def shard(ybio, raw):
+def shard(ybio, raw, geo_depths):
     ybio_raw =  ybio.reset_index()
+    geo_depths.reverse()
 
-    deepestB = ybio_raw['bra_id'].str.len() == 8    
+    deepestB = ybio_raw['bra_id'].str.len() == 8
     deepestI = ybio_raw['cnae_id'].str.len() == 6
     deepestO = ybio_raw['cbo_id'].str.len() == 4
 
@@ -24,7 +25,7 @@ def shard(ybio, raw):
 
     # for each dataset, we need to go back to the raw data
     lookup = {"b":"bra_id", "i":"cnae_id", "o":"cbo_id"}
-    nestings = {"b":[8,2], "i":[6,1], "o":[4, 1]}
+    nestings = {"b":geo_depths, "i":[6,1], "o":[4, 1]}
 
     raw["wage_med"] = raw["wage"]
     raw["age_med"] = raw["age"]

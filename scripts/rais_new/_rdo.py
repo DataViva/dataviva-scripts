@@ -7,10 +7,10 @@ growth_lib_path = os.path.abspath(os.path.join(file_path, "..", "growth_lib"))
 sys.path.insert(0, growth_lib_path)
 import growth
 
-def rdo(ybi, yi, year):
+def rdo(ybi, yi, year, geo_depths):
     
     rca_dist_opp = []
-    for geo_level in [2, 8]:
+    for geo_level in geo_depths:
         print "geo level:", geo_level
         
         ybi_data = ybi.reset_index()

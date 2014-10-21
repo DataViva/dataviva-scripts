@@ -15,7 +15,7 @@
     
     Example Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    python scripts/rais_new/format_raw_data.py data/rais/Rais2002.csv.bz2 -y 2002 -o data/rais/2002 -d
+    python scripts/rais_new/format_raw_data.py data/rais/Rais_2002.csv.bz2 -y 2002 -o data/rais/2002
 
 """
 
@@ -44,6 +44,7 @@ from _column_lengths import add_column_length
 def main(file_path, year, output_path, prev_path, prev5_path):
     start = time.time()
     step = 0
+    geo_depths = [2, 4, 6, 7, 8] # state, meso, micro, planning region, munic
     
     d = {} #pd.HDFStore(os.path.abspath(os.path.join(output_path,'rais.h5')))
     if "ybio" in d:
@@ -58,9 +59,9 @@ def main(file_path, year, output_path, prev_path, prev5_path):
         # sys.exit(1)
 
         step+=1; print; print '''STEP {0}: \nAggregate without Demographics'''.format(step)
-        ybio = aggregate(rais_df)
+        ybio = aggregate(rais_df, geo_depths)
         step+=1; print; print '''STEP {0}: \nShard'''.format(step)
-        tables = shard(ybio, rais_df)
+        tables = shard(ybio, rais_df, geo_depths)
         # for k,v in dtables.items():
             # tables[k] = v
         # sys.exit()
@@ -82,7 +83,7 @@ def main(file_path, year, output_path, prev_path, prev5_path):
 
 
     step+=1; print; print 'STEP {0}: \nCalculate RCA, diversity and opportunity gain aka RDO'.format(step)
-    tables["ybi"] = rdo(tables["ybi"], tables["yi"], year)
+    tables["ybi"] = rdo(tables["ybi"], tables["yi"], year, geo_depths)
 
     for table_name, table_data in tables.items():
         table_data = add_column_length(table_name, table_data)

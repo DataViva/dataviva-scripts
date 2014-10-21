@@ -1,8 +1,9 @@
-import sys
+import sys, os
 import pandas as pd
 import numpy as np
 import itertools
 import bottleneck
+import MySQLdb
 
 agg_rules = {"wage": np.sum, 
              "num_jobs": np.sum,
@@ -39,7 +40,8 @@ def strmask(x,d):
         i+=1
     return "".join(tmp)
 
-def medians_demographics(rais_df, t_name):
+def medians_demographics(rais_df, t_name, geo_depths):
+    geo_depths.reverse()
     mynewtable = pd.DataFrame() 
 
     all_demo_zeroes = ["1000", "0100", "0010", "0001"]
@@ -48,7 +50,7 @@ def medians_demographics(rais_df, t_name):
     lookup = {"b":"bra_id", "i":"cnae_id", "o":"cbo_id", "d": "d_id"}
     pk = ["year"] + [lookup[l] for l in t_name if l is not "y"]
     
-    nestings = {"b":[8,2], "i":[6,1], "o":[4, 1], "d": [0,1,2,3]}
+    nestings = {"b": geo_depths, "i":[6,1], "o":[4, 1], "d": [0,1,2,3]}
 
     my_nesting = [nestings[i] for i in t_name if i is not "y"]
     my_nesting_cols = [lookup[i] for i in t_name if i is not "y"]
@@ -73,9 +75,18 @@ def medians_demographics(rais_df, t_name):
 
     return mynewtable
     
+def get_planning_regions():
+    ''' Connect to DB '''
+    db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA_DB_USER"], 
+                            passwd=os.environ["DATAVIVA_DB_PW"], 
+                            db=os.environ["DATAVIVA_DB_NAME"])
+    db.autocommit(1)
+    cursor = db.cursor()
+    
+    cursor.execute("select bra_id, pr_id from attrs_bra_pr")
+    return {r[0]:r[1] for r in cursor.fetchall()}
 
-
-def aggregate_demographics(rais_df):
+def aggregate_demographics(rais_df, geo_depths):
     rais_df['wage_med'] = rais_df['wage']
     rais_df['num_jobs'] = 1
 
@@ -86,11 +97,11 @@ def aggregate_demographics(rais_df):
     dtables = ["ybid", "ybod", "ybd", "yod", "yid"]
     dtbls = {}
     for t_name in dtables:
-        table = medians_demographics(rais_df, t_name)
+        table = medians_demographics(rais_df, t_name, geo_depths)
         dtbls[t_name] = table
     return dtbls
 
-def aggregate(rais_df):
+def aggregate(rais_df, geo_depths):
     rais_df['wage_med'] = rais_df['wage']
     rais_df['num_jobs'] = 1
 
@@ -107,8 +118,21 @@ def aggregate(rais_df):
     ybio_state = ybio.reset_index()
     ybio_state["bra_id"] = ybio_state["bra_id"].str.slice(0, 2)
     ybio_state = ybio_state.groupby(pk).agg(agg_rules)
+    
+    ybio_meso = ybio.reset_index()
+    ybio_meso["bra_id"] = ybio_meso["bra_id"].str.slice(0, 4)
+    ybio_meso = ybio_meso.groupby(pk).agg(agg_rules)
+    
+    ybio_micro = ybio.reset_index()
+    ybio_micro["bra_id"] = ybio_micro["bra_id"].str.slice(0, 6)
+    ybio_micro = ybio_micro.groupby(pk).agg(agg_rules)
+    
+    ybio_pr = ybio.reset_index()
+    ybio_pr = ybio_pr[ybio_pr["bra_id"].map(lambda x: x[:2] == "mg")]
+    ybio_pr["bra_id"] = ybio_pr["bra_id"].astype(str).replace(get_planning_regions())
+    ybio_pr = ybio_pr.groupby(pk).agg(agg_rules)
 
-    ybio = pd.concat([ybio, ybio_state])
+    ybio = pd.concat([ybio, ybio_state, ybio_meso, ybio_micro, ybio_pr])
     # print ybio.index.is_unique
     '''
        CNAE AGGREGATIONS

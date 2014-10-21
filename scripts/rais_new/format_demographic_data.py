@@ -44,6 +44,7 @@ from _column_lengths import add_column_length
 def main(file_path, year, output_path, prev_path, prev5_path):
     start = time.time()
     step = 0
+    geo_depths = [2, 4, 6, 7, 8] # state, meso, micro, planning region, munic
     
     d = pd.HDFStore(os.path.abspath(os.path.join(output_path,'rais.h5')))
 
@@ -51,7 +52,7 @@ def main(file_path, year, output_path, prev_path, prev5_path):
     rais_df = to_df(file_path, False, calc_d_id=True)
 
     step+=1; print; print '''STEP {0}: \nAggregate with Demographics'''.format(step)
-    tables = aggregate_demographics(rais_df)
+    tables = aggregate_demographics(rais_df, geo_depths)
 
     for table_name, table_data in tables.items():
         table_data = add_column_length(table_name, table_data)
