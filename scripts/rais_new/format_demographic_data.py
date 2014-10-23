@@ -15,7 +15,7 @@
     
     Example Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    python scripts/rais_new/format_raw_data.py data/rais/Rais2002.csv.bz2 -y 2002 -o data/rais/2002 -d
+    python scripts/rais_new/format_demographic_data.py data/rais/Rais_2002.csv.bz2 -y 2002 -o data/rais/2002
 
 """
 
