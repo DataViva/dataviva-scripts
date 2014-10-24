@@ -78,13 +78,13 @@ def to_df(input_file_path, index=False, debug=False):
         secex_df = pd.read_csv(input_file, sep="\t", converters={"month":str, "hs_id":str})
         secex_df = secex_df.set_index(index_cols)
     else:
-        cols = ["year", "month", "wld_id", "state_id", "customs", "bra_id", "unit", \
-                "val_unit", "val_kg", "val_usd", "hs_id"]
+        cols = ["year", "month", "wld_id", "state_id", "customs", "bra_id", \
+                "val_kg", "val_usd", "hs_id"]
         delim = "|"
         coerce_cols = {"bra_id":bra_replace, "month":str, "hs_id":hs_replace, \
                         "state_id":state_replace, "wld_id":wld_replace}
         secex_df = pd.read_csv(input_file, header=0, sep=delim, converters=coerce_cols, names=cols)    
-        secex_df = secex_df[["year", "month", "state_id", "bra_id", "hs_id", "wld_id", "val_usd", "val_kg", "val_unit", "unit"]]
+        secex_df = secex_df[["year", "month", "state_id", "bra_id", "hs_id", "wld_id", "val_usd", "val_kg"]]
         
         for col, missings in missing.items():
             if not len(missings): continue
