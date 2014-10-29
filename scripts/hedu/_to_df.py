@@ -2,87 +2,101 @@ import sys, os, bz2
 import pandas as pd
 import numpy as np
 import os, MySQLdb
-
+from collections import defaultdict
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 growth_lib_path = os.path.abspath(os.path.join(file_path, "..", "common"))
 sys.path.insert(0, growth_lib_path)
 
-from demographics import map_gender, map_ethnicity, map_age
+''' Connect to DB '''
+db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA2_DB_USER"], passwd=os.environ["DATAVIVA2_DB_PW"], db=os.environ["DATAVIVA2_DB_NAME"])
+cursor = db.cursor()
 
-'''
-0:  Year
-1:  Enroll_ID
-2:  Studant_ID
-3:  Age
-4:  Gender
-5:  Color
-6:  Education_Mode
-7:  Education_Level
-8:  Education_Level_New
-9:  Education
-10: Class_ID
-11: Course_ID
-12: School_ID
-13: Municipality
-14: Location
-15: Adm_Dependency (federal, state or municipal)
-'''
+missing = {
+    "bra_id": defaultdict(int),
+    "university_id": defaultdict(int),
+    "course_id": defaultdict(int)
+}
 
+cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 8;")
+bra_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
 
-def gen_converters():
-    ''' Connect to DB '''
-    db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA2_DB_USER"], 
-                            passwd=os.environ["DATAVIVA2_DB_PW"], 
-                            db=os.environ["DATAVIVA2_DB_NAME"])
-    db.autocommit(1)
-    cursor = db.cursor()
+cursor.execute("select id from attrs_university;")
+university_lookup = {str(r[0]):str(r[0]) for r in cursor.fetchall()}
+
+cursor.execute("select id from attrs_course_hedu;")
+course_lookup = {str(r[0]):str(r[0]) for r in cursor.fetchall()}
+
+def map_gender(x):
+    MALE, FEMALE = 0, 1
+    gender_dict = {MALE: 'A', FEMALE: 'B'}
+    try: return str(gender_dict[int(x)])
+    except: print x; sys.exit()
+
+def map_color(color):
+    INDIAN, WHITE, BLACK, ASIAN, MULTI, UNKNOWN = 1,2,4,6,8,9
+    color_dict = {INDIAN:'C', WHITE:'D', BLACK:'E', ASIAN:'F', MULTI:'G', 9:'H', -1:'H', 3:'H', 5:'H', 0:'H'}
+    try: return str(color_dict[int(color)])
+    except: print color; sys.exit()
+
+def map_loc(loc):
+    URBAN, RURAL = 1, 2
+    loc_dict = {URBAN:'N', RURAL:'O'}
+    try: return str(loc_dict[int(loc)])
+    except: print loc; sys.exit()
+
+def map_school_type(st):
+    FEDERAL, STATE, LOCAL, PROFIT_PRIVATE, NONPROFIT_PRIVATE, SPECIAL = 1, 2, 3, 4, 5, 6
+    loc_dict = {FEDERAL:'P', STATE:'Q', LOCAL:'R', PROFIT_PRIVATE:'S', NONPROFIT_PRIVATE:'T', SPECIAL:'U'}
+    try: return str(loc_dict[int(st)])
+    except: print st; sys.exit()
+
+def floatvert(x):
+    x = x.replace(',', '.')
+    try: return float(x)
+    except: return np.nan
+
+def bra_replace(raw):
+    try: return bra_lookup[str(raw).strip()]
+    except: missing["bra_id"][raw] += 1; return "xx000007"
+
+def university_replace(raw):
+    try: return university_lookup[str(raw).strip()]
+    except: missing["university_id"][raw] += 1; return None
+
+def course_replace(raw):
+    try: return course_lookup[str(raw)]
+    except: missing["course_id"][raw] += 1; return "000000"
+
+def to_df(file_path, year):
+
+    if "bz2" in file_path: input_file = bz2.BZ2File(file_path)
+    else: input_file = open(file_path, "rU")
     
-    cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 8;")
-    bras = {str(r[0]):r[1] for r in cursor.fetchall()}
-    
-    
-    def bra_lookup(x):
-        if not x:
-            return "xx000007"
-        return bras[x]
-
-    cursor.execute("select id, id from attrs_course_hedu;")
-    courses = {str(r[0]):r[1] for r in cursor.fetchall()}
-
-    def course_lookup(x):
-        if not x:
-            return "UNKNOWN"
-        return courses[x]
-
-    return bra_lookup, course_lookup
-
-def to_df(input_file_path, year):
-
-    bra_lookup, course_lookup = gen_converters()
-
-    if "bz2" in input_file_path:
-        input_file = bz2.BZ2File(input_file_path)
-    else:
-        input_file = open(input_file_path, "rU")
-    
-    # cols = ["academic_organization","munic","university_id","year","adm_category","course_id","course_name","modality","level","openings","enrolled","graduates","entrants","degree"]
-    cols = ["university_id","adm_category","academic_organization","course_id_bad","degree","modality","level","student_id","enrolled_id","graduates","entrants","Year_entry","gender","age", "ethnicity", "bra_id","course_id","Name_Course","morning","afternoon","night", "full_time","year"]
+    cols = ["university_id","school_type","academic_organization","course_id_bad",\
+            "degree","modality","level","student_id","enrolled","graduates","entrants",\
+            "Year_entry","gender","age", "ethnicity", "bra_id","course_id","course_name",\
+            "morning","afternoon","night", "full_time","year"]
     delim = ";"
-    # coerce_cols = {"course_id":str, "class_id":str}
-    coerce_cols = {"bra_id":bra_lookup, "course_id":course_lookup}
+    coerce_cols = {"bra_id":bra_replace, "university_id":university_replace, \
+                    "course_id":course_replace, "ethnicity":map_color, "gender":map_gender, \
+                    "school_type":map_school_type}
     df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
-    df = df[["year", "bra_id", "university_id", "course_id", "student_id", "enrolled_id", "graduates", "entrants", "gender", "age", "ethnicity", "level", "morning", "afternoon", "night", "full_time" ]]
+    df = df.drop(["course_name","morning","afternoon","night","modality","full_time",\
+                    "Year_entry","degree","course_id_bad","academic_organization","level"], axis=1)
     df = df[df["year"]==int(year)]
-
-    print "Computing demographics..."
-    df["d_id"] = df.apply(lambda x:'%s%s%s' % (map_gender(x['gender']), map_age(x['age']), map_ethnicity(x['ethnicity'])), axis=1)
-    df = df[["year", "bra_id", "university_id", "course_id", "d_id", "graduates", "entrants", "full_time", "morning", "afternoon", "night" ]]
-    df["enrolled"] = 1
-    # tot = df['bra_id'].count()
-    # missing_bra = df[(df["bra_id"] == 'xx000007') & (df["modality"] == 2) ].bra_id.count()
-    # print "Total", tot, "Missing", missing_bra
-    # print "pct:", float(1.0*missing_bra/tot*1.0)
-
+    
+    for col, missings in missing.items():
+        if not len(missings): continue
+        num_rows = df.shape[0]
+        print; print "[WARNING]"; print "The following {0} IDs are not in the DB and will be dropped from the data.".format(col);
+        print list(missings)
+        # drop_criterion = rais_df[col].map(lambda x: x not in vals)
+        # rais_df = rais_df[drop_criterion]
+        df = df.dropna(subset=[col])
+        print; print "{0} rows deleted.".format(num_rows - df.shape[0]); print;
+    
+    # print df.head()
+    # sys.exit()
 
     return df
