@@ -78,8 +78,8 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
     [ymb, ymbp, ymbw, ymp, ympw, ymw] = shard(ymbpw)
 
     step += 1; print '''\nSTEP {0}: \nPrice / unit'''.format(step)
-    ymp = val_per_unit(ymp, secex_exports, "export")
-    ymp = val_per_unit(ymp, secex_imports, "import")
+    # ymp = val_per_unit(ymp, secex_exports, "export")
+    # ymp = val_per_unit(ymp, secex_imports, "import")
 
     step += 1; print '''\nSTEP {0}: \nCalculate PCI & ECI'''.format(step)
     [ymp, ymw] = pci_wld_eci(eci_file_path, pci_file_path, ymp, ymw)
