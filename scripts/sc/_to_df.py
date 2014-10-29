@@ -1,6 +1,7 @@
-import sys, os, bz2
+import sys, os, bz2, MySQLdb
 import pandas as pd
 import numpy as np
+from collections import defaultdict
 
 '''
 0:  Year
@@ -21,33 +22,122 @@ import numpy as np
 15: Adm_Dependency (federal, state or municipal)
 '''
 
+''' Connect to DB '''
+db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA2_DB_USER"], passwd=os.environ["DATAVIVA2_DB_PW"], db=os.environ["DATAVIVA2_DB_NAME"])
+cursor = db.cursor()
+
+missing = {
+    "bra_id": defaultdict(int),
+    "school_id": defaultdict(int),
+    "course_id": defaultdict(int)
+}
+
+cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 8;")
+bra_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
+
+cursor.execute("select id from attrs_school;")
+school_lookup = {str(r[0]):str(r[0]) for r in cursor.fetchall()}
+
+cursor.execute("select id from attrs_course_sc;")
+course_lookup = {int(r[0]):str(r[0]) for r in cursor.fetchall()}
+
+def map_gender(x):
+    MALE, FEMALE = 0, 1
+    gender_dict = {MALE: 'A', FEMALE: 'B'}
+    try: return str(gender_dict[int(x)])
+    except: print x; sys.exit()
+
+def map_color(color):
+    INDIAN, WHITE, BLACK, ASIAN, MULTI, UNKNOWN = 1,2,4,6,8,9
+    color_dict = {INDIAN:'C', WHITE:'D', BLACK:'E', ASIAN:'F', MULTI:'G', 9:'H', -1:'H', 3:'H', 5:'H', 0:'H'}
+    try: return str(color_dict[int(color)])
+    except: print color; sys.exit()
+
+def map_loc(loc):
+    URBAN, RURAL = 1, 2
+    loc_dict = {URBAN:'N', RURAL:'O'}
+    try: return str(loc_dict[int(loc)])
+    except: print loc; sys.exit()
+
+def map_school_type(st):
+    FEDERAL, STATE, LOCAL, PRIVATE = 1, 2, 3, 4
+    loc_dict = {FEDERAL:'P', STATE:'Q', LOCAL:'R', PRIVATE:'S'}
+    try: return str(loc_dict[int(st)])
+    except: print st; sys.exit()
+
 def floatvert(x):
     x = x.replace(',', '.')
-    try:
-        return float(x)
-    except:
-        return np.nan
+    try: return float(x)
+    except: return np.nan
 
+def bra_replace(raw):
+    try: return bra_lookup[str(raw).strip()]
+    except: missing["bra_id"][raw] += 1; return None
+
+def school_replace(raw):
+    try: return school_lookup[str(raw).strip()]
+    except: missing["school_id"][raw] += 1; return None
+
+def course_replace(raw):
+    try: return course_lookup[int(raw)]
+    except: missing["course_id"][raw] += 1; return "00000"
 
 def to_df(input_file_path, index=False, debug=False):
     if "bz2" in input_file_path:
         input_file = bz2.BZ2File(input_file_path)
     else:
         input_file = open(input_file_path, "rU")
-    
-    # if index:
-        # index_lookup = {"y":"year", "b":"bra_id", "i":"cnae_id", "o":"cbo_id"}
-        # index_cols = [index_lookup[i] for i in index]
-        # rais_df = pd.read_csv(input_file, sep="\t", converters={"cbo_id":str, "cnae_id":str})
-        # rais_df = rais_df.set_index(index_cols)
-    # else:
-        #cols = ["year", "enroll_id", "student_id", "age", "gender", "color", "edu_mode", "edu_level", "edu_level_new", "edu",
-         # "class_id", "course_id", "school_id", ]
-    cols = ["year", "enroll_id",  "student_id", "age", "gender", "color", "edu_mode",  "edu_level", "edu_level_new", "edu", "class_id", "course_id", "school_id","munic_lives", "location_lives", "munic", "loc", "adm_dep"]
-    delim = ";"
-        # coerce_cols = {"course_id":str, "class_id":str}
-    coerce_cols = {"course_id":str, "munic_lives": str}
-    rais_df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
-    rais_df = rais_df[["year", "enroll_id", "gender", "color", "edu_level_new", "school_id", "class_id", "munic", "age", "loc", "munic_lives"]]
 
-    return rais_df
+    cols = ["year", "enroll_id",  "student_id", "age", "gender", "color", "edu_mode", \
+            "edu_level", "edu_level_new", "edu", "class_id", "course_id", "school_id", \
+            "bra_id_lives", "location_lives", "bra_id", "loc", "school_type"]
+    delim = ";"
+    coerce_cols = {"bra_id":bra_replace, "bra_id_lives":bra_replace, "school_id":school_replace, \
+                    "course_id":course_replace, "color":map_color, "gender":map_gender, \
+                    "loc":map_loc, "school_type":map_school_type}
+    df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
+    df = df[["year", "enroll_id", "gender", "color", "edu_level_new", "school_id", "course_id", "class_id", "bra_id", "age", "loc", "bra_id_lives", "school_type"]]
+    
+    # print df.course_id.unique()
+    # sys.exit()
+    
+    for col, missings in missing.items():
+        if not len(missings): continue
+        num_rows = df.shape[0]
+        print; print "[WARNING]"; print "The following {0} IDs are not in the DB and will be dropped from the data.".format(col);
+        print list(missings)
+        # drop_criterion = rais_df[col].map(lambda x: x not in vals)
+        # rais_df = rais_df[drop_criterion]
+        df = df.dropna(subset=[col])
+        print; print "{0} rows deleted.".format(num_rows - df.shape[0]); print;
+    
+    return df
+    
+    # print df.head()
+    # sys.exit()
+    print "generating demographic codes..."
+    # df["d_id"] = df.apply(lambda x:'%s%s%s%s' % (map_gender(x['gender']), map_color(x['color']), \
+    #                                             map_loc(x['loc']), map_school_type(x['school_type'])), axis=1)
+    # df = df.drop(["color", "gender", "edu_level_new", "loc", "bra_id_lives", "school_type"], axis=1)
+    
+    df_dem = pd.DataFrame()
+    dems = ['gender', 'color', 'loc', 'school_type']
+    for dem in dems:
+        this_df = df.copy()
+        this_df["d_id"] = this_df[dem]
+        this_df = this_df.drop(dems, axis=1)
+        df_dem = df_dem.append(this_df)
+    
+    # for col, missings in missing.items():
+    #     if not len(missings): continue
+    #     num_rows = df.shape[0]
+    #     print; print "[WARNING]"; print "The following {0} IDs are not in the DB and will be dropped from the data.".format(col);
+    #     print list(missings)
+    #     # drop_criterion = rais_df[col].map(lambda x: x not in vals)
+    #     # rais_df = rais_df[drop_criterion]
+    #     df = df.dropna(subset=[col])
+    #     print; print "{0} rows deleted.".format(num_rows - df.shape[0]); print;
+    
+    # print df[df["course_id"].notnull()].head()
+
+    return df_dem
