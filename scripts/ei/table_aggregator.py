@@ -39,8 +39,8 @@ def make_table(ymbibip, table_name, output_values, odir, output_name, ignore_lis
     else:
         table = ymbibip.groupby(level=pk_cols).aggregate(np.sum)
 
-    table["net_value"] = table["purchase_value"] + table["service_value"] + table["fixed_asset_value"] + table["other_value"] - table["devolution_value"]
-    output_values.append("net_value")
+    # table["net_value"] = table["purchase_value"] + table["service_value"] + table["fixed_asset_value"] + table["other_value"] - table["devolution_value"]
+    # output_values.append("net_value")
 
     yearly = year_aggregation(table, table_name, pk_cols)
 
