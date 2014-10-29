@@ -51,41 +51,24 @@ def pre_check():
 @click.option('-y', '--year', prompt='Year', help='year of the data to convert', required=True)
 @click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
 def main(file_path, year, output_path):
-    step = 0
     pre_check()
     output_path = os.path.join(output_path, str(year))
     
     if not os.path.exists(output_path): os.makedirs(output_path)
-    d = pd.HDFStore(os.path.abspath(os.path.join(output_path,'edu_data.h5')))
-    if "ybge" in d:
-        df = d["ybge"]
-    else:
-        step+=1; print; print '''STEP {0}: \nImport file to pandas dataframe'''.format(step)
-        df = to_df(file_path, False)
+    # d = pd.HDFStore(os.path.abspath(os.path.join(output_path,'sc_data.h5')))
+    print; print '''STEP 1: \nImport file to pandas dataframe'''
+    df = to_df(file_path, False)
     
-        step+=1; print; print '''STEP {0}: \nReplace vals with DB IDs'''.format(step)
-        df = replace_vals(df, {})
-        d["ybge"] = df
-    
-    step+=1; print; print '''STEP {0}: \nAggregate'''.format(step)
-    ybge = aggregate(df)
-    
-    # print ybge.head()
-    # sys.exit()
-    
-    # step+=1; print; print '''STEP {0}: \nShard'''.format(step)
-    # [yb, ys, yc, ybs, ybc, ysc, ybsc] = shard(ybsc)
-    
-    # step+=1; print; print '''STEP {0}: \nCalc RCA'''.format(step)
-    # ybg = calc_rca(ybg, year)
-
-    # tables = {"yb": yb, "ys": ys, "yc": yc, "ybs": ybs, "ybc": ybc, "ysc": ysc, "ybsc": ybsc}
-    tables = {"ybge": ybge}
-    
-    print; print '''FINAL STEP: \nSave files to output path'''
-    for t_name, t in tables.items():
-        new_file_path = os.path.abspath(os.path.join(output_path, "{0}.tsv.bz2".format(t_name)))
-        t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+    for dem in ['', 'gender', 'color', 'loc', 'school_type']:
+        print '''\nSTEP 2: Aggregate {0}'''.format(dem)
+        tbl = aggregate(df, dem)
+        
+        print tbl.reset_index().course_id.nunique()
+       
+        file_name = "ybscd_{0}.tsv.bz2".format(dem) if dem else "ybsc.tsv.bz2"
+        print '''Save {0} to output path'''.format(file_name)
+        new_file_path = os.path.abspath(os.path.join(output_path, file_name))
+        tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
 if __name__ == "__main__":
     main()
