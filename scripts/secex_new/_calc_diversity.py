@@ -4,7 +4,7 @@ import numpy as np
 
 def get_deepest(column):
     if column == "hs_id": return 6
-    if column == "bra_id": return 8
+    if column == "bra_id": return 9
     if column == "wld_id": return 5
 
 def calc_diversity(diversity_tbl, return_tbl, index_col, diversity_col):

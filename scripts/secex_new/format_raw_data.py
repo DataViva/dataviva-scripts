@@ -60,7 +60,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
     step = 0
     # d = pd.HDFStore(os.path.abspath(os.path.join(output_path,'ymp.h5')))
     
-    geo_depths = [2, 4, 6, 7, 8]
+    geo_depths = [1, 3, 5, 7, 8, 9]
     
     step += 1; print '''\nSTEP {0}: \nImport file to pandas dataframe'''.format(step)
     secex_exports = to_df(export_file_path, False)

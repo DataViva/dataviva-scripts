@@ -1,7 +1,7 @@
 def shard(ymbpw):
     ymbpw = ymbpw.reset_index()
     
-    bra_criterion = ymbpw.bra_id.map(lambda x: len(x) == 8)
+    bra_criterion = ymbpw.bra_id.map(lambda x: len(x) == 9)
     hs_criterion = ymbpw.hs_id.map(lambda x: len(x) == 6)
     wld_criterion = ymbpw.wld_id.map(lambda x: len(x) == 5)
     

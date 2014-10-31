@@ -9,20 +9,20 @@ db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA2_DB_USER"],
 db.autocommit(1)
 cursor = db.cursor()
 
-cursor.execute("select id_mdic, id from attrs_bra where id_mdic is not null and length(id) = 8;")
+cursor.execute("select id_mdic, id from attrs_bra where id_mdic is not null and length(id) = 9;")
 bra_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
-bra_lookup["4314548"] = "rs030014"
-bra_lookup["9999999"] = "xx000007"
-bra_lookup["9400000"] = "xx000002"
+bra_lookup["4314548"] = "5rs030014"
+bra_lookup["9999999"] = "0xx000007"
+bra_lookup["9400000"] = "0xx000002"
 
-cursor.execute("select id_mdic, id from attrs_bra where id_mdic is not null and length(id) = 2;")
+cursor.execute("select id_mdic, id from attrs_bra where id_mdic is not null and length(id) = 3;")
 state_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
-state_lookup["94"] = "xx"
-state_lookup["95"] = "xx"
-state_lookup["96"] = "xx"
-state_lookup["97"] = "xx"
-state_lookup["98"] = "xx"
-state_lookup["99"] = "xx"
+state_lookup["94"] = "0xx"
+state_lookup["95"] = "0xx"
+state_lookup["96"] = "0xx"
+state_lookup["97"] = "0xx"
+state_lookup["98"] = "0xx"
+state_lookup["99"] = "0xx"
 
 cursor.execute("select substr(id, 3), id from attrs_hs where substr(id, 3) != '' and length(id) = 6;")
 hs_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
