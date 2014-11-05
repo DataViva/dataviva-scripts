@@ -9,20 +9,20 @@ db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA2_DB_USER"],
 db.autocommit(1)
 cursor = db.cursor()
 
-cursor.execute("select id_mdic, id from attrs_bra where id_mdic is not null and length(id) = 8;")
+cursor.execute("select id_mdic, id from attrs_bra where id_mdic is not null and length(id) = 9;")
 bra_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
-bra_lookup["4314548"] = "rs030014"
-bra_lookup["9999999"] = "xx000007"
-bra_lookup["9400000"] = "xx000002"
+bra_lookup["4314548"] = "5rs030014"
+bra_lookup["9999999"] = "0xx000007"
+bra_lookup["9400000"] = "0xx000002"
 
-cursor.execute("select id_mdic, id from attrs_bra where id_mdic is not null and length(id) = 2;")
+cursor.execute("select id_mdic, id from attrs_bra where id_mdic is not null and length(id) = 3;")
 state_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
-state_lookup["94"] = "xx"
-state_lookup["95"] = "xx"
-state_lookup["96"] = "xx"
-state_lookup["97"] = "xx"
-state_lookup["98"] = "xx"
-state_lookup["99"] = "xx"
+state_lookup["94"] = "0xx"
+state_lookup["95"] = "0xx"
+state_lookup["96"] = "0xx"
+state_lookup["97"] = "0xx"
+state_lookup["98"] = "0xx"
+state_lookup["99"] = "0xx"
 
 cursor.execute("select substr(id, 3), id from attrs_hs where substr(id, 3) != '' and length(id) = 6;")
 hs_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
@@ -42,7 +42,10 @@ missing = {
     "bra_id": defaultdict(int),
     "state_id": defaultdict(int),
     "hs_id": defaultdict(int),
-    "wld_id": defaultdict(int)
+    "wld_id": defaultdict(int),
+    "month": defaultdict(int),
+    "val_usd": defaultdict(int),
+    "val_kg": defaultdict(int)
 }
 
 def bra_replace(raw):
@@ -60,6 +63,20 @@ def hs_replace(raw):
 def wld_replace(raw):
     try: return wld_lookup[str(int(raw))]
     except: missing["wld_id"][raw] += 1
+
+def val_usd(raw):
+    try: return int(raw)
+    except: missing["val_usd"][raw] += 1
+
+def val_kg(raw):
+    try: return int(raw)
+    except: missing["val_kg"][raw] += 1
+
+def format_month(raw):
+    try: month = int(raw)
+    except: missing["month"][raw] += 1
+    if month in range(1, 13): return str(month).zfill(2)
+    missing["month"][raw] += 1
 
 def to_df(input_file_path, index=False, debug=False):
     if "rar" in input_file_path:
@@ -81,9 +98,9 @@ def to_df(input_file_path, index=False, debug=False):
         cols = ["year", "month", "wld_id", "state_id", "customs", "bra_id", \
                 "val_kg", "val_usd", "hs_id"]
         delim = "|"
-        coerce_cols = {"bra_id":bra_replace, "month":str, "hs_id":hs_replace, \
-                        "state_id":state_replace, "wld_id":wld_replace}
-        secex_df = pd.read_csv(input_file, header=0, sep=delim, converters=coerce_cols, names=cols)    
+        coerce_cols = {"bra_id":bra_replace, "month":format_month, "hs_id":hs_replace, \
+                        "state_id":state_replace, "wld_id":wld_replace, "val_kg":val_kg, "val_usd":val_usd}
+        secex_df = pd.read_csv(input_file, header=0, sep=delim, converters=coerce_cols, names=cols)
         secex_df = secex_df[["year", "month", "state_id", "bra_id", "hs_id", "wld_id", "val_usd", "val_kg"]]
         
         for col, missings in missing.items():

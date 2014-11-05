@@ -32,10 +32,11 @@ import numpy as np
 
 from _to_df import to_df
 from _replace_vals import replace_vals
+from _aggregate import aggregate
 # from _aggregate import aggregate
 # from _shard import shard
-from _calc_rca import calc_rca
-from _demographic_calc import compute_demographics
+# from _calc_rca import calc_rca
+# from _demographic_calc import compute_demographics
 
 def pre_check():
     failed = []
@@ -45,49 +46,45 @@ def pre_check():
     if len(failed):
         sys.exit("The following environment variables need to be set: {0}".format(", ".join(failed)))
 
-def get_years(year):
-    possible_years = range(2000, 2013)
-    if year == "all":
-        return possible_years
-    else:
-        try:
-            year = int(year)
-        except:
-            sys.exit("Invalid year provided.")
-        if year not in possible_years:
-            sys.exit("Invalid year provided. Must be between {0} and {1}.".format(possible_years[0], possible_years[-1]))
-        return [year]
-
 @click.command()
 @click.argument('file_path', type=click.Path(exists=True))
 @click.option('-y', '--year', prompt='Year', help='year of the data to convert', required=True, default='all')
 @click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
 def main(file_path, year, output_path):
     pre_check()
-    years = get_years(year)
+    output_path = os.path.join(output_path, str(year))
 
-    for y in years:
-        print "\nYEAR: {0}\n".format(y)
-        this_output_path = os.path.join(output_path, str(y))
-        if not os.path.exists(this_output_path): os.makedirs(this_output_path)
-        
-        step = 0
-        step+=1; print '''STEP {0}: Import file to pandas dataframe'''.format(step)
-        df = to_df(file_path, y)
-        print df.head()
-        step+=1; print '''STEP {0}: Replace vals with DB IDs'''.format(step)
-
-        ybucd = compute_demographics(df)
-        ybuc = df.groupby(["year", "bra_id", "university_id", "course_id"]).sum()
-        
-        step+=1; print '''STEP {0}: Calculating RCAs'''.format(step)
-        ybc = calc_rca(ybuc, y)
+    print "\nYEAR: {0}\n".format(year)
+    this_output_path = os.path.join(output_path)
+    if not os.path.exists(this_output_path): os.makedirs(this_output_path)
     
-        tables = {"ybuc":ybuc, "ybc":ybc, "ybucd": ybucd}
-        print '''FINAL STEP: Save files to output path'''
-        for t_name, t in tables.items():
-            new_file_path = os.path.abspath(os.path.join(this_output_path, "{0}.tsv.bz2".format(t_name)))
-            t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+    step = 0
+    step+=1; print '''STEP {0}: Import file to pandas dataframe'''.format(step)
+    df = to_df(file_path, year)
+    
+    for dem in ['', 'gender', 'ethnicity', 'school_type']:
+        print '''\nSTEP 2: Aggregate {0}'''.format(dem)
+        tbl = aggregate(df, dem)
+       
+        file_name = "ybucd_{0}.tsv.bz2".format(dem) if dem else "ybuc.tsv.bz2"
+        print '''Save {0} to output path'''.format(file_name)
+        new_file_path = os.path.abspath(os.path.join(output_path, file_name))
+        tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+    
+    # print df.head()
+    # step+=1; print '''STEP {0}: Replace vals with DB IDs'''.format(step)
+    #
+    # ybucd = compute_demographics(df)
+    # ybuc = df.groupby(["year", "bra_id", "university_id", "course_id"]).sum()
+    #
+    # step+=1; print '''STEP {0}: Calculating RCAs'''.format(step)
+    # ybc = calc_rca(ybuc, y)
+    #
+    # tables = {"ybuc":ybuc, "ybc":ybc, "ybucd": ybucd}
+    # print '''FINAL STEP: Save files to output path'''
+    # for t_name, t in tables.items():
+    #     new_file_path = os.path.abspath(os.path.join(this_output_path, "{0}.tsv.bz2".format(t_name)))
+    #     t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
 if __name__ == "__main__":
     main()

@@ -60,7 +60,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
     step = 0
     # d = pd.HDFStore(os.path.abspath(os.path.join(output_path,'ymp.h5')))
     
-    geo_depths = [2, 4, 6, 7, 8]
+    geo_depths = [1, 3, 5, 7, 8, 9]
     
     step += 1; print '''\nSTEP {0}: \nImport file to pandas dataframe'''.format(step)
     secex_exports = to_df(export_file_path, False)
@@ -78,8 +78,8 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
     [ymb, ymbp, ymbw, ymp, ympw, ymw] = shard(ymbpw)
 
     step += 1; print '''\nSTEP {0}: \nPrice / unit'''.format(step)
-    ymp = val_per_unit(ymp, secex_exports, "export")
-    ymp = val_per_unit(ymp, secex_imports, "import")
+    # ymp = val_per_unit(ymp, secex_exports, "export")
+    # ymp = val_per_unit(ymp, secex_imports, "import")
 
     step += 1; print '''\nSTEP {0}: \nCalculate PCI & ECI'''.format(step)
     [ymp, ymw] = pci_wld_eci(eci_file_path, pci_file_path, ymp, ymw)
