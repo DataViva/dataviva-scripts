@@ -3,6 +3,9 @@ import numpy as np
 import pandas as pd
 import os
 from pandas.tools.pivot import pivot_table
+import itertools
+from _helper_columns import add_helper_cols
+
 
 BIGGEST_TABLE = 'ymsrp'
 
@@ -31,22 +34,77 @@ def year_aggregation(table_data, table_name, pk_cols):
     
     return yearly
 
-def make_table(ymbibip, table_name, output_values, odir, output_name, ignore_list=[]):
-    pk_cols = pk(table_name)
+def agg_depths(first, t_name):
+    table= first.reset_index()
+    geo_depths = [1, 3, 9]
+    cnae_depths = [3]
+    product_depths = [2, 6]
     
-    if table_name == BIGGEST_TABLE:
-        table = ymbibip.groupby(pk_cols).aggregate(np.sum)
-    else:
-        table = ymbibip.groupby(level=pk_cols).aggregate(np.sum)
+    
+    # nestings = {"s": geo_depths, "r": geo_depths, "p": product_depths}
+    # lookup = {"s": "bra_id_s", "r": "bra_id_r", "p":"hs_id"}
+    my_nesting = [] # [nestings[i] for i in t_name if i not in ["y", "m"] ]
+    my_nesting_cols = []
 
-    # table["net_value"] = table["purchase_value"] + table["service_value"] + table["fixed_asset_value"] + table["other_value"] - table["devolution_value"]
-    # output_values.append("net_value")
+    for letter in t_name:
+        if letter in ["s", "r"]:
+            my_nesting.append(geo_depths) 
+            my_nesting.append(cnae_depths)
+            my_nesting_cols.append("bra_id_" + letter)
+            my_nesting_cols.append("cnae_id_" + letter)
+        elif letter == "p":
+            my_nesting.append(product_depths)
+            my_nesting_cols.append("hs_id")
 
-    yearly = year_aggregation(table, table_name, pk_cols)
+    # my_nesting_cols = [lookup[i] for i in t_name if i not in ["y", "m"]]
+    print my_nesting, my_nesting_cols
+    print
+    mynewtable = pd.DataFrame()     
 
-    big_table = pd.concat([table, yearly])
+    for depths in itertools.product(*my_nesting):
+        my_pk = [table["year"], table["month"]]
+
+        for col_name, d in zip(my_nesting_cols, depths):
+            my_pk.append( table[col_name].str.slice(0, d) )
+            
+
+        moi = table.groupby(my_pk, sort=False).agg( np.sum )
+        mynewtable = pd.concat([mynewtable, moi])
+        print "done ", depths , " table"
+
+    return mynewtable
+
+def make_table(ymbibip, table_name, output_values, odir, output_name, ignore_list=[]):
+    print table_name, "table in progress..."
+
+    pk_cols = pk(table_name)
+    print "table name", table_name, "pks=",pk_cols
+    # if table_name == BIGGEST_TABLE:
+    ymbibip = ymbibip.reset_index()
+
+    big_table = ymbibip.groupby(pk_cols).aggregate(np.sum)
+
+    print "ADDING HELPERS!"
+    big_table = add_helper_cols(table_name, big_table)
+    
+    tmp = output_values
+    # big_table = big_table.reset_index()
+    if "r" in table_name:
+        tmp = tmp + ["bra_id_r1", "bra_id_r3", "cnae_id_r1"]
+    if "s" in table_name:
+        tmp = tmp + ["bra_id_s1", "bra_id_s3", "cnae_id_s1"] 
+    if "p" in table_name:
+        tmp= tmp + ["hs_id2"]
+    
+        # ymbibip["hs_id1"] = ymbibip["hs_id"].str.get(0)
+        # output_values.append("hs_id1")
+
+
+    # yearly = year_aggregation(table, table_name, pk_cols)
+    # big_table = agg_depths(ymbibip, table_name)
+
     print "Writing csv to disk..."
 
     output_path = os.path.join(odir, "output_%s_%s.csv" % (table_name, output_name))
-    big_table.to_csv(output_path, ";", columns = output_values)
+    big_table.to_csv(output_path, ";", columns = tmp)
     return big_table

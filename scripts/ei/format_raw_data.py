@@ -8,7 +8,6 @@ from pandas.tools.pivot import pivot_table
 
 from table_aggregator import make_table
 
-
 PURCHASES = 1
 TRANSFERS = 2
 DEVOLUTIONS = 3
@@ -42,8 +41,11 @@ print "Getting CNAE data from DB..."
 cnae_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
 cursor.close()
 
-BRA_UNREPORTED = 'XX000007'
-CNAE_NO_INFO = 'x0'
+BRA_UNREPORTED = '0XX000007'
+CNAE_NO_INFO = 'x00'
+CNAE_BLACKLISTED = 'x01'
+CNAE_OTHER = 'x99'
+HS_BLACKLIST = '230000'
 #CNAE_DNA = 'x00002'
 
 def lookup_location(x):
@@ -52,8 +54,8 @@ def lookup_location(x):
     if x == '4128625':
     	x = '5200605'
     muni = lookup[x]
-    if not muni.startswith("mg"):
-    	muni = muni[:2] # -- outside MG only use state level
+    if not muni.startswith("4mg"):
+    	muni = muni[:3] # -- outside MG only use state level
     return muni
 
 def update_hs_id(old_hs_id):
@@ -111,13 +113,17 @@ def main(fname, blpath, odir):
 
 	# sender/receiver merge bl
 	ei_df = pd.merge(ei_df, bl_df, how='left', left_on=['bra_id_s','cnae_id_s'], right_on=['bra_id', 'cnae_id'])
-	ei_df.cnae_id_s[ei_df.d_bl == 1] = CNAE_NO_INFO
+	ei_df.cnae_id_s[ei_df.d_bl == 1] = CNAE_BLACKLISTED
 	print "Blacklisting %s sending transactions" % (ei_df.cnae_id_s[ei_df.d_bl == 1].count())
 	
 	ei_df = ei_df.drop(labels=bl_cols, axis=1)
 	ei_df = pd.merge(ei_df, bl_df, how='left', left_on=['bra_id_r','cnae_id_r'], right_on=['bra_id', 'cnae_id'])
 	print "Blacklisting %s receiving transactions" % (ei_df.cnae_id_r[ei_df.d_bl == 1].count())
-	ei_df.cnae_id_r[ei_df.d_bl == 1] = CNAE_NO_INFO
+	ei_df.cnae_id_r[ei_df.d_bl == 1] = CNAE_BLACKLISTED
+
+	# -- HS blacklist
+	ei_df.hs_id[(ei_df.cnae_id_r == CNAE_BLACKLISTED) & (ei_df.cnae_id_s == CNAE_BLACKLISTED)] = HS_BLACKLIST
+	print "Blacklisting %s products" % (ei_df.hs_id[ei_df.hs_id == HS_BLACKLIST].count())
 
 	# -- Filter out any rows that are ICMS Credits transactions or transfers
 	# print "Filtering ICMS credits and transfers"
@@ -148,12 +154,12 @@ def main(fname, blpath, odir):
 
 	print "Making tables..."
 	ymsrp = make_table(ei_df, "ymsrp", output_values, odir, output_name)
-	ymsr = make_table(ymsrp, "ymsr", output_values, odir, output_name)
-	ymsp = make_table(ymsrp, "ymsp", output_values, odir, output_name)
-	ymrp = make_table(ymsrp, "ymrp", output_values, odir, output_name)
-	yms = make_table(ymsp, "yms", output_values, odir, output_name)
-	ymr = make_table(ymrp, "ymr", output_values, odir, output_name)
-	ymp = make_table(ymsp, "ymp", output_values, odir, output_name)
+	ymsr = make_table(ei_df, "ymsr", output_values, odir, output_name)
+	ymsp = make_table(ei_df, "ymsp", output_values, odir, output_name)
+	ymrp = make_table(ei_df, "ymrp", output_values, odir, output_name)
+	yms = make_table(ei_df, "yms", output_values, odir, output_name)
+	ymr = make_table(ei_df, "ymr", output_values, odir, output_name)
+	ymp = make_table(ei_df, "ymp", output_values, odir, output_name)
 	
 if __name__ == '__main__':
     main()

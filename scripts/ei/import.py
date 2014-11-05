@@ -1,18 +1,3 @@
-'''
-for fullpath in $FOLDER/output_yms_*.csv
-do
-    tablename="ei_yms"
-    echo "Importing $fullpath to SQL table $tablename";
-
-    fields="year, month, bra_id_s, cnae_id_s,\
-            product_value, tax, icms_tax, transportation_cost, bra_id_s_len, cnae_id_s_len";
-    mysql -uroot $DATAVIVA_DB_NAME -e "LOAD DATA LOCAL INFILE '$fullpath' INTO TABLE $tablename FIELDS TERMINATED BY ';' LINES TERMINATED BY '\n' IGNORE 1 LINES  ($fields);"
-
-    echo "Completed import to $tablename";
-
-done
-'''
-
 import click
 import os, sys, fnmatch
 import re
