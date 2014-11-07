@@ -8,12 +8,15 @@ python import.py --idir=/Users/jspeiser/output/sc/2007/
 '''
 
 pattern = re.compile('(\w+).tsv(.bz2)*')
-
+pattern1 = re.compile('(\w+)_(gender|color|loc|school_type).tsv(.bz2)*')
 
 def parse_table(t):
+    m = pattern1.search(t)
+    if m:
+        return "sc_" + m.group(1)
     m = pattern.search(t)
     if m:
-        return "edu_" + m.group(1)
+        return "sc_" + m.group(1)
 
 # via http://stackoverflow.com/questions/13299731/python-need-to-loop-through-directories-looking-for-txt-files
 def findFiles (path, filter):
@@ -38,6 +41,8 @@ def main(idir):
         fields = header.split('\t')
         print "fields", fields
         fields = [x for x in fields if x!='schools']
+        fields[fields.index('class_id')] = 'classes'
+        fields[fields.index('enroll_id')] = 'enrolled'
 
         fields = ",".join(fields)
         print

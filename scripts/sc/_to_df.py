@@ -32,14 +32,16 @@ missing = {
     "course_id": defaultdict(int)
 }
 
-cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 8;")
+cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 9;")
 bra_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
 
 cursor.execute("select id from attrs_school;")
 school_lookup = {str(r[0]):str(r[0]) for r in cursor.fetchall()}
 
 cursor.execute("select id from attrs_course_sc;")
-course_lookup = {int(r[0]):str(r[0]) for r in cursor.fetchall()}
+course_lookup = {str(r[0]):str(r[0]) for r in cursor.fetchall()}
+
+BASIC_EDU_CODE = 'xxxxx'
 
 def map_gender(x):
     MALE, FEMALE = 0, 1
@@ -79,8 +81,8 @@ def school_replace(raw):
     except: missing["school_id"][raw] += 1; return None
 
 def course_replace(raw):
-    try: return course_lookup[int(raw)]
-    except: missing["course_id"][raw] += 1; return "00000"
+    try: return course_lookup[str(raw).strip()]
+    except: return BASIC_EDU_CODE # -- if missing give BASIC edu code
 
 def to_df(input_file_path, index=False, debug=False):
     if "bz2" in input_file_path:
@@ -110,34 +112,41 @@ def to_df(input_file_path, index=False, debug=False):
         # rais_df = rais_df[drop_criterion]
         df = df.dropna(subset=[col])
         print; print "{0} rows deleted.".format(num_rows - df.shape[0]); print;
-    
+
+    # df[df.course_id == BASIC_EDU_CODE] = BASIC_EDU_CODE[:-2] + str(df.edu_level_new).zfill(2)
+
+    # df.edu_level_new = df.edu_level_new.astype(str)
+    # df.course_id[df.course_id == BASIC_EDU_CODE] = df.course_id.str.slice(0, 3) + df.edu_level_new.str.pad(2)
+    # df.course_id = df.course_id.str.replace(replacerules)
+    # print df[df.course_id.str.contains(BASIC_EDU_CODE[:-2])].head()
+
     return df
     
     # print df.head()
     # sys.exit()
-    print "generating demographic codes..."
-    # df["d_id"] = df.apply(lambda x:'%s%s%s%s' % (map_gender(x['gender']), map_color(x['color']), \
-    #                                             map_loc(x['loc']), map_school_type(x['school_type'])), axis=1)
-    # df = df.drop(["color", "gender", "edu_level_new", "loc", "bra_id_lives", "school_type"], axis=1)
+    # print "generating demographic codes..."
+    # # df["d_id"] = df.apply(lambda x:'%s%s%s%s' % (map_gender(x['gender']), map_color(x['color']), \
+    # #                                             map_loc(x['loc']), map_school_type(x['school_type'])), axis=1)
+    # # df = df.drop(["color", "gender", "edu_level_new", "loc", "bra_id_lives", "school_type"], axis=1)
     
-    df_dem = pd.DataFrame()
-    dems = ['gender', 'color', 'loc', 'school_type']
-    for dem in dems:
-        this_df = df.copy()
-        this_df["d_id"] = this_df[dem]
-        this_df = this_df.drop(dems, axis=1)
-        df_dem = df_dem.append(this_df)
+    # df_dem = pd.DataFrame()
+    # dems = ['gender', 'color', 'loc', 'school_type']
+    # for dem in dems:
+    #     this_df = df.copy()
+    #     this_df["d_id"] = this_df[dem]
+    #     this_df = this_df.drop(dems, axis=1)
+    #     df_dem = df_dem.append(this_df)
     
-    # for col, missings in missing.items():
-    #     if not len(missings): continue
-    #     num_rows = df.shape[0]
-    #     print; print "[WARNING]"; print "The following {0} IDs are not in the DB and will be dropped from the data.".format(col);
-    #     print list(missings)
-    #     # drop_criterion = rais_df[col].map(lambda x: x not in vals)
-    #     # rais_df = rais_df[drop_criterion]
-    #     df = df.dropna(subset=[col])
-    #     print; print "{0} rows deleted.".format(num_rows - df.shape[0]); print;
+    # # for col, missings in missing.items():
+    # #     if not len(missings): continue
+    # #     num_rows = df.shape[0]
+    # #     print; print "[WARNING]"; print "The following {0} IDs are not in the DB and will be dropped from the data.".format(col);
+    # #     print list(missings)
+    # #     # drop_criterion = rais_df[col].map(lambda x: x not in vals)
+    # #     # rais_df = rais_df[drop_criterion]
+    # #     df = df.dropna(subset=[col])
+    # #     print; print "{0} rows deleted.".format(num_rows - df.shape[0]); print;
     
-    # print df[df["course_id"].notnull()].head()
+    # # print df[df["course_id"].notnull()].head()
 
-    return df_dem
+    # return df_dem

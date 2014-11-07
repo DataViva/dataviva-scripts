@@ -37,6 +37,7 @@ from _replace_vals import replace_vals
 from _aggregate import aggregate
 from _shard import shard
 from _calc_rca import calc_rca
+from _column_lengths import add_column_length
 
 def pre_check():
     failed = []
@@ -58,17 +59,29 @@ def main(file_path, year, output_path):
     # d = pd.HDFStore(os.path.abspath(os.path.join(output_path,'sc_data.h5')))
     print; print '''STEP 1: \nImport file to pandas dataframe'''
     df = to_df(file_path, False)
-    
-    for dem in ['', 'gender', 'color', 'loc', 'school_type']:
-        print '''\nSTEP 2: Aggregate {0}'''.format(dem)
-        tbl = aggregate(df, dem)
-        
-        print tbl.reset_index().course_id.nunique()
-       
-        file_name = "ybscd_{0}.tsv.bz2".format(dem) if dem else "ybsc.tsv.bz2"
-        print '''Save {0} to output path'''.format(file_name)
-        new_file_path = os.path.abspath(os.path.join(output_path, file_name))
-        tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+    print; print "Step 2: aggregate"
+
+    from _aggregate import agg_rules
+
+
+    pk_lookup = {"y": "year", "d": "d_id", "b": "bra_id", "c": "course_id", "s": "school_id"}
+    tables_list = ["ybd", "yd", "ybc", "yc", "ybs", "ys"]
+    for table_name in tables_list:
+        iterations = ['']
+        print "Working on table", table_name
+        pk = [pk_lookup[l] for l in table_name]
+        if "d" in table_name:
+            iterations = ['gender', 'color', 'loc', 'school_type']
+        for dem in iterations:
+            print '''\nSTEP 2: Aggregate {0}'''.format(dem)
+            tbl = aggregate(pk, df, dem)
+            tbl = add_column_length(table_name, tbl)
+            # print tbl.reset_index().course_id.nunique()
+            tmp = table_name + "_{0}.tsv.bz2"
+            file_name =  tmp.format(dem) if dem else str(table_name + ".tsv.bz2")
+            print '''Save {0} to output path'''.format(file_name)
+            new_file_path = os.path.abspath(os.path.join(output_path, file_name))
+            tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
 if __name__ == "__main__":
     main()
