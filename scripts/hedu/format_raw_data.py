@@ -33,6 +33,7 @@ import numpy as np
 from _to_df import to_df
 from _replace_vals import replace_vals
 from _aggregate import aggregate
+from _column_lengths import add_column_length
 # from _aggregate import aggregate
 # from _shard import shard
 # from _calc_rca import calc_rca
@@ -62,15 +63,46 @@ def main(file_path, year, output_path):
     step+=1; print '''STEP {0}: Import file to pandas dataframe'''.format(step)
     df = to_df(file_path, year)
     
-    for dem in ['', 'gender', 'ethnicity', 'school_type']:
-        print '''\nSTEP 2: Aggregate {0}'''.format(dem)
-        tbl = aggregate(df, dem)
-       
-        file_name = "ybucd_{0}.tsv.bz2".format(dem) if dem else "ybuc.tsv.bz2"
-        print '''Save {0} to output path'''.format(file_name)
-        new_file_path = os.path.abspath(os.path.join(output_path, file_name))
-        tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
-    
+    tables_list = ["ybuc", "ybucd"]
+    pk_lookup = {"y": "year", "d": "d_id", "b": "bra_id", "c": "course_id", "u": "university_id"}
+
+    for table_name in tables_list:
+        pk = [pk_lookup[l] for l in table_name]
+        print "working on", table_name
+        
+        dems = ['gender', 'ethnicity', 'school_type'] if "d" in table_name else ['']
+        
+        for dem in dems:
+            print '''\nSTEP 2: Aggregate {0}'''.format(dem)
+            tbl = aggregate(pk, df, dem)
+            
+            
+            if "c" in table_name:
+                pk2 = [x for x in pk]
+                # pk2[pk2.index("course_id")] = df.course_id.str.slice(0, 2)
+                df2 = df.copy()
+                df2.course_id = df.course_id.str.slice(0, 2)
+                tbl_course2 = aggregate(pk2, df2, dem)
+
+                tbl = pd.concat([tbl, tbl_course2])
+            
+            tbl = add_column_length(table_name, tbl)
+            tbl.rename(columns={"student_id": "students"}, inplace=True)   
+            file_name = table_name + "_" + dem + ".tsv.bz2" if "d" in table_name else table_name + ".tsv.bz2"
+            print '''Save {0} to output path'''.format(file_name)
+            new_file_path = os.path.abspath(os.path.join(output_path, file_name))
+            tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+
+        # if "c" in table_name:
+        #     print '''\nSTEP 3: Aggregate {0}'''
+        #     tbl = aggregate(pk, df, '', 2)
+        #     tbl = add_column_length(table_name, tbl)
+        #     # print tbl.reset_index().course_id.nunique()
+        #     file_name = table_name + "_cid2.tsv.bz2"
+        #     print '''Save {0} to output path'''.format(file_name)
+        #     new_file_path = os.path.abspath(os.path.join(output_path, file_name))
+        #     tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+
     # print df.head()
     # step+=1; print '''STEP {0}: Replace vals with DB IDs'''.format(step)
     #

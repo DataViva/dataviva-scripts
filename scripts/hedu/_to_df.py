@@ -9,7 +9,7 @@ growth_lib_path = os.path.abspath(os.path.join(file_path, "..", "common"))
 sys.path.insert(0, growth_lib_path)
 
 ''' Connect to DB '''
-db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA2_DB_USER"], passwd=os.environ["DATAVIVA2_DB_PW"], db=os.environ["DATAVIVA2_DB_NAME"])
+db = MySQLdb.connect(host="127.0.0.1", user=os.environ["DATAVIVA2_DB_USER"], passwd=os.environ["DATAVIVA2_DB_PW"], db=os.environ["DATAVIVA2_DB_NAME"])
 cursor = db.cursor()
 
 missing = {
@@ -18,7 +18,7 @@ missing = {
     "course_id": defaultdict(int)
 }
 
-cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 8;")
+cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 9;")
 bra_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
 
 cursor.execute("select id from attrs_university;")
@@ -34,10 +34,19 @@ def map_gender(x):
     except: print x; sys.exit()
 
 def map_color(color):
-    INDIAN, WHITE, BLACK, ASIAN, MULTI, UNKNOWN = 1,2,4,6,8,9
-    color_dict = {INDIAN:'C', WHITE:'D', BLACK:'E', ASIAN:'F', MULTI:'G', 9:'H', -1:'H', 3:'H', 5:'H', 0:'H'}
-    try: return str(color_dict[int(color)])
-    except: print color; sys.exit()
+    WHITE=1
+    BLACK=2
+    MULTI=3
+    ASIAN=4
+    INDIAN=5
+    UNIDENTIFIED = 6    
+    UNKNOWN = 9
+    color_dict = {UNIDENTIFIED: 'H' , INDIAN:'C', WHITE:'D', BLACK:'E', ASIAN:'F', MULTI:'G', 9:'H', -1:'H', 0:'H'}
+    try: 
+        return str(color_dict[int(color)])
+    except Exception, e:
+        raise Exception("Unknown color: error %s" % e)
+
 
 def map_loc(loc):
     URBAN, RURAL = 1, 2
@@ -82,8 +91,7 @@ def to_df(file_path, year):
                     "course_id":course_replace, "ethnicity":map_color, "gender":map_gender, \
                     "school_type":map_school_type}
     df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
-    df = df.drop(["course_name","morning","afternoon","night","modality","full_time",\
-                    "Year_entry","degree","course_id_bad","academic_organization","level"], axis=1)
+    df = df.drop(["course_name","modality", "Year_entry","degree","course_id_bad","academic_organization","level"], axis=1)
     df = df[df["year"]==int(year)]
     
     for col, missings in missing.items():
