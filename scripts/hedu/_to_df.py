@@ -67,7 +67,7 @@ def floatvert(x):
 
 def bra_replace(raw):
     try: return bra_lookup[str(raw).strip()]
-    except: missing["bra_id"][raw] += 1; return "xx000007"
+    except: missing["bra_id"][raw] += 1; return "0xx000007"
 
 def university_replace(raw):
     try: return university_lookup[str(raw).strip()]
@@ -97,12 +97,12 @@ def to_df(file_path, year):
     for col, missings in missing.items():
         if not len(missings): continue
         num_rows = df.shape[0]
-        print; print "[WARNING]"; print "The following {0} IDs are not in the DB and will be dropped from the data.".format(col);
+        print; print "[WARNING]"; print "The following {0} IDs are not in the DB.".format(col);
         print list(missings)
         # drop_criterion = rais_df[col].map(lambda x: x not in vals)
         # rais_df = rais_df[drop_criterion]
-        df = df.dropna(subset=[col])
-        print; print "{0} rows deleted.".format(num_rows - df.shape[0]); print;
+        # df = df.dropna(subset=[col])
+        # print; print "{0} rows deleted.".format(num_rows - df.shape[0]); print;
     
     # print df.head()
     # sys.exit()

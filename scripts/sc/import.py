@@ -8,7 +8,7 @@ python import.py --idir=/Users/jspeiser/output/sc/2007/
 '''
 
 pattern = re.compile('(\w+).tsv(.bz2)*')
-pattern1 = re.compile('(\w+)_(gender|color|loc|school_type).tsv(.bz2)*')
+pattern1 = re.compile('(\w+)_(gender|color|loc|school_type|cid2).tsv(.bz2)*')
 
 def parse_table(t):
     m = pattern1.search(t)

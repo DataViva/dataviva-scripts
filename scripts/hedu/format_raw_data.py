@@ -34,9 +34,10 @@ from _to_df import to_df
 from _replace_vals import replace_vals
 from _aggregate import aggregate
 from _column_lengths import add_column_length
+
+from _calc_rca import calc_rca
 # from _aggregate import aggregate
 # from _shard import shard
-# from _calc_rca import calc_rca
 # from _demographic_calc import compute_demographics
 
 def pre_check():
@@ -63,8 +64,11 @@ def main(file_path, year, output_path):
     step+=1; print '''STEP {0}: Import file to pandas dataframe'''.format(step)
     df = to_df(file_path, year)
     
-    tables_list = ["ybuc", "ybucd"]
+    # tables_list = ["ybuc", "ybucd"]
+    tables_list = ["ybd", "yd", "ybc", "yc", "ybu"]
     pk_lookup = {"y": "year", "d": "d_id", "b": "bra_id", "c": "course_id", "u": "university_id"}
+
+    ybuc = None
 
     for table_name in tables_list:
         pk = [pk_lookup[l] for l in table_name]
@@ -76,18 +80,19 @@ def main(file_path, year, output_path):
             print '''\nSTEP 2: Aggregate {0}'''.format(dem)
             tbl = aggregate(pk, df, dem)
             
-            
             if "c" in table_name:
                 pk2 = [x for x in pk]
-                # pk2[pk2.index("course_id")] = df.course_id.str.slice(0, 2)
-                df2 = df.copy()
-                df2.course_id = df.course_id.str.slice(0, 2)
-                tbl_course2 = aggregate(pk2, df2, dem)
+                pk2[pk2.index("course_id")] = df.course_id.str.slice(0, 2)
+                # df2.course_id = df.course_id.str.slice(0, 2)
+                tbl_course2 = aggregate(pk2, df, dem)
 
                 tbl = pd.concat([tbl, tbl_course2])
             
             tbl = add_column_length(table_name, tbl)
             tbl.rename(columns={"student_id": "students"}, inplace=True)   
+            if table_name == "ybuc":
+                print tbl.head()
+                ybuc = tbl
             file_name = table_name + "_" + dem + ".tsv.bz2" if "d" in table_name else table_name + ".tsv.bz2"
             print '''Save {0} to output path'''.format(file_name)
             new_file_path = os.path.abspath(os.path.join(output_path, file_name))
@@ -101,22 +106,15 @@ def main(file_path, year, output_path):
         #     file_name = table_name + "_cid2.tsv.bz2"
         #     print '''Save {0} to output path'''.format(file_name)
         #     new_file_path = os.path.abspath(os.path.join(output_path, file_name))
-        #     tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
-
-    # print df.head()
-    # step+=1; print '''STEP {0}: Replace vals with DB IDs'''.format(step)
-    #
-    # ybucd = compute_demographics(df)
-    # ybuc = df.groupby(["year", "bra_id", "university_id", "course_id"]).sum()
-    #
-    # step+=1; print '''STEP {0}: Calculating RCAs'''.format(step)
-    # ybc = calc_rca(ybuc, y)
-    #
-    # tables = {"ybuc":ybuc, "ybc":ybc, "ybucd": ybucd}
-    # print '''FINAL STEP: Save files to output path'''
-    # for t_name, t in tables.items():
-    #     new_file_path = os.path.abspath(os.path.join(this_output_path, "{0}.tsv.bz2".format(t_name)))
-    #     t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+        #     tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)        
+    
+    if ybuc is not None:
+        step+=1; print '''STEP {0}: Calculating RCAs'''.format(step)
+        ybc = calc_rca(ybuc, year)
+        new_file_path = os.path.abspath(os.path.join(output_path, "ybc_rca.tsv.bz2"))
+        ybc.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+        print "writing", new_file_path
+    
 
 if __name__ == "__main__":
     main()

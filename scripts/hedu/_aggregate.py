@@ -31,6 +31,21 @@ def aggregate(this_pk, tbl, dem):
         tbl["d_id"] = tbl[dem]
     
     tbl = tbl.drop(['gender', 'ethnicity', 'school_type'], axis=1)
+
+    # -- For aggregation make sure we are only looking at the deepest level!!
+    deepestBra = tbl.bra_id.str.len() == 9
+    deepestCourse = tbl.course_id.str.len() == 6
+
+
+
+    test = tbl[ ~(deepestBra & deepestCourse) ]
+    tbl = tbl[ deepestBra & deepestCourse ]
+
+    if not test.empty:
+        print "ROWS REMOVED! On table", this_pk 
+        print test.head()
+    test = None
+
     tbl_all = tbl.groupby(this_pk).agg(agg_rules)
 
     tbl_region = tbl.reset_index()

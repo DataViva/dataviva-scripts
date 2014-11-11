@@ -60,7 +60,7 @@ planning_regions = get_planning_regions()
 #     tbl["commute_distance"] = tbl.apply(lambda x: query_distance(x.bra_id_lives, x.bra_id, distances), axis=1)    
 #     return tbl
 
-def aggregate(this_pk, tbl, dem):
+def aggregate(this_pk, tbl, dem, cid_len=None):
 
     if dem:
         tbl["d_id"] = tbl[dem]
@@ -72,6 +72,9 @@ def aggregate(this_pk, tbl, dem):
 
     tbl = tbl.drop(['gender', 'color', 'loc', 'school_type'], axis=1)
     
+    if cid_len:
+        tbl['course_id'] = tbl["course_id"].str.slice(0, cid_len)
+
     # tbl = compute_distances(tbl)
     print "Step A."
     tbl_all = tbl.groupby(this_pk).agg(agg_rules)
@@ -99,18 +102,13 @@ def aggregate(this_pk, tbl, dem):
 
     print "Step F."
     tbl_pr = tbl.reset_index()
-    tbl_pr = tbl_pr[tbl_pr["bra_id"].map(lambda x: x[:2] == "mg")]
+    tbl_pr = tbl_pr[tbl_pr["bra_id"].map(lambda x: x[:3] == "4mg")]
     tbl_pr["bra_id"] = tbl_pr["bra_id"].astype(str).replace(planning_regions)
     tbl_pr = tbl_pr.groupby(this_pk).agg(agg_rules)
 
 
     master_table = pd.concat([tbl_all, tbl_state, tbl_meso, tbl_micro, tbl_pr, tbl_region])
 
-    if "course_id" in this_pk:
-        tbl_course2 = master_table.reset_index()
-        tbl_course2["course_id"] = tbl_course2["course_id"].str.slice(0, 2) 
-        tbl_course2 = tbl_course2.groupby(this_pk).agg(agg_rules)
-        return pd.concat([master_table, tbl_course2])
-    else:
-        return master_table
+  
+    return master_table
 

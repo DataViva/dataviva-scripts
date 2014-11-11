@@ -50,8 +50,13 @@ def map_gender(x):
     except: print x; sys.exit()
 
 def map_color(color):
-    INDIAN, WHITE, BLACK, ASIAN, MULTI, UNKNOWN = 1,2,4,6,8,9
-    color_dict = {INDIAN:'C', WHITE:'D', BLACK:'E', ASIAN:'F', MULTI:'G', 9:'H', -1:'H', 3:'H', 5:'H', 0:'H'}
+    INDIAN=5
+    WHITE=1
+    BLACK=2
+    ASIAN=4
+    MULTI=3
+    UNKNOWN = 9
+    color_dict = {INDIAN:'C', WHITE:'D', BLACK:'E', ASIAN:'F', MULTI:'G', 9:'H', -1:'H', 0:'H'}
     try: return str(color_dict[int(color)])
     except: print color; sys.exit()
 

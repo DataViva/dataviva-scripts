@@ -131,17 +131,12 @@ def main(fname, blpath, odir):
 	ei_df['icms_tax'] = ei_df.ICMS_ST_Value + ei_df.ICMS_Value 
 	ei_df['tax'] = ei_df.icms_tax + ei_df.IPI_Value + ei_df.PIS_Value + ei_df.COFINS_Value + ei_df.II_Value + ei_df.ISSQN_Value
 
-	ei_df['purchase_value'] = 0
-	ei_df['transfer_value'] = 0
-	ei_df['devolution_value'] = 0
-	ei_df['icms_credit_value'] = 0
-	ei_df['remit_value'] = 0
 
-	ei_df['purchase_value'][ei_df["CFOP_ID"] == PURCHASES] = ei_df["product_value"]
-	ei_df['transfer_value'][ei_df["CFOP_ID"] == TRANSFERS] = ei_df["product_value"]
-	ei_df['devolution_value'][ei_df["CFOP_ID"] == DEVOLUTIONS] = ei_df["product_value"]
-	ei_df['icms_credit_value'][ei_df["CFOP_ID"] == CREDITS] = ei_df["product_value"]
-	ei_df['remit_value'][ei_df["CFOP_ID"] == REMITS] = ei_df["product_value"]
+	ei_df["purchase_value"] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == PURCHASES else 0, axis=1)
+	ei_df["transfer_value"] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == TRANSFERS else 0, axis=1)
+	ei_df["devolution_value"] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == DEVOLUTIONS else 0, axis=1)
+	ei_df["icms_credit_value"] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == CREDITS else 0, axis=1)
+	ei_df["remit_value"] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == REMITS else 0, axis=1)
 
 	print "Aggregating..."
 	primary_key =  ['year', 'month', 'bra_id_s', 'cnae_id_s', 

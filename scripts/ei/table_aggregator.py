@@ -82,7 +82,7 @@ def make_table(ymbibip, table_name, output_values, odir, output_name, ignore_lis
     # if table_name == BIGGEST_TABLE:
     ymbibip = ymbibip.reset_index()
 
-    big_table = ymbibip.groupby(pk_cols).aggregate(np.sum)
+    big_table = ymbibip.groupby(pk_cols).sum()
 
     print "ADDING HELPERS!"
     big_table = add_helper_cols(table_name, big_table)
