@@ -2,30 +2,8 @@ import sys, os
 import pandas as pd
 import numpy as np
 import itertools
-import bottleneck
+# import bottleneck
 import MySQLdb
-
-agg_rules = {
-    "wage": np.sum, 
-    "wage_avg": pd.Series.mean, 
-    "num_jobs": np.sum,
-    "num_emp" : pd.Series.nunique,
-    "num_est": pd.Series.nunique,
-    "age": pd.Series.mean
-}            
-
-median_rules = {
-    "wage_med" : bottleneck.median,
-    "age_med" : bottleneck.median,
-    "edu_mode" : bottleneck.median,
-    "num_emp" : pd.Series.nunique,
-    "num_est": pd.Series.nunique
-}
-
-median_rules_d = {"wage_med" :bottleneck.median, "age_med" : bottleneck.median, "num_emp" : pd.Series.nunique, "num_est": pd.Series.nunique, "edu_mode": bottleneck.median}
-agg_rules_d = { "wage": np.sum, "num_jobs": np.sum }            
-
-joint = dict(median_rules_d.items() + agg_rules_d.items() )
 
 def replace_at_pos(x, dseq):
     d_id = list(x)

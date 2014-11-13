@@ -27,14 +27,13 @@ import numpy as np
 
 from _to_df import to_df
 from _aggregate import aggregate, aggregate_demographics
-from _shard import shard
 from _required import required
 from _importance import importance
 from _calc_diversity import calc_diversity
 from _rdo import rdo
 from _growth import calc_growth
 from _column_lengths import add_column_length
-from _mne import mne
+# from _mne import mne
 
 @click.command()
 @click.argument('file_path', type=click.Path(exists=True))
