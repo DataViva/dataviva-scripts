@@ -23,11 +23,11 @@ def get_ybi_rcas(ybi, geo_level):
     
     return rcas
 
-def ybio_to_panel(ybio):
+def ybio_to_panel(ybio, geo_depths):
     ybio = ybio.reset_index()
     cnae_criterion = ybio['cnae_id'].map(lambda x: len(x) == 6)
     cbo_criterion = ybio['cbo_id'].map(lambda x: len(x) == 4)
-    bra_criterion = ybio['bra_id'].map(lambda x: len(x) == 8)
+    bra_criterion = ybio['bra_id'].map(lambda x: len(x) == geo_depths[-1])
     ybio = ybio[cnae_criterion & cbo_criterion & bra_criterion]
     
     ybio = ybio[["cnae_id", "cbo_id", "bra_id", "num_jobs"]]
@@ -41,20 +41,20 @@ def ybio_to_panel(ybio):
     
     return panel
 
-def importance(ybio, ybi, yio, yo, year):
+def importance(ybio, ybi, yio, yo, year, geo_depths):
     year = int(year)
     yo = yo.reset_index(level="year")
     all_cbo = [cbo for cbo in list(yo.index) if len(cbo) == 4]
     
     '''get ybi RCAs'''
-    rcas = get_ybi_rcas(ybi, 8)
+    rcas = get_ybi_rcas(ybi, geo_depths[-1])
     
     denoms = rcas.sum()
     
     # z       = occupations
     # rows    = bras
     # colums  = cnaes
-    ybio = ybio_to_panel(ybio)
+    ybio = ybio_to_panel(ybio, geo_depths)
     
     yio_importance = []
     for cbo in all_cbo:

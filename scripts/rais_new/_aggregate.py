@@ -5,8 +5,13 @@ import itertools
 import bottleneck
 import MySQLdb
 
-agg_rules = {"wage": np.sum, 
-             "num_jobs": np.sum,
+agg_rules = {
+    "wage": np.sum, 
+    "wage_avg": pd.Series.mean, 
+    "num_jobs": np.sum,
+    "num_emp" : pd.Series.nunique,
+    "num_est": pd.Series.nunique,
+    "age": pd.Series.mean
 }            
 
 median_rules = {
@@ -39,54 +44,19 @@ def strmask(x,d):
             tmp[i] = "0"
         i+=1
     return "".join(tmp)
-
-def medians_demographics(rais_df, t_name, geo_depths):
-    geo_depths.reverse()
-    mynewtable = pd.DataFrame() 
-
-    all_demo_zeroes = ["1000", "0100", "0010", "0001"]
-    
-
-    lookup = {"b":"bra_id", "i":"cnae_id", "o":"cbo_id", "d": "d_id"}
-    pk = ["year"] + [lookup[l] for l in t_name if l is not "y"]
-    
-    nestings = {"b": geo_depths, "i":[6,1], "o":[4, 1], "d": [0,1,2,3]}
-
-    my_nesting = [nestings[i] for i in t_name if i is not "y"]
-    my_nesting_cols = [lookup[i] for i in t_name if i is not "y"]
-
-    for depths in itertools.product(*my_nesting):
-        print "Processing", my_nesting_cols, "at depths", depths
-
-        my_pk = [rais_df["year"]]
-
-        for col_name, d in zip(my_nesting_cols, depths):
-            if col_name == "d_id":
-                my_pk.append( rais_df[col_name].str.get(d) )
-            else:
-                my_pk.append( rais_df[col_name].str.slice(0, d) )
-
-        moi = rais_df.groupby(my_pk, sort=False).agg( joint )
-        # print moi.head()
-        mynewtable = pd.concat([mynewtable, moi])
-        print "done ", depths , " table"
-
-
-
-    return mynewtable
     
 def get_planning_regions():
     ''' Connect to DB '''
-    db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA_DB_USER"], 
-                            passwd=os.environ["DATAVIVA_DB_PW"], 
-                            db=os.environ["DATAVIVA_DB_NAME"])
+    db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA2_DB_USER"], 
+                            passwd=os.environ["DATAVIVA2_DB_PW"], 
+                            db=os.environ["DATAVIVA2_DB_NAME"])
     db.autocommit(1)
     cursor = db.cursor()
     
     cursor.execute("select bra_id, pr_id from attrs_bra_pr")
     return {r[0]:r[1] for r in cursor.fetchall()}
 
-def aggregate_demographics(rais_df, geo_depths):
+def aggregate_demographics(rais_df, bra_depths):
     rais_df['wage_med'] = rais_df['wage']
     rais_df['num_jobs'] = 1
 
@@ -97,66 +67,127 @@ def aggregate_demographics(rais_df, geo_depths):
     dtables = ["ybid", "ybod", "ybd", "yod", "yid"]
     dtbls = {}
     for t_name in dtables:
-        table = medians_demographics(rais_df, t_name, geo_depths)
+        table = medians_demographics(rais_df, t_name, bra_depths)
         dtbls[t_name] = table
     return dtbls
 
-def aggregate(rais_df, geo_depths):
-    rais_df['wage_med'] = rais_df['wage']
-    rais_df['num_jobs'] = 1
+def aggregate(rais_df, depths, demographics):
+    bra_depths = depths["bra"]
+    cnae_depths = depths["cnae"]
+    cbo_depths = depths["cbo"]
+    demo_depths = depths["demo"]
+    
+    rais_df = rais_df.drop(["color", "gender", "literacy", "est_size"], axis=1)
+    if demographics:
+        pk = ["year", "bra_id", "cnae_id", "cbo_id", "d_id"]
+        tables = {"ybd":["year", "bra_id", "d_id"],
+                    "ybid":["year", "bra_id", "cnae_id", "d_id"],
+                    "ybod":["year", "bra_id", "cbo_id", "d_id"],
+                    "yid":["year", "cnae_id", "d_id"],
+                    "yod":["year", "cbo_id", "d_id"]}
+    else:
+        rais_df = rais_df.drop(["d_id"], axis=1)
+        pk = ["year", "bra_id", "cnae_id", "cbo_id"]
+        tables = {"ybio":["year", "bra_id", "cnae_id", "cbo_id"],
+                    "ybi":["year", "bra_id", "cnae_id"],
+                    "ybo":["year", "bra_id", "cbo_id"],
+                    "yb":["year", "bra_id"],
+                    "yi":["year", "cnae_id"],
+                    "yio":["year", "cnae_id", "cbo_id"],
+                    "yo":["year", "cbo_id"]}
+    # rais_df = rais_df.rename(columns = {"age": "age_med", "literacy": "edu_mode"})
 
     # rais_df['wage_m'] = rais_df['wage'] * rais_df['gender']
     # rais_df['wage_f'] = rais_df['wage'] * ((rais_df['gender']+1)%2)
-
-    rais_df = rais_df.drop(["color", "est_size"], axis=1)
-    pk = ["year", "bra_id", "cnae_id", "cbo_id"]
-    ybio = rais_df.groupby(pk).agg(agg_rules)
-    # print ybio.index.is_unique
-    '''
-        BRA AGGREGATIONS
-    '''
-    ybio_state = ybio.reset_index()
-    ybio_state["bra_id"] = ybio_state["bra_id"].str.slice(0, 2)
-    ybio_state = ybio_state.groupby(pk).agg(agg_rules)
+    import time
+    s = time.time()
     
-    ybio_meso = ybio.reset_index()
-    ybio_meso["bra_id"] = ybio_meso["bra_id"].str.slice(0, 4)
-    ybio_meso = ybio_meso.groupby(pk).agg(agg_rules)
+    agg_rules = {
+        "wage": np.sum,  
+        "num_jobs": np.sum,
+        "num_emp" : pd.Series.nunique,
+        "est_id" : lambda x: set.union(set(x)),
+        # "num_emp" : lambda x: set.union(set(x)),
+        "age": np.sum
+    }
     
-    ybio_micro = ybio.reset_index()
-    ybio_micro["bra_id"] = ybio_micro["bra_id"].str.slice(0, 6)
-    ybio_micro = ybio_micro.groupby(pk).agg(agg_rules)
+    rais_df['num_jobs'] = 1
+    ybio_raw = rais_df.groupby(pk).agg(agg_rules)
     
-    ybio_pr = ybio.reset_index()
-    ybio_pr = ybio_pr[ybio_pr["bra_id"].map(lambda x: x[:2] == "mg")]
-    ybio_pr["bra_id"] = ybio_pr["bra_id"].astype(str).replace(get_planning_regions())
-    ybio_pr = ybio_pr.groupby(pk).agg(agg_rules)
-
-    ybio = pd.concat([ybio, ybio_state, ybio_meso, ybio_micro, ybio_pr])
-    # print ybio.index.is_unique
-    '''
-       CNAE AGGREGATIONS
-    '''
-    ybio_cnae1 = ybio.reset_index()
-    ybio_cnae1["cnae_id"] = ybio_cnae1["cnae_id"].str.get(0)
-    ybio_cnae1 = ybio_cnae1.groupby(pk).agg(agg_rules)
-
-    ybio = pd.concat([ybio, ybio_cnae1])
-    # print ybio.index.is_unique
-    '''
-       CBO AGGREGATIONS
-    '''
-    ybio_cbo1 = ybio.reset_index()
-    ybio_cbo1["cbo_id"] = ybio_cbo1["cbo_id"].str.get(0)
-    ybio_cbo1 = ybio_cbo1.groupby(pk).agg(agg_rules)
+    agg_rules["est_id"] = lambda x: set.union(*list(x))
+    agg_rules["num_emp"] = np.sum
+    # agg_rules["num_emp"] = lambda x: set.union(*list(x))
+    
+    for t_name in tables.keys():
+        ss = time.time()
+        print t_name
+        tbl_pk = tables[t_name]
         
-    ybio = pd.concat([ybio, ybio_cbo1])
+        if len(pk) != len(tbl_pk):
+            tables[t_name] = ybio_raw.groupby(level=tbl_pk).agg(agg_rules)
+        else:
+            tables[t_name] = ybio_raw.copy()
+
+        if "d_id" in tbl_pk:
+            print "demographics"
+            ybio_new_depths = pd.DataFrame()
+            for depth in range(4):
+                print "  ", depth
+                ybio_depth = tables[t_name].reset_index()
+                ybio_depth["d_id"] = ybio_depth["d_id"].str.slice(depth, depth+1)
+                ybio_depth = ybio_depth.groupby(tbl_pk).agg(agg_rules)
+                ybio_new_depths = pd.concat([ybio_new_depths, ybio_depth])
+            tables[t_name] = ybio_new_depths
+
+        if "cbo_id" in tbl_pk:
+            print "cbo"
+            ybio_new_depths = pd.DataFrame()
+            for depth in cbo_depths[:-1]:
+                print "  ", depth
+                ybio_depth = tables[t_name].reset_index()
+                ybio_depth["cbo_id"] = ybio_depth["cbo_id"].str.slice(0, depth)
+                ybio_depth = ybio_depth.groupby(tbl_pk).agg(agg_rules)
+                ybio_new_depths = pd.concat([ybio_new_depths, ybio_depth])
+            tables[t_name] = pd.concat([ybio_new_depths, tables[t_name]])
     
-    ybio = ybio.sortlevel()
+        if "cnae_id" in tbl_pk:
+            print "cnae"
+            ybio_new_depths = pd.DataFrame()
+            for depth in cnae_depths[:-1]:
+                print "  ", depth
+                ybio_depth = tables[t_name].reset_index()
+                ybio_depth["cnae_id"] = ybio_depth["cnae_id"].str.slice(0, depth)
+                ybio_depth = ybio_depth.groupby(tbl_pk).agg(agg_rules)
+                ybio_new_depths = pd.concat([ybio_new_depths, ybio_depth])
+            tables[t_name] = pd.concat([ybio_new_depths, tables[t_name]])
     
-    # print ybio.xs([2002, "ac000000", "0139399", "7151"])
-    # print ybio.xs([2002, "al020303", "4781400", "47"])
+        if "bra_id" in tbl_pk:
+            print "bra"
+            ybio_new_depths = pd.DataFrame()
+            for depth in bra_depths[:-1]:
+                print "  ", depth
+                ybio_depth = tables[t_name].reset_index()
+                if depth == 8:
+                    ybio_depth = ybio_depth[ybio_depth["bra_id"].map(lambda x: x[:3] == "4mg")]
+                    ybio_depth["bra_id"] = ybio_depth["bra_id"].astype(str).replace(get_planning_regions())
+                else:
+                    ybio_depth["bra_id"] = ybio_depth["bra_id"].str.slice(0, depth)
+                ybio_depth = ybio_depth.groupby(tbl_pk).agg(agg_rules)
+                ybio_new_depths = pd.concat([ybio_new_depths, ybio_depth])
+            tables[t_name] = pd.concat([ybio_new_depths, tables[t_name]])
+        
+        # tables[t_name]["num_emp"] = tables[t_name]["num_emp"].apply(lambda x: len(x))
+        tables[t_name]["est_id"] = tables[t_name]["est_id"].apply(lambda x: len(x))
+        tables[t_name]["wage_avg"] = tables[t_name]["wage"] / tables[t_name]["num_jobs"]
+        tables[t_name]["age"] = tables[t_name]["age"] / tables[t_name]["num_jobs"]
+        tables[t_name] = tables[t_name].rename(columns={"age":"age_avg","est_id":"num_est"})
+        
+        print "Is unique:",tables[t_name].index.is_unique
+        
+        # tables[t_name].to_csv(t_name+".csv")
+        print (time.time() - ss) / 60
     
-    return ybio
+    print (time.time() - s) / 60
     
+    return tables
 
