@@ -41,20 +41,20 @@ def ybio_to_panel(ybio, geo_depths):
     
     return panel
 
-def importance(ybio, ybi, yio, yo, year, geo_depths):
+def importance(ybio, ybi, yio, yo, year, depths):
     year = int(year)
     yo = yo.reset_index(level="year")
     all_cbo = [cbo for cbo in list(yo.index) if len(cbo) == 4]
     
     '''get ybi RCAs'''
-    rcas = get_ybi_rcas(ybi, geo_depths[-1])
+    rcas = get_ybi_rcas(ybi, depths["bra"][-1])
     
     denoms = rcas.sum()
     
     # z       = occupations
     # rows    = bras
     # colums  = cnaes
-    ybio = ybio_to_panel(ybio, geo_depths)
+    ybio = ybio_to_panel(ybio, depths["bra"])
     
     yio_importance = []
     for cbo in all_cbo:
