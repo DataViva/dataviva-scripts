@@ -12,7 +12,7 @@ depths = {
 
 def get_planning_regions():
     ''' Connect to DB '''
-    db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA2_DB_USER"], 
+    db = MySQLdb.connect(host=os.environ["DATAVIVA2_DB_HOST"], user=os.environ["DATAVIVA2_DB_USER"], 
                             passwd=os.environ["DATAVIVA2_DB_PW"], 
                             db=os.environ["DATAVIVA2_DB_NAME"])
     db.autocommit(1)
@@ -35,6 +35,8 @@ def main(output_path, start_from):
         sys.exit('Need rais_df_raw.h5!')
     d.close()
     
+    rais_df = rais_df.drop(["wage", "age", "color", "gender", "literacy"], axis=1)
+    
     cnaes = set(rais_df.cnae_id.unique())
     cnaes = cnaes.union({c[:3] for c in cnaes})
     cnaes = cnaes.union({c[:1] for c in cnaes})
@@ -44,10 +46,27 @@ def main(output_path, start_from):
     if start_from:
         cnaes = cnaes[cnaes.index(start_from):]
     
+    last_seen = {d:{"id":None, "data":None} for d in depths["cnae"][:-1]}
     for i, cnae in enumerate(cnaes):
         s = time.time()
         
-        cnae_df = rais_df.copy()
+        # cnae_df = rais_df.copy()
+        # if len(cnae) < 6:
+        #     cnae_df["cnae_id"] = cnae_df["cnae_id"].str.slice(0, len(cnae))
+        # cnae_df = cnae_df[cnae_df["cnae_id"]==cnae]
+        
+        prev_id_len = depths["cnae"].index(len(cnae))-1
+        prev_id_len = depths["cnae"][prev_id_len]
+        if prev_id_len in last_seen and cnae[:prev_id_len] == last_seen[prev_id_len]["id"]:
+            cnae_df = last_seen[prev_id_len]["data"][last_seen[prev_id_len]["data"].cnae_id.str.startswith(cnae)]
+        else:
+            cnae_df = rais_df[rais_df.cnae_id.str.startswith(cnae)]
+        
+        if len(cnae) in last_seen:
+            last_seen[len(cnae)]["id"] = cnae
+            last_seen[len(cnae)]["data"] = cnae_df.copy()
+        
+        cnae_df = cnae_df[cnae_df.cnae_id.str.startswith(cnae)]
         if len(cnae) < 6:
             cnae_df["cnae_id"] = cnae_df["cnae_id"].str.slice(0, len(cnae))
         cnae_df = cnae_df[cnae_df["cnae_id"]==cnae]
@@ -55,22 +74,12 @@ def main(output_path, start_from):
         cbo_depths = depths["cbo"]
         cnae_depths = depths["cnae"]
         geo_depths = depths["bra"]
-    
-        cnae_df = cnae_df.drop(["wage", "age", "color", "gender", "literacy"], axis=1)
-    
-        # cnae_df['mne_micro'] = cnae_df.apply(lambda x: x["num_emp"] if x["est_size"]==0 else None, axis=1)
-        # cnae_df['mne_small'] = cnae_df.apply(lambda x: x["num_emp"] if x["est_size"]==1 else None, axis=1)
-        # cnae_df['mne_medium'] = cnae_df.apply(lambda x: x["num_emp"] if x["est_size"]==2 else None, axis=1)
-        # cnae_df['mne_large'] = cnae_df.apply(lambda x: x["num_emp"] if x["est_size"]==3 else None, axis=1)
-    
-        cnae_df['est_id_size'] = cnae_df.apply(lambda x: "{0}_{1}".format(x["est_id"], x["est_size"]), axis=1)
-
+        
+        cnae_df['est_id_size'] = cnae_df['est_id'].str.cat(cnae_df['est_size'].values.astype(str), sep='_')
         cnae_df = cnae_df.drop(["est_id", "est_size"], axis=1)
     
         pk = ["year", "bra_id", "cnae_id", "cbo_id", "est_id_size"]
         cnae_df = cnae_df.groupby(pk).agg({"num_emp" : lambda x: set.union(set(x))})
-    
-        # print cnae_df.head()
     
         # print "cbo"
         ybio_new_depths = pd.DataFrame()
@@ -81,18 +90,6 @@ def main(output_path, start_from):
             ybio_depth = ybio_depth.groupby(pk).agg({"num_emp" : lambda x: set.union(*list(x))})
             ybio_new_depths = pd.concat([ybio_new_depths, ybio_depth])
         cnae_df = pd.concat([ybio_new_depths, cnae_df])
-    
-        # # print "cnae"
-        # ybio_new_depths = pd.DataFrame()
-        # for depth in cnae_depths[:-1]:
-        #     if cnae[:depth] in cnae_seen: continue
-        #     # print "  ", depth
-        #     ybio_depth = cnae_df.reset_index()
-        #     ybio_depth["cnae_id"] = ybio_depth["cnae_id"].str.slice(0, depth)
-        #     ybio_depth = ybio_depth.groupby(pk).agg({"num_emp" : lambda x: set.union(*list(x))})
-        #     ybio_new_depths = pd.concat([ybio_new_depths, ybio_depth])
-        #     cnae_seen.append(cnae[:depth])
-        # cnae_df = pd.concat([ybio_new_depths, cnae_df])
     
         # print "bra"
         ybio_new_depths = pd.DataFrame()
@@ -109,31 +106,24 @@ def main(output_path, start_from):
         cnae_df = pd.concat([ybio_new_depths, cnae_df])
     
         cnae_df = cnae_df.reset_index()
-        cnae_df["est_id_size"] = cnae_df["est_id_size"].apply(lambda x: x.split("_")[1])
+        cnae_df["est_id_size"] = cnae_df["est_id_size"].str.split("_").str[1]
         cnae_df["num_emp"] = cnae_df["num_emp"].apply(len)
     
         cnae_df_ybio = cnae_df.groupby(pk).agg({"num_emp" : pd.Series.median})["num_emp"].unstack(level=-1)
         cnae_df_ybio = cnae_df_ybio.rename(columns={'0':'mne_micro', '1':'mne_small', '2':'mne_medium', '3':'mne_large'})
         
-        pk = [p for p in pk if p != "bra_id"]
-        cnae_df_yio = cnae_df.groupby(pk).agg({"num_emp" : pd.Series.median})["num_emp"].unstack(level=-1)
-        cnae_df_yio = cnae_df_yio.rename(columns={'0':'mne_micro', '1':'mne_small', '2':'mne_medium', '3':'mne_large'})
-        
         print cnae, (time.time() - s) / 60
         
         fname_ybio = os.path.join(output_path, 'mne_ybio.csv')
-        fname_yio = os.path.join(output_path, 'mne_yio.csv')
         if i == 0 and not start_from:
             cnae_df_ybio.to_csv(fname_ybio)
-            cnae_df_yio.to_csv(fname_yio)
         else:
             cnae_df_ybio.to_csv(open(fname_ybio, 'a'), header=False)
-            cnae_df_yio.to_csv(open(fname_yio, 'a'), header=False)
     
     print "Done! Merging..."
     
     index_lookup = {"y":"year", "b":"bra_id", "i":"cnae_id", "o":"cbo_id"}
-    for tbl in ["ybio", "yio"]:
+    for tbl in ["ybio"]:
         print tbl
         index_col = [index_lookup[i] for i in tbl]
         full_tbl = pd.read_csv(os.path.join(output_path, "{0}.tsv.bz2".format(tbl)), sep="\t", compression="bz2", converters={"cbo":str, "cnae_id":str, "bra_id":str}, index_col=index_col)
