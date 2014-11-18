@@ -41,7 +41,23 @@ school_lookup = {str(r[0]):str(r[0]) for r in cursor.fetchall()}
 cursor.execute("select id from attrs_course_sc;")
 course_lookup = {str(r[0]):str(r[0]) for r in cursor.fetchall()}
 
-BASIC_EDU_CODE = 'xxxxx'
+BASIC_EDU_CODE = 'xx'
+
+
+proper_age_map = {
+    "xx002": 6 + 2,
+    "xx003": 7 + 2,
+    "xx004" : 8 + 2,
+    "xx005" : 9 + 2,
+    "xx006" : 10 + 2,
+    "xx007" : 11 + 2,
+    "xx008" : 12 + 2,
+    "xx009" : 13 + 2,
+    "xx010" : 14 + 2,
+    "xx011" : 15 + 2,
+    "xx012" : 16 + 2,
+    "xx013" : 17 + 2,
+}
 
 def map_gender(x):
     MALE, FEMALE = 0, 1
@@ -120,9 +136,16 @@ def to_df(input_file_path, index=False, debug=False):
 
     # df[df.course_id == BASIC_EDU_CODE] = BASIC_EDU_CODE[:-2] + str(df.edu_level_new).zfill(2)
     print "Calculating Course IDs for basic education..."
-    df.edu_level_new = df.edu_level_new.astype(str)
-    df["course_id"] = df.apply(lambda x: "xx" + x["edu_level_new"].zfill(3) if x["course_id"] == BASIC_EDU_CODE else x["course_id"], axis=1)
-        
+    # df.edu_level_new = df.edu_level_new.astype(str)
+    # df["course_id"] = df.apply(lambda x: "xx" + x["edu_level_new"].zfill(3) if x["course_id"] == BASIC_EDU_CODE else x["course_id"], axis=1)
+    df.loc[df['course_id'] == BASIC_EDU_CODE, 'course_id'] = df['course_id'] + df.edu_level_new.astype(str).str.pad(3)
+    df['course_id'] = df['course_id'].str.replace(' ', '0')
+
+    print "Calculating proper age..."
+
+    df["distorted_age"] = df.course_id.map(proper_age_map)
+    df.loc[df['distorted_age'].notnull() , 'distorted_age'] = (df.age >= df.distorted_age).astype(int) 
+    
     return df
     
     # print df.head()

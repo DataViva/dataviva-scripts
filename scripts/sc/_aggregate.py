@@ -7,6 +7,7 @@ agg_rules = {
     "age" : np.mean,
     "enroll_id": pd.Series.count,
     "class_id": pd.Series.nunique,
+    "distorted_age" : np.sum,
 }
 
 commute_rules = {
@@ -29,36 +30,6 @@ def get_planning_regions():
 
 planning_regions = get_planning_regions()
 
-# def query_distance(src, target, distances):
-#     if src == target:
-#         return 0
-
-#     if not src or not target:
-#         return None
-
-#     src = src[1:]
-#     target = target[1:]
-#     if src in distances and target in distances[src]:
-#         return distances[src][target]
-#     elif target in distances and src in distances[target]:
-#         return distances[target][src]
-#     cursor = db.cursor()
-#     q="SELECT distance FROM attrs_bb WHERE bra_id_origin = '%s' AND bra_id_dest ='%s' " % (src,target)
-#     cursor.execute(q)
-#     res = cursor.fetchall()
-#     if res and res[0]:
-#         val = res[0][0]
-#         if not src in distances: distances[src] = {}
-#         distances[src][target] = val
-#         return val
-   
-#     print "MISSING", src, target
-#     # return None
-#     raise Exception("problem calculating distance `%s`,`%s`." % (src, target) )
-
-# def compute_distances(tbl):
-#     tbl["commute_distance"] = tbl.apply(lambda x: query_distance(x.bra_id_lives, x.bra_id, distances), axis=1)    
-#     return tbl
 
 def aggregate(this_pk, tbl, dem, cid_len=None):
 
@@ -75,7 +46,6 @@ def aggregate(this_pk, tbl, dem, cid_len=None):
     if cid_len:
         tbl['course_id'] = tbl["course_id"].str.slice(0, cid_len)
 
-    # tbl = compute_distances(tbl)
     print "Step A."
     tbl_all = tbl.groupby(this_pk).agg(agg_rules)
     # print tbl_all[tbl_all.commute_distance > 0].head()
@@ -109,6 +79,10 @@ def aggregate(this_pk, tbl, dem, cid_len=None):
 
     master_table = pd.concat([tbl_all, tbl_state, tbl_meso, tbl_micro, tbl_pr, tbl_region])
 
-  
+    if "course_id" in this_pk or cid_len:
+        print "Step G. (course_id step) compute distortion rate"
+        master_table['distortion_rate'] = master_table["distorted_age"] / master_table["enroll_id"]
+    
+    master_table.drop('distorted_age', axis=1, inplace=True)
     return master_table
 
