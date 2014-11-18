@@ -64,8 +64,7 @@ def main(file_path, year, output_path):
     step+=1; print '''STEP {0}: Import file to pandas dataframe'''.format(step)
     df = to_df(file_path, year)
     
-    # tables_list = ["ybuc", "ybucd"]
-    tables_list = ["ybd", "yd", "ybc", "yc", "ybu"]
+    tables_list = ["yb", "ybd", "yd", "ybc", "yc", "ybu"]
     pk_lookup = {"y": "year", "d": "d_id", "b": "bra_id", "c": "course_id", "u": "university_id"}
 
     ybuc = None

@@ -119,12 +119,10 @@ def to_df(input_file_path, index=False, debug=False):
         print; print "{0} rows deleted.".format(num_rows - df.shape[0]); print;
 
     # df[df.course_id == BASIC_EDU_CODE] = BASIC_EDU_CODE[:-2] + str(df.edu_level_new).zfill(2)
-
-    # df.edu_level_new = df.edu_level_new.astype(str)
-    # df.course_id[df.course_id == BASIC_EDU_CODE] = df.course_id.str.slice(0, 3) + df.edu_level_new.str.pad(2)
-    # df.course_id = df.course_id.str.replace(replacerules)
-    # print df[df.course_id.str.contains(BASIC_EDU_CODE[:-2])].head()
-
+    print "Calculating Course IDs for basic education..."
+    df.edu_level_new = df.edu_level_new.astype(str)
+    df["course_id"] = df.apply(lambda x: "xx" + x["edu_level_new"].zfill(3) if x["course_id"] == BASIC_EDU_CODE else x["course_id"], axis=1)
+        
     return df
     
     # print df.head()
