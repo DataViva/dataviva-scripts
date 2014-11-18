@@ -55,7 +55,7 @@ def aggregate(rais_df, depths, demographics):
     cbo_depths = depths["cbo"]
     demo_depths = depths["demo"]
     
-    rais_df = rais_df.drop(["color", "gender", "literacy", "est_size"], axis=1)
+    rais_df = rais_df.drop(["est_size"], axis=1)
     if demographics:
         pk = ["year", "bra_id", "cnae_id", "cbo_id", "d_id"]
         tables = {"ybd":["year", "bra_id", "d_id"],
