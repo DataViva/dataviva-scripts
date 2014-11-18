@@ -1,4 +1,4 @@
-import sys, os, MySQLdb
+import sys, os, MySQLdb, time
 import pandas as pd
 import numpy as np
 from collections import defaultdict
@@ -44,39 +44,6 @@ missing = {
     "cbo_id": defaultdict(int)
 }
 
-def map_gender(x):
-    MALE, FEMALE = 0, 1
-    gender_dict = {MALE: 'A', FEMALE: 'B'}
-    if x in gender_dict:
-        return str(gender_dict[x])
-    return 'z'
-
-def map_color(color):
-    INDIAN, WHITE, BLACK, ASIAN, MULTI, UNKNOWN = 1,2,4,6,8,9
-    color_dict = {INDIAN:'C', WHITE:'D', BLACK:'E', ASIAN:'F', MULTI:'G', 9:'H', -1:'H' }
-    return str(color_dict[int(color)])
-
-def map_age(age):
-    age_bucket = int(np.floor( int(age) / 10 ))
-    if age_bucket == 0: 
-        age_bucket = 1
-    elif age_bucket > 6:
-        age_bucket = 6
-    return str(age_bucket)
-
-def map_literacy(lit):
-    ILLITERATE, BASIC, HIGHSCHOOL, COLLEGE, UNKNOWN = 1, 2, 3, 4, 9
-    lit_dict = {1:'I', 2:'I', 3:'J', 4:'J', 5:'J', 6:'J', 7:'K', 
-                8:'K', 9:'L', -1:'M' }
-    return str(lit_dict[int(lit)])
-
-def floatvert(x):
-    x = x.replace(',', '.')
-    try:
-        return float(x)
-    except:
-        return np.nan
-
 def bra_replace(raw):
     try:
         return bra_lookup[str(raw).strip()]
@@ -105,24 +72,9 @@ def convertint(x):
         return -999
     return int(x)
 
-def est_size(row):
-    cnae, est_size = row["cnae_id"], row["est_size"]
-    try:
-        if int(cnae[1:3]) > 4 and int(cnae[1:3]) < 34:
-            if est_size >= 1 and est_size <= 3: return 0
-            if est_size >= 4 and est_size <= 5: return 1
-            if est_size >= 6 and est_size <= 7: return 2
-            if est_size >= 8 and est_size <= 9: return 3
-        else:
-            if est_size >= 1 and est_size <= 2: return 0
-            if est_size >= 3 and est_size <= 4: return 1
-            if est_size ==5: return 2
-            if est_size >= 6 and est_size <= 9: return 3
-    except:
-        return 0
-
 def to_df(input_file_path, index=False):
     input_file = get_file(input_file_path)
+    s = time.time()
     
     if index:
         index_lookup = {"y":"year", "b":"bra_id", "i":"cnae_id", "o":"cbo_id", "d": "d_id"}
@@ -134,16 +86,9 @@ def to_df(input_file_path, index=False):
         cols = ["cbo_id", "cnae_id", "literacy", "age", "est_id", "simple", "bra_id", "num_emp", "color", "wage_dec", "wage", "gender", "est_size", "year"]
         delim = ";"
         coerce_cols = {"bra_id": bra_replace, "cnae_id":cnae_replace, "cbo_id":cbo_replace, \
-                        "wage":floatvert, "emp_id":str, "est_id": str, "age": convertint}
-        rais_df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
+                        "emp_id":str, "est_id": str, "age": convertint}
+        rais_df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols, engine='c', decimal=',')
         rais_df = rais_df[["year", "bra_id", "cnae_id", "cbo_id", "wage", "num_emp", "est_id", "age", "color", "gender", "est_size", "literacy"]]
-        
-        rais_df['est_size'] = rais_df.apply(est_size, axis=1)
-        
-        # rais_df['mne_micro'] = rais_df.apply(lambda x: x["num_emp"] if x["est_size"]==0 else None, axis=1)
-        # rais_df['mne_small'] = rais_df.apply(lambda x: x["num_emp"] if x["est_size"]==1 else None, axis=1)
-        # rais_df['mne_medium'] = rais_df.apply(lambda x: x["num_emp"] if x["est_size"]==2 else None, axis=1)
-        # rais_df['mne_large'] = rais_df.apply(lambda x: x["num_emp"] if x["est_size"]==3 else None, axis=1)
 
         print "first remove rows with empty ages, if any..."
         count = rais_df[ rais_df.age == -999 ].age.count()
@@ -152,11 +97,55 @@ def to_df(input_file_path, index=False):
         rais_df = rais_df[ rais_df.age != -999 ]
 
         print "generating demographic codes..."
-        rais_df["d_id"] = rais_df.apply(lambda x:'%s%s%s%s' % (
-                            map_gender(x['gender']), map_age(x['age']), 
-                            map_color(x['color']), map_literacy(x['literacy'])), axis=1)
+        MALE, FEMALE = 0, 1
+        gender_dict = {MALE: 'A', FEMALE: 'B'}
+        rais_df["gender"] = rais_df["gender"].replace(gender_dict)
         
-        #map_gender(rais_df["gender"]) + map_age(rais_df["age"]) + map_color(rais_df["color"]) + map_literacy(rais_df["literacy"]) 
+        INDIAN, WHITE, BLACK, ASIAN, MULTI, UNKNOWN = 1,2,4,6,8,9
+        color_dict = {INDIAN:'C', WHITE:'D', BLACK:'E', ASIAN:'F', MULTI:'G', 9:'H', -1:'H' }
+        rais_df["color"] = rais_df["color"].replace(color_dict)
+        
+        lit_dict = {1:'I', 2:'I', 3:'J', 4:'J', 5:'J', 6:'J', 7:'K', 8:'K', 9:'L', -1:'M'}
+        rais_df["literacy"] = rais_df["literacy"].replace(color_dict)
+        
+        rais_df["age_demo"] = (rais_df["age"] / 10).astype(int)
+        rais_df["age_demo"] = rais_df["age_demo"].clip(1,6)
+        
+        rais_df["d_id"] = rais_df['gender'].str.cat([rais_df['age_demo'].values.astype(str), rais_df['color'].values.astype(str), rais_df['literacy'].values.astype(str)])
+
+        rais_df = rais_df.drop(["gender", "color", "age_demo", "literacy"], axis=1)
+                
+        # rais_df["new_est_size"] = rais_df["cnae_id"].str.slice(1, 3).astype(int)
+        # rais_df["new_est_size"][rais_df["new_est_size"].between(5, 35)] = -1
+        # rais_df["new_est_size"][rais_df["new_est_size"] >= 0] = 0
+        #
+        # print rais_df["new_est_size"].mask(rais_df["new_est_size"] >= 0).head()
+        # print rais_df["new_est_size"].where(rais_df["new_est_size"] >= 0).head()
+        
+        print "determining establishment sizes..."
+        rais_df["new_est_size_1"] = rais_df["cnae_id"].str.slice(1, 3).astype(int)
+        rais_df["new_est_size_1"][rais_df["new_est_size_1"].between(5, 35)] = -1
+        rais_df["new_est_size_1"][rais_df["new_est_size_1"] >= 0] = 0
+        
+        rais_df["new_est_size_2"] = rais_df["new_est_size_1"].mask(rais_df["new_est_size_1"] >= 0).head()
+        rais_df["new_est_size_1"] = rais_df["new_est_size_1"].where(rais_df["new_est_size_1"] >= 0).head()
+
+        rais_df["new_est_size_2"][rais_df["new_est_size_2"]==-1] = 0        
+        rais_df["new_est_size_2"] = rais_df["new_est_size_2"] + rais_df["est_size"]
+        rais_df["new_est_size_1"] = rais_df["new_est_size_1"] + rais_df["est_size"]
+        
+        est_size_1_lookup = {1:0, 2:0, 3:1, 4:1, 5:2, 6:3, 7:3, 8:3, 9:3}
+        est_size_2_lookup = {1:0, 2:0, 3:0, 4:1, 5:1, 6:2, 7:2, 8:3, 9:3}
+        
+        rais_df["new_est_size_1"] = rais_df["new_est_size_1"].replace(est_size_1_lookup)
+        rais_df["new_est_size_2"] = rais_df["new_est_size_2"].replace(est_size_2_lookup)
+        
+        rais_df["est_size"] = rais_df["new_est_size_1"].fillna(0) + rais_df["new_est_size_2"].fillna(0)
+        
+        rais_df = rais_df.drop(["new_est_size_1", "new_est_size_2"], axis=1)
+        
+        print rais_df.head(20)
+        print (time.time() - s) / 60.0
 
         for col, missings in missing.items():
             if not len(missings): continue
