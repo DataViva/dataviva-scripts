@@ -23,7 +23,7 @@ from collections import defaultdict
 '''
 
 ''' Connect to DB '''
-db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA2_DB_USER"], passwd=os.environ["DATAVIVA2_DB_PW"], db=os.environ["DATAVIVA2_DB_NAME"])
+db = MySQLdb.connect(host=os.environ["DATAVIVA2_DB_HOST"], user=os.environ["DATAVIVA2_DB_USER"], passwd=os.environ["DATAVIVA2_DB_PW"], db=os.environ["DATAVIVA2_DB_NAME"])
 cursor = db.cursor()
 
 missing = {
@@ -57,6 +57,11 @@ proper_age_map = {
     "xx011" : 15 + 2,
     "xx012" : 16 + 2,
     "xx013" : 17 + 2,
+    "xx014" : 18 + 2,
+    "xx016" : 15 + 2,
+    "xx017" : 16 + 2,
+    "xx018" : 17 + 2,
+    "xx019" : 18 + 2,
 }
 
 def map_gender(x):
@@ -145,7 +150,7 @@ def to_df(input_file_path, index=False, debug=False):
 
     df["distorted_age"] = df.course_id.map(proper_age_map)
     df.loc[df['distorted_age'].notnull() , 'distorted_age'] = (df.age >= df.distorted_age).astype(int) 
-    
+
     return df
     
     # print df.head()
