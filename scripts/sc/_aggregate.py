@@ -1,4 +1,4 @@
-import sys, bottleneck, MySQLdb, os
+import sys, MySQLdb, os
 import pandas as pd
 import numpy as np
 import re
@@ -82,7 +82,7 @@ def aggregate(this_pk, tbl, dem, cid_len=None):
     if "course_id" in this_pk or cid_len:
         print "Step G. (course_id step) compute distortion rate"
         master_table['distortion_rate'] = master_table["distorted_age"] / master_table["enroll_id"]
-    
+
     master_table.drop('distorted_age', axis=1, inplace=True)
     return master_table
 
