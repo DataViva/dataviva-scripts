@@ -25,7 +25,7 @@ click
 rarfile
 
 # Helpful HTTP library
-requests
+# requests
 
-# speed up median calculations
-bottleneck
+# for storing dataframes
+tables

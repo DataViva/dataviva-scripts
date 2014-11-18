@@ -27,13 +27,13 @@ import numpy as np
 
 from _to_df import to_df
 from _aggregate import aggregate, aggregate_demographics
-from _shard import shard
 from _required import required
 from _importance import importance
 from _calc_diversity import calc_diversity
 from _rdo import rdo
 from _growth import calc_growth
 from _column_lengths import add_column_length
+# from _mne import mne
 
 @click.command()
 @click.argument('file_path', type=click.Path(exists=True))
@@ -41,49 +41,51 @@ from _column_lengths import add_column_length
 @click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
 @click.option('prev_path', '--prev', '-g', help='Path to files from the previous year for calculating growth.', type=click.Path(exists=True), required=False)
 @click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.', type=click.Path(exists=True), required=False)
-def main(file_path, year, output_path, prev_path, prev5_path):
+@click.option('--demographics/--no-demographics', '-d', default=False)
+def main(file_path, year, output_path, prev_path, prev5_path, demographics):
     start = time.time()
     step = 0
-    geo_depths = [2, 4, 6, 7, 8] # state, meso, micro, planning region, munic
+    # regions state, meso, micro, planning region, munic
+    depths = {
+        "bra": [1, 3, 5, 7, 8, 9],
+        "cnae": [1, 3, 6],
+        "cbo": [1, 4],
+        "demo": [1, 4]
+    }
     
-    d = {} #pd.HDFStore(os.path.abspath(os.path.join(output_path,'rais.h5')))
-    if "ybio" in d:
-        tables = {}
-        tables["yb"] = d["yb"]; tables["yi"] = d["yi"]; tables["yo"] = d["yo"]; tables["ybi"] = d["ybi"]; tables["ybo"] = d["ybo"]; tables["yio"] = d["yio"]; tables["ybio"] = d["ybio"]
+    if not os.path.exists(output_path): os.makedirs(output_path)
+    d = pd.HDFStore(os.path.join(output_path, 'rais_df_raw.h5'))
+    if "rais_df" in d:
+        rais_df = d['rais_df']
     else:
         step+=1; print; print '''STEP {0}: \nImport file to pandas dataframe'''.format(step)
         rais_df = to_df(file_path, False)
-        # step+=1; print; print '''STEP {0}: \nAggregate with Demographics'''.format(step)
-        # dtables = aggregate_demographics(rais_df)
-        # print "DONE!"
-        # sys.exit(1)
-
-        step+=1; print; print '''STEP {0}: \nAggregate without Demographics'''.format(step)
-        ybio = aggregate(rais_df, geo_depths)
-        step+=1; print; print '''STEP {0}: \nShard'''.format(step)
-        tables = shard(ybio, rais_df, geo_depths)
-        # for k,v in dtables.items():
-            # tables[k] = v
-        # sys.exit()
-        
-        # for t_name, t in tables.items():
-        #     d[t_name] = t
+        d['rais_df'] = rais_df
+    d.close()
     
-    step+=1; print; print 'STEP {0}: \nImportance'.format(step)
-    tables["yio"] = importance(tables["ybio"], tables["ybi"], tables["yio"], tables["yo"], year)
+    step+=1; print; print '''STEP {0}: \nAggregate without Demographics'''.format(step)
+    tables = aggregate(rais_df, depths, demographics)
+    
+    # step+=1; print; print '''STEP {0}: \nMedian Number of Employees'''.format(step)
+    # tables["ybio"] = mne(rais_df, tables["ybio"], depths)
 
-    step+=1; print; print 'STEP {0}: \nDiversity'.format(step)
-    tables["yb"] = calc_diversity(tables["ybi"], tables["yb"], "bra_id", "cnae_id", year)
-    tables["yb"] = calc_diversity(tables["ybo"], tables["yb"], "bra_id", "cbo_id", year)
-    tables["yi"] = calc_diversity(tables["ybi"], tables["yi"], "cnae_id", "bra_id", year)
-    tables["yi"] = calc_diversity(tables["yio"], tables["yi"], "cnae_id", "cbo_id", year)
-    tables["yo"] = calc_diversity(tables["ybo"], tables["yo"], "cbo_id", "bra_id", year)
-    tables["yo"] = calc_diversity(tables["yio"], tables["yo"], "cbo_id", "cnae_id", year)
+    # step+=1; print; print '''STEP {0}: \nShard'''.format(step)
+    # tables = shard(ybio, rais_df, geo_depths)
+    
+    if not demographics:
+        step+=1; print; print 'STEP {0}: \nImportance'.format(step)
+        tables["yio"] = importance(tables["ybio"], tables["ybi"], tables["yio"], tables["yo"], year, depths)
 
+        step+=1; print; print 'STEP {0}: \nDiversity'.format(step)
+        tables["yb"] = calc_diversity(tables["ybi"], tables["yb"], "bra_id", "cnae_id", year, depths)
+        tables["yb"] = calc_diversity(tables["ybo"], tables["yb"], "bra_id", "cbo_id", year, depths)
+        tables["yi"] = calc_diversity(tables["ybi"], tables["yi"], "cnae_id", "bra_id", year, depths)
+        tables["yi"] = calc_diversity(tables["yio"], tables["yi"], "cnae_id", "cbo_id", year, depths)
+        tables["yo"] = calc_diversity(tables["ybo"], tables["yo"], "cbo_id", "bra_id", year, depths)
+        tables["yo"] = calc_diversity(tables["yio"], tables["yo"], "cbo_id", "cnae_id", year, depths)
 
-
-    step+=1; print; print 'STEP {0}: \nCalculate RCA, diversity and opportunity gain aka RDO'.format(step)
-    tables["ybi"] = rdo(tables["ybi"], tables["yi"], year, geo_depths)
+        step+=1; print; print 'STEP {0}: \nCalculate RCA, diversity and opportunity gain aka RDO'.format(step)
+        tables["ybi"] = rdo(tables["ybi"], tables["yi"], year, depths)
 
     for table_name, table_data in tables.items():
         table_data = add_column_length(table_name, table_data)
@@ -114,11 +116,8 @@ def main(file_path, year, output_path, prev_path, prev5_path):
                 
                 tables[t_name] = calc_growth(tables[t_name], t_prev, 5)
     
-    
     print; print '''FINAL STEP: \nSave files to output path'''
     for t_name, t in tables.items():
-        if not os.path.exists(output_path):
-            os.makedirs(output_path)
         new_file_path = os.path.abspath(os.path.join(output_path, "{0}.tsv.bz2".format(t_name)))
         t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.2f")
     

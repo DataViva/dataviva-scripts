@@ -2,12 +2,12 @@ import sys
 import pandas as pd
 import numpy as np
 
-def get_deepest(column):
-    if column == "cnae_id": return 6
-    if column == "bra_id": return 8
-    if column == "cbo_id": return 4
-
-def calc_diversity(diversity_tbl, return_tbl, index_col, diversity_col, year):
+def calc_diversity(diversity_tbl, return_tbl, index_col, diversity_col, year, depths):
+    
+    def get_deepest(column):
+        if column == "cnae_id": return depths["cnae"][-1]
+        if column == "bra_id": return depths["bra"][-1]
+        if column == "cbo_id": return depths["cbo"][-1]
     
     # filter table by deepest length
     diversity_tbl = diversity_tbl.reset_index()

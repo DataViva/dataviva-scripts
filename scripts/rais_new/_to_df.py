@@ -22,13 +22,13 @@ from helpers import get_file
 '''
 
 ''' Connect to DB '''
-db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA2_DB_USER"], 
+db = MySQLdb.connect(host=os.environ["DATAVIVA2_DB_HOST"], user=os.environ["DATAVIVA2_DB_USER"], 
                         passwd=os.environ["DATAVIVA2_DB_PW"], 
                         db=os.environ["DATAVIVA2_DB_NAME"])
 db.autocommit(1)
 cursor = db.cursor()
 
-cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 8;")
+cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 9;")
 bra_lookup = {str(r[0])[:-1]:r[1] for r in cursor.fetchall()}
 
 cursor.execute("select substr(id, 2), id from attrs_cnae where length(id) = 6;")
@@ -105,13 +105,29 @@ def convertint(x):
         return -999
     return int(x)
 
-def to_df(input_file_path, index=False, debug=False, calc_d_id=False):
+def est_size(row):
+    cnae, est_size = row["cnae_id"], row["est_size"]
+    try:
+        if int(cnae[1:3]) > 4 and int(cnae[1:3]) < 34:
+            if est_size >= 1 and est_size <= 3: return 0
+            if est_size >= 4 and est_size <= 5: return 1
+            if est_size >= 6 and est_size <= 7: return 2
+            if est_size >= 8 and est_size <= 9: return 3
+        else:
+            if est_size >= 1 and est_size <= 2: return 0
+            if est_size >= 3 and est_size <= 4: return 1
+            if est_size ==5: return 2
+            if est_size >= 6 and est_size <= 9: return 3
+    except:
+        return 0
+
+def to_df(input_file_path, index=False):
     input_file = get_file(input_file_path)
     
     if index:
         index_lookup = {"y":"year", "b":"bra_id", "i":"cnae_id", "o":"cbo_id", "d": "d_id"}
         index_cols = [index_lookup[i] for i in index]
-        rais_df = pd.read_csv(input_file, sep="\t", converters={"cbo_id":str, "cnae_id":str})
+        rais_df = pd.read_csv(input_file, sep="\t", converters={"bra_id":str, "cbo_id":str, "cnae_id":str})
         rais_df = rais_df.set_index(index_cols)
     else:
         orig_cols = ['BrazilianOcupation_ID', 'EconomicAtivity_ID_CNAE', 'Literacy', 'Age', 'Establishment_ID', 'Simple', 'Municipality_ID', 'Employee_ID', 'Color', 'WageReceived', 'AverageMonthlyWage', 'Gender', 'Establishment_Size', 'Year', 'Establishment_ID_len']
@@ -121,6 +137,13 @@ def to_df(input_file_path, index=False, debug=False, calc_d_id=False):
                         "wage":floatvert, "emp_id":str, "est_id": str, "age": convertint}
         rais_df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
         rais_df = rais_df[["year", "bra_id", "cnae_id", "cbo_id", "wage", "num_emp", "est_id", "age", "color", "gender", "est_size", "literacy"]]
+        
+        rais_df['est_size'] = rais_df.apply(est_size, axis=1)
+        
+        # rais_df['mne_micro'] = rais_df.apply(lambda x: x["num_emp"] if x["est_size"]==0 else None, axis=1)
+        # rais_df['mne_small'] = rais_df.apply(lambda x: x["num_emp"] if x["est_size"]==1 else None, axis=1)
+        # rais_df['mne_medium'] = rais_df.apply(lambda x: x["num_emp"] if x["est_size"]==2 else None, axis=1)
+        # rais_df['mne_large'] = rais_df.apply(lambda x: x["num_emp"] if x["est_size"]==3 else None, axis=1)
 
         print "first remove rows with empty ages, if any..."
         count = rais_df[ rais_df.age == -999 ].age.count()
@@ -128,13 +151,11 @@ def to_df(input_file_path, index=False, debug=False, calc_d_id=False):
             print "** REMOVED", count, "rows due to empty ages"
         rais_df = rais_df[ rais_df.age != -999 ]
 
-        if calc_d_id:
-
-            print "generating demographic codes..."
-            rais_df["d_id"] = rais_df.apply(lambda x:'%s%s%s%s' % (
-                                map_gender(x['gender']), map_age(x['age']), 
-                                map_color(x['color']), map_literacy(x['literacy'])), axis=1)
-
+        print "generating demographic codes..."
+        rais_df["d_id"] = rais_df.apply(lambda x:'%s%s%s%s' % (
+                            map_gender(x['gender']), map_age(x['age']), 
+                            map_color(x['color']), map_literacy(x['literacy'])), axis=1)
+        
         #map_gender(rais_df["gender"]) + map_age(rais_df["age"]) + map_color(rais_df["color"]) + map_literacy(rais_df["literacy"]) 
 
         for col, missings in missing.items():
@@ -146,7 +167,5 @@ def to_df(input_file_path, index=False, debug=False, calc_d_id=False):
             # rais_df = rais_df[drop_criterion]
             rais_df = rais_df.dropna(subset=[col])
             print; print "{0} rows deleted.".format(num_rows - rais_df.shape[0]); print;
-
-    rais_df = rais_df.rename(columns = {"est_id":"num_est"})
 
     return rais_df
