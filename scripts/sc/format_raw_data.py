@@ -64,9 +64,9 @@ def main(file_path, year, output_path):
     from _aggregate import agg_rules
 
 
-    pk_lookup = {"y": "year", "d": "d_id", "b": "bra_id", "c": "course_id", "s": "school_id"}
+    pk_lookup = {"y": "year", "d": "d_id", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
     
-    tables_list = ["yc", "ybc"] #["yb", "ybd", "yd", "ybc", "yc", "ybs"]
+    tables_list = ["yb", "ybd", "yd", "ybs", "yc", "ybc"]
 
     for table_name in tables_list:
         iterations = ['']
@@ -79,7 +79,7 @@ def main(file_path, year, output_path):
             print '''\nSTEP 2: Aggregate {0}'''.format(dem)
             tbl = aggregate(pk, df, dem)
             tbl = add_column_length(table_name, tbl)
-            # print tbl.reset_index().course_id.nunique()
+            # print tbl.reset_index().course_sc_id.nunique()
             tmp = table_name + "_{0}.tsv.bz2"
             file_name =  tmp.format(dem) if dem else str(table_name + ".tsv.bz2")
             print '''Save {0} to output path'''.format(file_name)
@@ -90,7 +90,7 @@ def main(file_path, year, output_path):
             print '''\nSTEP 3: Aggregate {0}'''
             tbl = aggregate(pk, df, '', 2)
             tbl = add_column_length(table_name, tbl)
-            # print tbl.reset_index().course_id.nunique()
+            # print tbl.reset_index().course_sc_id.nunique()
             file_name = table_name + "_cid2.tsv.bz2"
             print '''Save {0} to output path'''.format(file_name)
             new_file_path = os.path.abspath(os.path.join(output_path, file_name))

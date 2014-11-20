@@ -29,7 +29,7 @@ cursor = db.cursor()
 missing = {
     "bra_id": defaultdict(int),
     "school_id": defaultdict(int),
-    "course_id": defaultdict(int)
+    "course_sc_id": defaultdict(int)
 }
 
 cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 9;")
@@ -117,16 +117,16 @@ def to_df(input_file_path, index=False, debug=False):
         input_file = open(input_file_path, "rU")
 
     cols = ["year", "enroll_id",  "student_id", "age", "gender", "color", "edu_mode", \
-            "edu_level", "edu_level_new", "edu", "class_id", "course_id", "school_id", \
+            "edu_level", "edu_level_new", "edu", "class_id", "course_sc_id", "school_id", \
             "bra_id_lives", "location_lives", "bra_id", "loc", "school_type"]
     delim = ";"
     coerce_cols = {"bra_id":bra_replace, "bra_id_lives":bra_replace, "school_id":school_replace, \
-                    "course_id":course_replace, "color":map_color, "gender":map_gender, \
+                    "course_sc_id":course_replace, "color":map_color, "gender":map_gender, \
                     "loc":map_loc, "school_type":map_school_type}
     df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
-    df = df[["year", "enroll_id", "gender", "color", "edu_level_new", "school_id", "course_id", "class_id", "bra_id", "age", "loc", "bra_id_lives", "school_type"]]
+    df = df[["year", "enroll_id", "gender", "color", "edu_level_new", "school_id", "course_sc_id", "class_id", "bra_id", "age", "loc", "bra_id_lives", "school_type"]]
     
-    # print df.course_id.unique()
+    # print df.course_sc_id.unique()
     # sys.exit()
     
     for col, missings in missing.items():
@@ -139,16 +139,13 @@ def to_df(input_file_path, index=False, debug=False):
         df = df.dropna(subset=[col])
         print; print "{0} rows deleted.".format(num_rows - df.shape[0]); print;
 
-    # df[df.course_id == BASIC_EDU_CODE] = BASIC_EDU_CODE[:-2] + str(df.edu_level_new).zfill(2)
     print "Calculating Course IDs for basic education..."
-    # df.edu_level_new = df.edu_level_new.astype(str)
-    # df["course_id"] = df.apply(lambda x: "xx" + x["edu_level_new"].zfill(3) if x["course_id"] == BASIC_EDU_CODE else x["course_id"], axis=1)
-    df.loc[df['course_id'] == BASIC_EDU_CODE, 'course_id'] = df['course_id'] + df.edu_level_new.astype(str).str.pad(3)
-    df['course_id'] = df['course_id'].str.replace(' ', '0')
+    df.loc[df['course_sc_id'] == BASIC_EDU_CODE, 'course_sc_id'] = df['course_sc_id'] + df.edu_level_new.astype(str).str.pad(3)
+    df['course_sc_id'] = df['course_sc_id'].str.replace(' ', '0')
 
     print "Calculating proper age..."
 
-    df["distorted_age"] = df.course_id.map(proper_age_map)
+    df["distorted_age"] = df.course_sc_id.map(proper_age_map)
     df.loc[df['distorted_age'].notnull() , 'distorted_age'] = (df.age >= df.distorted_age).astype(int) 
 
     return df

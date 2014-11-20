@@ -14,7 +14,7 @@ commute_rules = {
     "commute_distance" : np.mean
 }
 
-# pk = ["year", "bra_id", "school_id", "course_id", "d_id"]
+# pk = ["year", "bra_id", "school_id", "course_sc_id", "d_id"]
 
 db = MySQLdb.connect(host=os.environ["DATAVIVA2_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"], 
                             passwd=os.environ["DATAVIVA_DB_PW"], 
@@ -44,7 +44,7 @@ def aggregate(this_pk, tbl, dem, cid_len=None):
     tbl = tbl.drop(['gender', 'color', 'loc', 'school_type'], axis=1)
     
     if cid_len:
-        tbl['course_id'] = tbl["course_id"].str.slice(0, cid_len)
+        tbl['course_sc_id'] = tbl["course_sc_id"].str.slice(0, cid_len)
 
     print "Step A."
     tbl_all = tbl.groupby(this_pk).agg(agg_rules)
@@ -79,8 +79,8 @@ def aggregate(this_pk, tbl, dem, cid_len=None):
 
     master_table = pd.concat([tbl_all, tbl_state, tbl_meso, tbl_micro, tbl_pr, tbl_region])
 
-    if "course_id" in this_pk or cid_len:
-        print "Step G. (course_id step) compute distortion rate"
+    if "course_sc_id" in this_pk or cid_len:
+        print "Step G. (course_sc_id step) compute distortion rate"
         master_table['distortion_rate'] = master_table["distorted_age"] / master_table["enroll_id"]
         master_table.loc[master_table['distorted_age'].isnull() , 'distortion_rate'] = '\N'
     
