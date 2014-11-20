@@ -34,7 +34,7 @@ def aggregate(this_pk, tbl, dem):
 
     # -- For aggregation make sure we are only looking at the deepest level!!
     deepestBra = tbl.bra_id.str.len() == 9
-    deepestCourse = tbl.course_id.str.len() == 6
+    deepestCourse = tbl.course_hedu_id.str.len() == 6
 
 
 

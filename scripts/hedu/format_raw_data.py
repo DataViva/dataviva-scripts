@@ -65,7 +65,7 @@ def main(file_path, year, output_path):
     df = to_df(file_path, year)
     
     tables_list = ["yb", "ybd", "yd", "ybc", "yc", "ybu"]
-    pk_lookup = {"y": "year", "d": "d_id", "b": "bra_id", "c": "course_id", "u": "university_id"}
+    pk_lookup = {"y": "year", "d": "d_id", "b": "bra_id", "c": "course_hedu_id", "u": "university_id"}
 
     ybuc = None
 
@@ -81,8 +81,8 @@ def main(file_path, year, output_path):
             
             if "c" in table_name:
                 pk2 = [x for x in pk]
-                pk2[pk2.index("course_id")] = df.course_id.str.slice(0, 2)
-                # df2.course_id = df.course_id.str.slice(0, 2)
+                pk2[pk2.index("course_hedu_id")] = df.course_hedu_id.str.slice(0, 2)
+                # df2.course_hedu_id = df.course_hedu_id.str.slice(0, 2)
                 tbl_course2 = aggregate(pk2, df, dem)
 
                 tbl = pd.concat([tbl, tbl_course2])
@@ -101,7 +101,7 @@ def main(file_path, year, output_path):
         #     print '''\nSTEP 3: Aggregate {0}'''
         #     tbl = aggregate(pk, df, '', 2)
         #     tbl = add_column_length(table_name, tbl)
-        #     # print tbl.reset_index().course_id.nunique()
+        #     # print tbl.reset_index().course_hedu_id.nunique()
         #     file_name = table_name + "_cid2.tsv.bz2"
         #     print '''Save {0} to output path'''.format(file_name)
         #     new_file_path = os.path.abspath(os.path.join(output_path, file_name))

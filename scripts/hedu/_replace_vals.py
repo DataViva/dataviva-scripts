@@ -20,7 +20,7 @@ def replace_vals(df, missing={}, debug=False):
     
     replacements = [
         {"col":"munic", "lookup":get_bra_lookup()},
-        {"col":"course_id", "lookup":get_course_lookup()}
+        {"col":"course_hedu_id", "lookup":get_course_lookup()}
     ]
     
     df = df.set_index([r["col"] for r in replacements])

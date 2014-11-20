@@ -9,12 +9,12 @@ import growth
 
 def calc_rca(ybuc, year):
     
-    ybc = ybuc.groupby(level=["year", "bra_id", "course_id"]).sum()
+    ybc = ybuc.groupby(level=["year", "bra_id", "course_hedu_id"]).sum()
     ybc = ybc[["enrolled"]]
     ybc = ybc.reset_index()
     ybc = ybc.drop("year", axis=1)
             
-    rcas = ybc.pivot(index="bra_id", columns="course_id", values="enrolled")
+    rcas = ybc.pivot(index="bra_id", columns="course_hedu_id", values="enrolled")
     rcas = growth.rca(rcas)
     rcas = pd.DataFrame(rcas.stack(), columns=["enrolled_rca"])
     
@@ -23,7 +23,7 @@ def calc_rca(ybuc, year):
         
     rcas["year"] = int(year)
     rcas = rcas.set_index("year", append=True)
-    rcas = rcas.swaplevel("year", "course_id")
+    rcas = rcas.swaplevel("year", "course_hedu_id")
     rcas = rcas.swaplevel("year", "bra_id")
     
     return rcas

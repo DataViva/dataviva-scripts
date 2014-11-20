@@ -15,7 +15,7 @@ cursor = db.cursor()
 missing = {
     "bra_id": defaultdict(int),
     "university_id": defaultdict(int),
-    "course_id": defaultdict(int)
+    "course_hedu_id": defaultdict(int)
 }
 
 cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 9;")
@@ -70,12 +70,12 @@ def bra_replace(raw):
     except: missing["bra_id"][raw] += 1; return "0xx000007"
 
 def university_replace(raw):
-    try: return university_lookup[str(raw).strip()]
+    try: return university_lookup[str(raw).strip()].zfill(5)
     except: missing["university_id"][raw] += 1; return None
 
 def course_replace(raw):
     try: return course_lookup[str(raw)]
-    except: missing["course_id"][raw] += 1; return "000000"
+    except: missing["course_hedu_id"][raw] += 1; return "000000"
 
 def to_df(file_path, year):
 
@@ -84,11 +84,11 @@ def to_df(file_path, year):
     
     cols = ["university_id","school_type","academic_organization","course_id_bad",\
             "degree","modality","level","student_id","enrolled","graduates","entrants",\
-            "Year_entry","gender","age", "ethnicity", "bra_id","course_id","course_name",\
+            "Year_entry","gender","age", "ethnicity", "bra_id","course_hedu_id","course_name",\
             "morning","afternoon","night", "full_time","year"]
     delim = ";"
     coerce_cols = {"bra_id":bra_replace, "university_id":university_replace, \
-                    "course_id":course_replace, "ethnicity":map_color, "gender":map_gender, \
+                    "course_hedu_id":course_replace, "ethnicity":map_color, "gender":map_gender, \
                     "school_type":map_school_type}
     df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
     df = df.drop(["course_name","modality", "Year_entry","degree","course_id_bad","academic_organization","level"], axis=1)
