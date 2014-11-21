@@ -30,6 +30,7 @@ cursor = db.cursor()
 
 cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 9;")
 bra_lookup = {str(r[0])[:-1]:r[1] for r in cursor.fetchall()}
+bra_lookup["431454"] = "5rs030014"
 
 cursor.execute("select substr(id, 2), id from attrs_cnae where length(id) = 6;")
 cnae_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
@@ -124,13 +125,13 @@ def to_df(input_file_path, index=False):
         
         print "determining establishment sizes..."
         rais_df["new_est_size_1"] = rais_df["cnae_id"].str.slice(1, 3).astype(int)
-        rais_df["new_est_size_1"][rais_df["new_est_size_1"].between(5, 35)] = -1
-        rais_df["new_est_size_1"][rais_df["new_est_size_1"] >= 0] = 0
+        rais_df.loc[rais_df["new_est_size_1"].between(5, 35),"new_est_size_1"] = -1
+        rais_df.loc[rais_df["new_est_size_1"] >= 0,"new_est_size_1"] = 0
         
         rais_df["new_est_size_2"] = rais_df["new_est_size_1"].mask(rais_df["new_est_size_1"] >= 0).head()
         rais_df["new_est_size_1"] = rais_df["new_est_size_1"].where(rais_df["new_est_size_1"] >= 0).head()
 
-        rais_df["new_est_size_2"][rais_df["new_est_size_2"]==-1] = 0        
+        rais_df.loc[rais_df["new_est_size_2"]==-1,"new_est_size_2"] = 0
         rais_df["new_est_size_2"] = rais_df["new_est_size_2"] + rais_df["est_size"]
         rais_df["new_est_size_1"] = rais_df["new_est_size_1"] + rais_df["est_size"]
         
@@ -144,9 +145,7 @@ def to_df(input_file_path, index=False):
         
         rais_df = rais_df.drop(["new_est_size_1", "new_est_size_2"], axis=1)
         
-        print rais_df.head(20)
-        print (time.time() - s) / 60.0
-
+        print "finding missing attrs..."
         for col, missings in missing.items():
             if not len(missings): continue
             num_rows = rais_df.shape[0]
@@ -156,5 +155,7 @@ def to_df(input_file_path, index=False):
             # rais_df = rais_df[drop_criterion]
             rais_df = rais_df.dropna(subset=[col])
             print; print "{0} rows deleted.".format(num_rows - rais_df.shape[0]); print;
+        
+        print (time.time() - s) / 60.0, "minutes to read."
 
     return rais_df

@@ -66,7 +66,10 @@ def main(file_path, year, output_path, prev_path, prev5_path, demographics):
         else:
             step+=1; print; print '''STEP {0}: \nImport file to pandas dataframe'''.format(step)
             rais_df = to_df(file_path, False)
-            d['rais_df'] = rais_df
+            try:
+                d['rais_df'] = rais_df
+            except OverflowError:
+                print "WARNING: Unable to save dataframe, Overflow Error."
         d.close()
         # rais_df = to_df(file_path, False)
     

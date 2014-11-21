@@ -129,10 +129,11 @@ def main(output_path, start_from):
         full_tbl = pd.read_csv(os.path.join(output_path, "{0}.tsv.bz2".format(tbl)), sep="\t", compression="bz2", converters={"cbo":str, "cnae_id":str, "bra_id":str}, index_col=index_col)
         mne_tbl = pd.read_csv(os.path.join(output_path, "mne_{0}.csv".format(tbl)), converters={"cbo":str, "cnae_id":str, "bra_id":str}, index_col=index_col)
     
-        full_tbl["mne_micro"] = mne_tbl["mne_micro"]
-        full_tbl["mne_small"] = mne_tbl["mne_small"]
-        full_tbl["mne_medium"] =mne_tbl["mne_medium"]
-        full_tbl["mne_large"] = mne_tbl["mne_large"]
+        # full_tbl["mne_micro"] = mne_tbl["mne_micro"]
+        # full_tbl["mne_small"] = mne_tbl["mne_small"]
+        # full_tbl["mne_medium"] =mne_tbl["mne_medium"]
+        # full_tbl["mne_large"] = mne_tbl["mne_large"]
+        full_tbl = full_tbl.join(mne_tbl, how='outer')
     
         new_file_path = os.path.abspath(os.path.join(output_path, "{0}_mne.tsv.bz2".format(tbl)))
         full_tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.2f")
