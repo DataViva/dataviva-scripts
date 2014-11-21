@@ -2,18 +2,6 @@ import sys, bottleneck, MySQLdb, os
 import pandas as pd
 import numpy as np
 
-agg_rules = {
-    "age" : np.mean,
-    "enrolled": np.sum,
-    "entrants": np.sum,
-    "graduates": np.sum,
-    "student_id": pd.Series.nunique,
-    "morning": np.sum,
-    "afternoon" : np.sum,
-    "night": np.sum,
-    "full_time": np.sum,
-    "entrants": np.sum,
-}
 
 def get_planning_regions():
     ''' Connect to DB '''
@@ -36,7 +24,21 @@ def aggregate(this_pk, tbl, dem):
     deepestBra = tbl.bra_id.str.len() == 9
     deepestCourse = tbl.course_hedu_id.str.len() == 6
 
+    agg_rules = {
+        "age" : np.mean,
+        "enrolled": np.sum,
+        "entrants": np.sum,
+        "graduates": np.sum,
+        "student_id": pd.Series.nunique,
+        "morning": np.sum,
+        "afternoon" : np.sum,
+        "night": np.sum,
+        "full_time": np.sum,
+        "entrants": np.sum,
+    }
 
+    if this_pk == ["year", "bra_id"]:
+        agg_rules["university_id"] = pd.Series.nunique
 
     test = tbl[ ~(deepestBra & deepestCourse) ]
     tbl = tbl[ deepestBra & deepestCourse ]

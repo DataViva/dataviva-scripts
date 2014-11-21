@@ -89,6 +89,8 @@ def main(file_path, year, output_path):
             
             tbl = add_column_length(table_name, tbl)
             tbl.rename(columns={"student_id": "students"}, inplace=True)   
+            if table_name == "yb":
+                tbl.rename(columns={"university_id": "num_universities"}, inplace=True)   
             if table_name == "ybuc":
                 print tbl.head()
                 ybuc = tbl
