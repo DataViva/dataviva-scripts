@@ -43,12 +43,13 @@ def main(idir):
         fields = [x for x in fields if x!='schools']
         fields[fields.index('class_id')] = 'classes'
         fields[fields.index('enroll_id')] = 'enrolled'
+        fields[fields.index('school_id')] = 'num_schools'
 
         fields = ",".join(fields)
         print
         print
 
-        cmd = '''mysql -uroot $DATAVIVA_DB_NAME -e "LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' IGNORE 1 LINES (%s);" ''' % (f, tablename, fields)
+        cmd = '''mysql -h 127.0.0.1 -uroot $DATAVIVA_DB_NAME -e "LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' IGNORE 1 LINES (%s);" ''' % (f, tablename, fields)
         print cmd
         os.system(cmd)
 

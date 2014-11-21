@@ -40,6 +40,17 @@ def aggregate(this_pk, tbl, dem, cid_len=None):
         # this_pk = pk[:-1]
     
     # print "getting distances..."
+    if this_pk != ["year", "bra_id"]:
+        this_agg_rules = agg_rules
+    else:
+        this_agg_rules = {
+            "age" : np.mean,
+            "enroll_id": pd.Series.count,
+            "class_id": pd.Series.nunique,
+            "distorted_age" : np.sum,
+            "school_id" : pd.Series.nunique,
+        }
+
 
     tbl = tbl.drop(['gender', 'color', 'loc', 'school_type'], axis=1)
     
@@ -47,34 +58,34 @@ def aggregate(this_pk, tbl, dem, cid_len=None):
         tbl['course_sc_id'] = tbl["course_sc_id"].str.slice(0, cid_len)
 
     print "Step A."
-    tbl_all = tbl.groupby(this_pk).agg(agg_rules)
+    tbl_all = tbl.groupby(this_pk).agg(this_agg_rules)
     # print tbl_all[tbl_all.commute_distance > 0].head()
 
     print "Step B."
     tbl_region = tbl.reset_index()
     tbl_region["bra_id"] = tbl_region["bra_id"].str.slice(0, 1)
-    tbl_region = tbl_region.groupby(this_pk).agg(agg_rules)
+    tbl_region = tbl_region.groupby(this_pk).agg(this_agg_rules)
     
     print "Step C."
     tbl_state = tbl.reset_index()
     tbl_state["bra_id"] = tbl_state["bra_id"].str.slice(0, 3)
-    tbl_state = tbl_state.groupby(this_pk).agg(agg_rules)
+    tbl_state = tbl_state.groupby(this_pk).agg(this_agg_rules)
 
     print "Step D."
     tbl_meso = tbl.reset_index()
     tbl_meso["bra_id"] = tbl_meso["bra_id"].str.slice(0, 5)
-    tbl_meso = tbl_meso.groupby(this_pk).agg(agg_rules)
+    tbl_meso = tbl_meso.groupby(this_pk).agg(this_agg_rules)
 
     print "Step E."
     tbl_micro = tbl.reset_index()
     tbl_micro["bra_id"] = tbl_micro["bra_id"].str.slice(0, 7)
-    tbl_micro = tbl_micro.groupby(this_pk).agg(agg_rules)
+    tbl_micro = tbl_micro.groupby(this_pk).agg(this_agg_rules)
 
     print "Step F."
     tbl_pr = tbl.reset_index()
     tbl_pr = tbl_pr[tbl_pr["bra_id"].map(lambda x: x[:3] == "4mg")]
     tbl_pr["bra_id"] = tbl_pr["bra_id"].astype(str).replace(planning_regions)
-    tbl_pr = tbl_pr.groupby(this_pk).agg(agg_rules)
+    tbl_pr = tbl_pr.groupby(this_pk).agg(this_agg_rules)
 
 
     master_table = pd.concat([tbl_all, tbl_state, tbl_meso, tbl_micro, tbl_pr, tbl_region])
