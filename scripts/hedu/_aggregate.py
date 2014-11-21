@@ -37,7 +37,8 @@ def aggregate(this_pk, tbl, dem):
         "entrants": np.sum,
     }
 
-    if this_pk == ["year", "bra_id"]:
+
+    if type(this_pk) == type([]) and this_pk == ["year", "bra_id"]:
         agg_rules["university_id"] = pd.Series.nunique
 
     test = tbl[ ~(deepestBra & deepestCourse) ]
