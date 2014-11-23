@@ -168,56 +168,32 @@ def rule_2(ei_df):
     print ei_df[ei_df.hs_id == HS_BLACKLIST].hs_id.count()
     return ei_df
 
-def rule_4(ei_df):
-    print "APPLY rule 4"
-    aggrules={"cnae_id": pd.Series.nunique}
-    bp_bl_df = flatten_df(ei_df, ["bra_id", "hs_id"], aggrules, onlyblacklist=True)
-    bp_bl_df = bp_bl_df.rename(columns={"cnae_id": "bl_cnaes"})
-    bp_bl_df = bp_bl_df.reset_index()
-    bl_all_df = flatten_df(ei_df, ["bra_id", "hs_id"], aggrules, onlyblacklist=False)
-    bl_all_df = bl_all_df.rename(columns={"cnae_id": "total_cnaes"})
-    bl_all_df = bl_all_df.reset_index()
-    counter_df = pd.merge(bp_bl_df, bl_all_df, how='left', left_on=["bra_id", "hs_id"], right_on=["bra_id", "hs_id"])
+def rule_4_2_ii(ei_df, bp_mixed_gte3):
+    print "Applying rule 4.2.ii" ##### DBLCHECK
+    ''' blacklist all the CNAEs with bra/hs_id '''    
+    ei_df = ei_df.drop(labels=["bl_cnaes_x", "bl_cnaes_y", "bl_cnaes"], axis=1)
 
-    # print counter_df.bra_id.count()
-    # print counter_df[counter_df.bl_cnaes == counter_df.total_cnaes].bra_id.count()
-    # print counter_df.head()
+    print ei_df.head()
+    print bp_mixed_gte3.head()
+    # print smallest_thingies.head()
+  
+    print "Filtering receivers ..."
+    ei_df = pd.merge(ei_df, bp_mixed_gte3, how="left", left_on=["bra_id_r", "hs_id"], right_on=["bra_id", "hs_id"])
+    ei_df.loc[ei_df.bl_cnaes >= 3, 'cnae_id_r'] = CNAE_BLACKLISTED
+    print "Blacklisted rows (receivers):", ei_df[ei_df.bl_cnaes >= 3].cnae_id_r.count()
+    ei_df = ei_df.drop(labels=["bra_id", "bl_cnaes", "total_cnaes"], axis=1)
+    print ei_df.head(), "DROP"
+    ei_df = pd.merge(ei_df, bp_mixed_gte3, how="left", left_on=["bra_id_s", "hs_id"], right_on=["bra_id", "hs_id"])
 
-    bp_only_bl = counter_df[counter_df.bl_cnaes == counter_df.total_cnaes]
-    # START 4.1.i (less than 3 CNAEs) DO NOT SHOW PRODUCT (BL PRODUCT)
-    print "Applying rule 4.1.i"
-    hs_to_bl = bp_only_bl[bp_only_bl.bl_cnaes < 3]
-    hs_to_bl = hs_to_bl.drop(labels=["total_cnaes"], axis=1)
-    ei_df = pd.merge(ei_df, hs_to_bl, how='left', left_on=["bra_id_r", "hs_id"], right_on=["bra_id", "hs_id"])
-    ei_df.loc[ei_df.bl_cnaes > 0, 'hs_id'] = HS_BLACKLIST
-    round_1 =  ei_df[ei_df.bl_cnaes > 0].hs_id.count()
-    ei_df =ei_df.drop(labels=["bra_id", "bl_cnaes"], axis=1)
-    ei_df = pd.merge(ei_df, hs_to_bl, how='left', left_on=["bra_id_s", "hs_id"], right_on=["bra_id", "hs_id"])
-    ei_df.loc[ei_df.bl_cnaes > 0, 'hs_id'] = HS_BLACKLIST
-    print "4.i: Blacklisted # products", ei_df[ei_df.bl_cnaes > 0].hs_id.count() + round_1
-    ei_df = ei_df.drop(labels=["bra_id", "bl_cnaes"], axis=1)
-    # -- END of 4.1.i
 
-    # START 4.1.ii
-    cnae_to_bl = bp_only_bl[bp_only_bl.bl_cnaes >= 3]
-    cnae_to_bl = cnae_to_bl.drop(labels=["total_cnaes"], axis=1)
-    ei_df = pd.merge(ei_df, cnae_to_bl, how='left', left_on=["bra_id_r", "hs_id"], right_on=["bra_id", "hs_id"])
-    ei_df.loc[ei_df.bl_cnaes > 0, 'cnae_id_r'] = CNAE_BLACKLISTED
-    round_1 =  ei_df[ei_df.bl_cnaes > 0].hs_id.count()
+    ei_df.loc[ei_df.bl_cnaes >= 3, 'cnae_id_s'] = CNAE_BLACKLISTED
+    print "Blacklisted rows (senders):", ei_df[ei_df.bl_cnaes >= 3].cnae_id_r.count()
+    ei_df = ei_df.drop(labels=["bra_id", "bl_cnaes", "total_cnaes"], axis=1)
 
-    ei_df =ei_df.drop(labels=["bra_id", "bl_cnaes"], axis=1)
-    ei_df = pd.merge(ei_df, cnae_to_bl, how='left', left_on=["bra_id_s", "hs_id"], right_on=["bra_id", "hs_id"])
-    ei_df.loc[ei_df.bl_cnaes > 0, 'cnae_id_s'] = CNAE_BLACKLISTED
-    
-    print "4.1ii: Blacklisted # products", ei_df[ei_df.bl_cnaes > 0].cnae_id_s.count() + round_1
-    # print ei_df.head()
-    # -- END of 4.1.ii
-    
-    print "Appling rule 4.2.i"
-    print ''' These products are traded by blacklist + non blacklist CNAEs and have < 3 ests '''
-    bp_mixed = counter_df[counter_df.bl_cnaes != counter_df.total_cnaes]
-    bp_mixed_lt2 = bp_mixed[bp_mixed.total_cnaes < 3]
-    # print bp_mixed_lt2.head()
+    print "Done with rule 4.2.ii"
+    return ei_df
+
+def rule_4_2_i(ei_df, bp_mixed_lt2):
     bpi_cols=["bra_id", "hs_id", "cnae_id"]
     bp_cols=["bra_id", "hs_id"]
     bpi_values = flatten_df(ei_df, bpi_cols, {"product_value": np.sum}, onlyblacklist=False, onlymg=True, notinblacklist=True).reset_index()
@@ -269,16 +245,62 @@ def rule_4(ei_df):
     ei_df = ei_df.drop(labels=["bra_id", "total_cnaes", "cnae_id1", "cnae_id2", "is_min2"], axis=1)
     print ei_df.head()
     print "FINISHED applying rule 4.2.i"
+    return ei_df
 
+def rule_4(ei_df):
+    print "APPLY rule 4"
+    aggrules={"cnae_id": pd.Series.nunique}
+    bp_bl_df = flatten_df(ei_df, ["bra_id", "hs_id"], aggrules, onlyblacklist=True)
+    bp_bl_df = bp_bl_df.rename(columns={"cnae_id": "bl_cnaes"})
+    bp_bl_df = bp_bl_df.reset_index()
+    bl_all_df = flatten_df(ei_df, ["bra_id", "hs_id"], aggrules, onlyblacklist=False)
+    bl_all_df = bl_all_df.rename(columns={"cnae_id": "total_cnaes"})
+    bl_all_df = bl_all_df.reset_index()
+    counter_df = pd.merge(bp_bl_df, bl_all_df, how='left', left_on=["bra_id", "hs_id"], right_on=["bra_id", "hs_id"])
 
-    print "Applying rule 4.2.ii"
+    # print counter_df.bra_id.count()
+    # print counter_df[counter_df.bl_cnaes == counter_df.total_cnaes].bra_id.count()
+    # print counter_df.head()
+
+    bp_only_bl = counter_df[counter_df.bl_cnaes == counter_df.total_cnaes]
+    # START 4.1.i (less than 3 CNAEs) DO NOT SHOW PRODUCT (BL PRODUCT)
+    print "Applying rule 4.1.i"
+    hs_to_bl = bp_only_bl[bp_only_bl.bl_cnaes < 3]
+    hs_to_bl = hs_to_bl.drop(labels=["total_cnaes"], axis=1)
+    ei_df = pd.merge(ei_df, hs_to_bl, how='left', left_on=["bra_id_r", "hs_id"], right_on=["bra_id", "hs_id"])
+    ei_df.loc[ei_df.bl_cnaes > 0, 'hs_id'] = HS_BLACKLIST
+    round_1 =  ei_df[ei_df.bl_cnaes > 0].hs_id.count()
+    ei_df =ei_df.drop(labels=["bra_id", "bl_cnaes"], axis=1)
+    ei_df = pd.merge(ei_df, hs_to_bl, how='left', left_on=["bra_id_s", "hs_id"], right_on=["bra_id", "hs_id"])
+    ei_df.loc[ei_df.bl_cnaes > 0, 'hs_id'] = HS_BLACKLIST
+    print "4.i: Blacklisted # products", ei_df[ei_df.bl_cnaes > 0].hs_id.count() + round_1
+    ei_df = ei_df.drop(labels=["bra_id", "bl_cnaes"], axis=1)
+    # -- END of 4.1.i
+
+    # START 4.1.ii
+    cnae_to_bl = bp_only_bl[bp_only_bl.bl_cnaes >= 3]
+    cnae_to_bl = cnae_to_bl.drop(labels=["total_cnaes"], axis=1)
+    ei_df = pd.merge(ei_df, cnae_to_bl, how='left', left_on=["bra_id_r", "hs_id"], right_on=["bra_id", "hs_id"])
+    ei_df.loc[ei_df.bl_cnaes > 0, 'cnae_id_r'] = CNAE_BLACKLISTED
+    round_1 =  ei_df[ei_df.bl_cnaes > 0].hs_id.count()
+
+    ei_df =ei_df.drop(labels=["bra_id", "bl_cnaes"], axis=1)
+    ei_df = pd.merge(ei_df, cnae_to_bl, how='left', left_on=["bra_id_s", "hs_id"], right_on=["bra_id", "hs_id"])
+    ei_df.loc[ei_df.bl_cnaes > 0, 'cnae_id_s'] = CNAE_BLACKLISTED
     
-    # print smallest_thingies.head()
-  
+    print "4.1ii: Blacklisted # products", ei_df[ei_df.bl_cnaes > 0].cnae_id_s.count() + round_1
+    # print ei_df.head()
+    # -- END of 4.1.ii
     
+    print "Appling rule 4.2.i"
+    print ''' These products are traded by blacklist + non blacklist CNAEs and have < 3 ests '''
+    bp_mixed = counter_df[counter_df.bl_cnaes != counter_df.total_cnaes]
+    bp_mixed_lt2 = bp_mixed[bp_mixed.total_cnaes < 3]
 
-    # print bp_mixed.head(), "TEST"
-    print "Done with rule 4.2.i"
+    ei_df = rule_4_2_i(ei_df, bp_mixed_lt2)
+    
+    bp_mixed_gte3 = bp_mixed[bp_mixed.bl_cnaes >= 3] # TODO: bl_cnae or total_cnaes. DBLCHECK.
+    ei_df = rule_4_2_ii(ei_df, bp_mixed_gte3)
 
     return ei_df
 
