@@ -114,7 +114,7 @@ def main(file_path, year, output_path, prev_path, prev5_path, demographics):
                 print tbl_name
                 years_ago_str = "" if years_ago == 1 else "_5"
                 new_file_path = os.path.abspath(os.path.join(output_path, "{0}_growth{1}.tsv.bz2".format(tbl_name, years_ago_str)))
-                tbl_w_growth.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.2f")
+                tbl_w_growth.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
 
     
     print("--- %s minutes ---" % str((time.time() - start)/60))
