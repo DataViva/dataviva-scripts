@@ -96,14 +96,25 @@ def to_df(input_file_path, index=False):
         if count > 0:
             print "** REMOVED", count, "rows due to empty ages"
         rais_df = rais_df[ rais_df.age != -999 ]
+        
+        print "finding missing attrs..."
+        for col, missings in missing.items():
+            if not len(missings): continue
+            num_rows = rais_df.shape[0]
+            print; print "[WARNING]"; print "The following {0} IDs are not in the DB and will be dropped from the data.".format(col);
+            print list(missings)
+            # drop_criterion = rais_df[col].map(lambda x: x not in vals)
+            # rais_df = rais_df[drop_criterion]
+            rais_df = rais_df.dropna(subset=[col])
+            print; print "{0} rows deleted.".format(num_rows - rais_df.shape[0]); print;
 
         print "generating demographic codes..."
-        MALE, FEMALE = 0, 1
+        FEMALE, MALE = 0, 1
         gender_dict = {MALE: 'A', FEMALE: 'B'}
         rais_df["gender"] = rais_df["gender"].replace(gender_dict)
         
         INDIAN, WHITE, BLACK, ASIAN, MULTI, UNKNOWN = 1,2,4,6,8,9
-        color_dict = {INDIAN:'C', WHITE:'D', BLACK:'E', ASIAN:'F', MULTI:'G', 9:'H', -1:'H' }
+        color_dict = {INDIAN:'C', WHITE:'D', BLACK:'E', ASIAN:'F', MULTI:'G', UNKNOWN:'H', -1:'H' }
         rais_df["color"] = rais_df["color"].replace(color_dict)
         
         lit_dict = {1:'I', 2:'I', 3:'J', 4:'J', 5:'J', 6:'J', 7:'K', 8:'K', 9:'L', -1:'M'}
@@ -144,17 +155,6 @@ def to_df(input_file_path, index=False):
         rais_df["est_size"] = rais_df["new_est_size_1"].fillna(0) + rais_df["new_est_size_2"].fillna(0)
         
         rais_df = rais_df.drop(["new_est_size_1", "new_est_size_2"], axis=1)
-        
-        print "finding missing attrs..."
-        for col, missings in missing.items():
-            if not len(missings): continue
-            num_rows = rais_df.shape[0]
-            print; print "[WARNING]"; print "The following {0} IDs are not in the DB and will be dropped from the data.".format(col);
-            print list(missings)
-            # drop_criterion = rais_df[col].map(lambda x: x not in vals)
-            # rais_df = rais_df[drop_criterion]
-            rais_df = rais_df.dropna(subset=[col])
-            print; print "{0} rows deleted.".format(num_rows - rais_df.shape[0]); print;
         
         print (time.time() - s) / 60.0, "minutes to read."
 
