@@ -118,7 +118,7 @@ def to_df(input_file_path, index=False):
         rais_df["color"] = rais_df["color"].replace(color_dict)
         
         lit_dict = {1:'I', 2:'I', 3:'J', 4:'J', 5:'J', 6:'J', 7:'K', 8:'K', 9:'L', -1:'M'}
-        rais_df["literacy"] = rais_df["literacy"].replace(color_dict)
+        rais_df["literacy"] = rais_df["literacy"].replace(lit_dict)
         
         rais_df["age_demo"] = (rais_df["age"] / 10).astype(int)
         rais_df["age_demo"] = rais_df["age_demo"].clip(1,6)
