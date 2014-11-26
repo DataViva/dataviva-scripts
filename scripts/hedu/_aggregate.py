@@ -1,13 +1,11 @@
-import sys, bottleneck, MySQLdb, os
+import sys, MySQLdb, os
 import pandas as pd
 import numpy as np
 
 
 def get_planning_regions():
     ''' Connect to DB '''
-    db = MySQLdb.connect(host="127.0.0.1", user=os.environ["DATAVIVA_DB_USER"], 
-                            passwd=os.environ["DATAVIVA_DB_PW"], 
-                            db=os.environ["DATAVIVA_DB_NAME"])
+    db = MySQLdb.connect(host=os.environ["DATAVIVA2_DB_HOST"], user=os.environ["DATAVIVA2_DB_USER"], passwd=os.environ["DATAVIVA2_DB_PW"], db=os.environ["DATAVIVA2_DB_NAME"])
     db.autocommit(1)
     cursor = db.cursor()
     
@@ -36,9 +34,9 @@ def aggregate(this_pk, tbl, dem):
         "full_time": np.sum,
         "entrants": np.sum,
     }
-
-
-    if type(this_pk) == type([]) and this_pk == ["year", "bra_id"]:
+    
+    pk_types = set([type(t) for t in this_pk])
+    if pk_types == set([str]) and this_pk == ["year", "bra_id"]:
         agg_rules["university_id"] = pd.Series.nunique
 
     test = tbl[ ~(deepestBra & deepestCourse) ]

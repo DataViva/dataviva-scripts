@@ -48,6 +48,7 @@ def findFiles (path, filter):
 @click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.', type=click.Path(exists=True), required=False)
 @click.option('--demographics/--no-demographics', '-d', default=False)
 def main(file_path, year, output_path, prev_path, prev5_path, demographics):
+    print; print "~~~**** YEAR: {0} ****~~~".format(year); print;
     start = time.time()
     step = 0
     # regions state, meso, micro, planning region, munic
@@ -68,9 +69,11 @@ def main(file_path, year, output_path, prev_path, prev5_path, demographics):
             rais_df = to_df(file_path, False)
             try:
                 d['rais_df'] = rais_df
+                d.close()
             except OverflowError:
                 print "WARNING: Unable to save dataframe, Overflow Error."
-        d.close()
+                d.close()
+                os.remove(os.path.join(output_path, 'rais_df_raw.h5'))
         # rais_df = to_df(file_path, False)
     
         step+=1; print; print '''STEP {0}: \nAggregate'''.format(step)
@@ -114,7 +117,7 @@ def main(file_path, year, output_path, prev_path, prev5_path, demographics):
                 print tbl_name
                 years_ago_str = "" if years_ago == 1 else "_5"
                 new_file_path = os.path.abspath(os.path.join(output_path, "{0}_growth{1}.tsv.bz2".format(tbl_name, years_ago_str)))
-                tbl_w_growth.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.2f")
+                tbl_w_growth.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
 
     
     print("--- %s minutes ---" % str((time.time() - start)/60))

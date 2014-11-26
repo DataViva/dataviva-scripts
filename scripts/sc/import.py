@@ -28,30 +28,33 @@ def findFiles (path, filter):
 @click.option('--idir', default='.', prompt=False,
               help='Directory for tsv files.')
 def main(idir):
-   for f in findFiles(idir, '*.tsv*'):
-        print f, "Processing"
+    for f in findFiles(idir, '*.tsv*'):
+        bzipped = False
+        print "Processing", f
         if f.endswith("bz2"):
+            bzipped = True
             os.system("bunzip2 -k " + f)
             f = f[:-4]
-        print f
+        # print f
         handle = open(f)
         tablename = parse_table(f)
-        print "table name =", tablename
+        # print "table name =", tablename
         header = handle.readline().strip()
         fields = header.split('\t')
-        print "fields", fields
         fields = [x for x in fields if x!='schools']
-        fields[fields.index('class_id')] = 'classes'
-        fields[fields.index('enroll_id')] = 'enrolled'
-        fields[fields.index('school_id')] = 'num_schools'
+        if 'class_id' in fields: fields[fields.index('class_id')] = 'classes'
+        if 'enroll_id' in fields: fields[fields.index('enroll_id')] = 'enrolled'
+        if 'school_id' in fields: fields[fields.index('school_id')] = 'num_schools'
 
         fields = ",".join(fields)
-        print
-        print
 
         cmd = '''mysql -h 127.0.0.1 -uroot $DATAVIVA_DB_NAME -e "LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' IGNORE 1 LINES (%s);" ''' % (f, tablename, fields)
-        print cmd
+        # print cmd
         os.system(cmd)
+        
+        # delete bunzipped file
+        if bzipped:
+            os.remove(f)
 
 if __name__ == '__main__':
     main()

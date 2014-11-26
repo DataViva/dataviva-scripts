@@ -9,7 +9,7 @@ growth_lib_path = os.path.abspath(os.path.join(file_path, "..", "common"))
 sys.path.insert(0, growth_lib_path)
 
 ''' Connect to DB '''
-db = MySQLdb.connect(host="127.0.0.1", user=os.environ["DATAVIVA2_DB_USER"], passwd=os.environ["DATAVIVA2_DB_PW"], db=os.environ["DATAVIVA2_DB_NAME"])
+db = MySQLdb.connect(host=os.environ["DATAVIVA2_DB_HOST"], user=os.environ["DATAVIVA2_DB_USER"], passwd=os.environ["DATAVIVA2_DB_PW"], db=os.environ["DATAVIVA2_DB_NAME"])
 cursor = db.cursor()
 
 missing = {
@@ -70,7 +70,7 @@ def bra_replace(raw):
     except: missing["bra_id"][raw] += 1; return "0xx000007"
 
 def university_replace(raw):
-    try: return university_lookup[str(raw).strip()].zfill(5)
+    try: return university_lookup[str(raw).strip().zfill(5)]
     except: missing["university_id"][raw] += 1; return None
 
 def course_replace(raw):
