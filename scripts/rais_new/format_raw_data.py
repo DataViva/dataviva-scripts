@@ -103,21 +103,20 @@ def main(file_path, year, output_path, prev_path, prev5_path, demographics):
             t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.2f")
     
     if prev_path:
-        for path, years_ago in ((prev_path, 1), (prev5_path, 5)):
-            print years_ago, "year growth"
-            if not path: continue
-            for current_year_file_path in findFiles(output_path, '*.tsv.bz2'):
-                if "growth" in current_year_file_path: continue
-                current_year_file_name = os.path.basename(current_year_file_path)
-                prev_year_file_path = os.path.join(path, current_year_file_name)
-                if not os.path.exists(prev_year_file_path):
-                    print "Unable to find", current_year_file_name, "for previous year."
-                    continue
-                tbl_name, tbl_w_growth = calc_growth(current_year_file_path, prev_year_file_path, year, years_ago)
-                print tbl_name
-                years_ago_str = "" if years_ago == 1 else "_5"
-                new_file_path = os.path.abspath(os.path.join(output_path, "{0}_growth{1}.tsv.bz2".format(tbl_name, years_ago_str)))
-                tbl_w_growth.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
+        for current_year_file_path in findFiles(output_path, '*.tsv.bz2'):
+            if "growth" in current_year_file_path: continue
+            current_year_file_name = os.path.basename(current_year_file_path)
+            prev_year_file_path = os.path.join(prev_path, current_year_file_name)
+            prev5_year_file_path = None
+            if prev5_path:
+                prev5_year_file_path = os.path.join(prev5_path, current_year_file_name)
+            if not os.path.exists(prev_year_file_path):
+                print "Unable to find", current_year_file_name, "for previous year."
+                continue
+            tbl_name, tbl_w_growth = calc_growth(year, current_year_file_path, prev_year_file_path, prev5_year_file_path)
+            print tbl_name
+            new_file_path = os.path.abspath(os.path.join(output_path, "{0}_growth.tsv.bz2".format(tbl_name)))
+            tbl_w_growth.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
 
     
     print("--- %s minutes ---" % str((time.time() - start)/60))
