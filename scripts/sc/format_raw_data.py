@@ -66,7 +66,7 @@ def main(file_path, year, output_path):
 
     pk_lookup = {"y": "year", "d": "d_id", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
     
-    tables_list = ["yb", "ybd", "yd", "ybs", "yc", "ybc"]
+    tables_list = ["yb", "ybd", "yd", "ybs", "yc", "ybc", "ybcd"]
 
     for table_name in tables_list:
         iterations = ['']

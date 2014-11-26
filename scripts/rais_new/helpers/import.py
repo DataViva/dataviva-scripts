@@ -25,7 +25,10 @@ def findFiles (path, filter):
 @click.option('--idir', default='.', prompt=False,
               help='Directory for tsv files.')
 def main(idir):
-    for f in findFiles(idir, '*.tsv*'):
+    file_list = list(findFiles(idir, '*_growth.tsv*'))
+    if not file_list:
+        file_list = list(findFiles(idir, '*.tsv*'))
+    for f in file_list:
         bzipped = False
         print "Processing", f
         if f.endswith("bz2"):
@@ -34,7 +37,7 @@ def main(idir):
             f = f[:-4]
         # print f
         handle = open(f)
-        tablename = parse_table(f)
+        tablename = parse_table(f).replace("_growth", "")
         # print "table name =", tablename
         header = handle.readline().strip()
         fields = header.split('\t')
