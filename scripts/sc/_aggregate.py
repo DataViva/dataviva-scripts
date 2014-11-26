@@ -31,7 +31,7 @@ def get_planning_regions():
 planning_regions = get_planning_regions()
 
 
-def aggregate(this_pk, tbl, dem, cid_len=None):
+def aggregate(this_pk, tbl, dem, cid_len=None, course_flag=None):
 
     if dem:
         tbl["d_id"] = tbl[dem]
@@ -90,7 +90,7 @@ def aggregate(this_pk, tbl, dem, cid_len=None):
 
     master_table = pd.concat([tbl_all, tbl_state, tbl_meso, tbl_micro, tbl_pr, tbl_region])
 
-    if "course_sc_id" in this_pk or cid_len:
+    if cid_len or course_flag:
         print "Step G. (course_sc_id step) compute distortion rate"
         master_table['distortion_rate'] = master_table["distorted_age"] / master_table["enroll_id"]
         master_table.loc[master_table['distorted_age'].isnull() , 'distortion_rate'] = '\N'

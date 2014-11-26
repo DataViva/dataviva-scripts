@@ -56,9 +56,23 @@ def main(file_path, year, output_path):
     output_path = os.path.join(output_path, str(year))
     
     if not os.path.exists(output_path): os.makedirs(output_path)
+    print "Output Path=", output_path
     # d = pd.HDFStore(os.path.abspath(os.path.join(output_path,'sc_data.h5')))
     print; print '''STEP 1: \nImport file to pandas dataframe'''
-    df = to_df(file_path, False)
+    
+    hdf_filepath = output_path + "/store_df.h5"
+
+    print "LOOKING for HDF file at location ", hdf_filepath
+
+    if os.path.exists(hdf_filepath):
+        print "READING HDF"
+        df = pd.read_hdf(hdf_filepath, 'table')
+    else:
+        print "No HDF file. Need to create DF"
+        df = to_df(file_path, False)
+        print "SAVING HDF to", hdf_filepath
+        df.to_hdf(hdf_filepath, 'table')
+
     print; print "Step 2: aggregate"
 
     from _aggregate import agg_rules
@@ -69,32 +83,60 @@ def main(file_path, year, output_path):
     tables_list = ["yb", "ybd", "yd", "ybs", "yc", "ybc", "ybcd"]
 
     for table_name in tables_list:
-        iterations = ['']
-        print "Working on table", table_name
         pk = [pk_lookup[l] for l in table_name]
-        if "d" in table_name:
-            iterations = ['gender', 'color', 'loc', 'school_type']
-
-        for dem in iterations:
+        print "working on", table_name
+        
+        dems = ['gender', 'color', 'loc', 'school_type'] if "d" in table_name else ['']
+        
+        for dem in dems:
             print '''\nSTEP 2: Aggregate {0}'''.format(dem)
             tbl = aggregate(pk, df, dem)
+            
+            if "c" in table_name:
+                pk2 = [x for x in pk]
+                pk2[pk2.index("course_sc_id")] = df.course_sc_id.str.slice(0, 2)
+                tbl_course2 = aggregate(pk2, df, dem, course_flag=True)
+
+                tbl = pd.concat([tbl, tbl_course2])
+            
             tbl = add_column_length(table_name, tbl)
-            # print tbl.reset_index().course_sc_id.nunique()
-            tmp = table_name + "_{0}.tsv.bz2"
-            file_name =  tmp.format(dem) if dem else str(table_name + ".tsv.bz2")
+            # tbl.rename(columns={"student_id": "students"}, inplace=True)   
+            file_name = table_name + "_" + dem + ".tsv.bz2" if "d" in table_name else table_name + ".tsv.bz2"
             print '''Save {0} to output path'''.format(file_name)
             new_file_path = os.path.abspath(os.path.join(output_path, file_name))
             tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
-        if "c" in table_name:
-            print '''\nSTEP 3: Aggregate {0}'''
-            tbl = aggregate(pk, df, '', 2)
-            tbl = add_column_length(table_name, tbl)
-            # print tbl.reset_index().course_sc_id.nunique()
-            file_name = table_name + "_cid2.tsv.bz2"
-            print '''Save {0} to output path'''.format(file_name)
-            new_file_path = os.path.abspath(os.path.join(output_path, file_name))
-            tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+
+    # for table_name in tables_list:
+    #     iterations = ['']
+    #     print "Working on table", table_name
+    #     pk = [pk_lookup[l] for l in table_name]
+
+    #     dems = 
+
+    #     if "d" in table_name:
+    #         iterations = ['gender', 'color', 'loc', 'school_type']
+
+    #     for dem in iterations:
+    #         print '''\nSTEP 2: Aggregate {0}'''.format(dem)
+    #         tbl = aggregate(pk, df, dem)
+    #         tbl = add_column_length(table_name, tbl)
+    #         # print tbl.reset_index().course_sc_id.nunique()
+    #         tmp = table_name + "_{0}.tsv.bz2"
+    #         file_name =  tmp.format(dem) if dem else str(table_name + ".tsv.bz2")
+    #         print '''Save {0} to output path'''.format(file_name)
+    #         new_file_path = os.path.abspath(os.path.join(output_path, file_name))
+    #         tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+
+    #     if "c" in table_name:
+    #         print '''\nSTEP 3: Aggregate {0}'''
+    #         tbl = aggregate(pk, df, '', 2)
+    #         tbl = add_column_length(table_name, tbl)
+    #         # print tbl.reset_index().course_sc_id.nunique()
+    #         file_name = table_name + "_cid2.tsv.bz2"
+    #         print '''Save {0} to output path'''.format(file_name)
+    #         new_file_path = os.path.abspath(os.path.join(output_path, file_name))
+    #         tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
 
 if __name__ == "__main__":
