@@ -141,8 +141,8 @@ def rule1(grouped_df, blacklist_df, mode):
 def rule2(grouped_df):
     print grouped_df
     grouped_df['total_cnaes'] = grouped_df.apply(lambda x: len( set(x["cnae_r_og"].union(x["cnae_s_og"])) ), axis=1)
-
-    grouped_df.loc[ grouped_df.total_cnaes < 3 , 'hs_id' ] = BLACKLISTED
+    grouped_df['hs_id_og'] = grouped_df['hs_id']
+    grouped_df.loc[ ( (grouped_df.cnae_r == BLACKLISTED) | (grouped_df.cnae_s == BLACKLISTED) ) & (grouped_df.total_cnaes < 3) , 'hs_id' ] = BLACKLISTED
 
     grouped_df = grouped_df.groupby(["bra_r", "cnae_r", "bra_s", "cnae_s", "hs_id"]).agg({
             "cnae_s_og" : lambda x: set.union(*list(x)),
@@ -150,6 +150,7 @@ def rule2(grouped_df):
             "value" : pd.Series.sum,
             "num_cnae_r": pd.Series.sum,
             "num_cnae_s" : pd.Series.sum,
+            "hs_id_og": lambda x: set.union(set(x)),
     }).reset_index()
 
     # '''
@@ -159,15 +160,20 @@ def rule2(grouped_df):
     # (bra_s, cnae_s, bra_r, cnae_r) and change those small 
     # hs_ids to other
     # '''
-    agg_pk = ["bra_s", "cnae_s", "bra_r", "cnae_r"]
-    bad_df = grouped_df[(grouped_df.hs_id == BLACKLISTED) & ((grouped_df.num_cnae_r + grouped_df.num_cnae_s ) < 3)  ]
+    # agg_pk = ["bra_s", "cnae_s", "bra_r", "cnae_r"]
+    grouped_df["hs_set_len"] = grouped_df.hs_id_og.apply(lambda x: len(x))
+    bad_df = grouped_df[(grouped_df.hs_id == BLACKLISTED) & ( grouped_df.hs_set_len < 3)  ]
+
+    bad_count = bad_df.bra_r.count()
+    print " !!! WARNING: there are %s products on the blacklist with less than 3 products" % (bad_count)
+    print bad_df.head()
     # good_df = grouped_df.iloc[ grouped_df[(grouped_df.hs_id != BLACKLISTED)].groupby(agg_pk).agg({"value":pd.Series.idxmin}).value ]
 
     # violations = bad_df.hs_id.count()
     # print "Step #3: number of violations", violations
     # if violations:
     #     pass
-    # return grouped_df
+    return grouped_df
 
 
 mygrouped_df, blacklist_df = setup("rule2/small_2013_01.csv", "rule2/BlackList_2013_01.csv")
