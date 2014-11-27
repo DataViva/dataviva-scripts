@@ -1,22 +1,8 @@
 # compute_growth.py
 # -*- coding: utf-8 -*-
 """
-    Format RAIS data for DB entry
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    Columns:
-    0 Municipality_ID
-    1 EconmicAtivity_ID_ISIC
-    2 EconomicActivity_ID_CNAE
-    3 BrazilianOcupation_ID
-    4 AverageMonthlyWage
-    5 WageReceived
-    6 Employee_ID
-    7 Establishment_ID
-    8 Year
-    
-    Example Usage
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    python scripts/common/growth_calc.py file.tsv.bz2 file2.tsv.bz2 --years=1 --cols=wage,age
+    python scripts/common/growth_calc.py file.tsv.bz2 file2.tsv.bz2 --years=1 --cols=wage,age -o /tmp
 
 """
 
