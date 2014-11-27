@@ -24,10 +24,17 @@
 import os, sys, time, bz2, click
 import pandas as pd
 import numpy as np
+import re
 file_path = os.path.dirname(os.path.realpath(__file__))
 utils_path = os.path.abspath(os.path.join(file_path, ".."))
 sys.path.insert(0, utils_path)
 from helpers import get_file
+
+
+def parse_table_name(t):
+    pattern = re.compile('(\w+)(_\w+)*.tsv(.bz2)*')
+    m = pattern.search(t)
+    return m.group(1)
 
 def do_growth(tbl, tbl_prev, cols, years_ago=1):
 
@@ -46,7 +53,8 @@ def do_growth(tbl, tbl_prev, cols, years_ago=1):
 @click.argument('new_path_str', type=click.Path(exists=True))
 @click.option('-c', '--cols', prompt='Columns separated by commas to compute growth', type=str, required=True)
 @click.option('-y', '--years', prompt='years between data points', type=int, required=False)
-def main(orig_path_str, new_path_str, cols, years=1):
+@click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
+def main(orig_path_str, new_path_str, cols, output_path, years=1):
     start = time.time()
     step = 0
     
@@ -62,10 +70,12 @@ def main(orig_path_str, new_path_str, cols, years=1):
 
     df2 = do_growth(df1, df2, col_names, years)
     
-    output_path = "./" # - for testing only
-
-    t_name = str(os.path.dirname(os.path.realpath( new_path_str ))).split("_")[0]
-
+    output_path = "/tmp" # - for testing only
+    print output_path
+    t_name = parse_table_name(new_path_str) # str(os.path.dirname(os.path.realpath( new_path_str ))).split("_")[0]
+    print "GOT TABLE NAME OF ", t_name
+    if not t_name:
+        t_name = "noname"
     new_file_path = os.path.abspath(os.path.join(output_path, "{0}_with_growth.tsv.bz2".format(t_name)))
     df2.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.2f")
     
