@@ -79,6 +79,12 @@ def setup(df, blacklist_df):
     print "Done with setup"
     return grouped_df, blacklist_df
 
+###################################################################################
+# RULE 1
+# Blacklist the CNAE ID of any row where the sender or receiver CNAE is blacklisted 
+# and the number of the corresponding establishments (sender/receiver) is less
+# than 3. 
+###################################################################################
 def rule1(grouped_df, blacklist_df, mode):
     ''' Accepts a dataframe of the data in YMSRP form, a blacklist dataframe and a mode (either SENDER or RECEIVER) '''
 
@@ -201,9 +207,11 @@ def rule1(grouped_df, blacklist_df, mode):
     return grouped_df
 
 
-###########################
-# RULE 2                  #
-###########################
+#################################################################################
+# RULE 2                  
+# Blacklist the HS ID of any row where the sender or receiver CNAE is blacklisted 
+# and the total number of CNAEs (sender+receiver) is less than 3.
+#################################################################################
 def rule2(grouped_df):
     ''' Blacklist any row where the sender or receiver CNAE is blacklisted and the total number of CNAEs is less than 3 '''
 
