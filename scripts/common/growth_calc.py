@@ -16,14 +16,12 @@ utils_path = os.path.abspath(os.path.join(file_path, ".."))
 sys.path.insert(0, utils_path)
 from helpers import get_file
 
-pattern = re.compile('(\w+).tsv(.bz2)*')
-pattern1 = re.compile('(\w+)_(gender|color|loc|school_type|cid2|ethnicity).tsv(.bz2)*')
+
 
 def parse_table_name(t):
-    t = t.replace('_with_growth', '')
-    m = pattern1.search(t)
-    if m:
-        return m.group(1)
+    pattern = re.compile('(\w+).tsv(.bz2)*')
+    
+    # t = t.replace('_with_growth', '')
     m = pattern.search(t)
     if m:
         return m.group(1)
@@ -31,9 +29,9 @@ def parse_table_name(t):
 def do_growth(t_name, tbl, tbl_prev, cols, years_ago=1, edu_mode='hedu'):
     '''Growth rate'''
     print "COLS", cols
-    pk_lookup = {"b": "bra_id", "u": "university_id", "d": "d_id", "c": "course_%s_id" % (edu_mode) }
-    
-    pk = [pk_lookup[letter] for letter in t_name if letter != 'y']
+    pk_lookup = {"b": "bra_id", "s": "school_id", "u": "university_id", "d": "d_id", "c": "course_%s_id" % (edu_mode) }
+    t_namelook = t_name.split("_")[0]    
+    pk = [pk_lookup[letter] for letter in t_namelook if letter != 'y']
 
     tbl = pd.merge(tbl, tbl_prev[pk + cols], how='left', left_on=pk, right_on=pk )
     
