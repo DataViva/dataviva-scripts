@@ -9,6 +9,13 @@ from ei_config import CNAE_BLACKLISTED, HS_BLACKLISTED
 from ei_config import PURCHASES, DEVOLUTIONS, REMITS, CREDITS, TRANSFERS
 RECEIVER, SENDER = "receiver", "sender"
 
+
+'''
+EXAMPLE USAGE:
+
+python format_raw_new.py --fname path/to/ei_2013_01.csv --blpath path/to/BlackList_2013_01.csv --odir output/path -y 2013 -m 1
+'''
+
 def mylen(x):
     return len(x) if isinstance(x, collections.Iterable) else 1
 
