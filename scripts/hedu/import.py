@@ -11,6 +11,7 @@ pattern = re.compile('(\w+).tsv(.bz2)*')
 pattern1 = re.compile('(\w+)_(gender|color|loc|school_type|cid2|ethnicity).tsv(.bz2)*')
 
 def parse_table(t):
+    t = t.replace('_with_growth', '')
     m = pattern1.search(t)
     if m:
         return "hedu_" + m.group(1)
