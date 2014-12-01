@@ -51,7 +51,9 @@ def setup(df, blacklist_df):
                 try:
                     total += blacklist_df.xs([bra, x]).num_est
                 except KeyError:
-                    print "[SEVERE WARNING] BRA %s CNAE %s is not defined in Blacklist!" % (bra,x)
+                    ''' Per Elton, we treat items not in the blacklist as if they have at least 3 establishments '''
+                    total += 3
+                    
         return total
     
     print "Doing groupby..."
