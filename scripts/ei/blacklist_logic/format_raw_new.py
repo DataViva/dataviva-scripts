@@ -28,7 +28,7 @@ def setup(df, blacklist_df):
     df['icms_tax'] = df.ICMS_ST_Value + df.ICMS_Value 
     df['tax'] = df.icms_tax + df.IPI_Value + df.PIS_Value + df.COFINS_Value + df.II_Value + df.ISSQN_Value
     
-    df["product_value"] = 0
+    df["purchase_value"] = 0
     df["transfer_value"] = 0
     df["devolution_value"] = 0
     df["icms_credit_value"] = 0
@@ -39,6 +39,8 @@ def setup(df, blacklist_df):
     df.loc[df.CFOP_ID == DEVOLUTIONS, 'devolution_value'] = df.product_value
     df.loc[df.CFOP_ID == CREDITS, 'icms_credit_value'] = df.product_value
     df.loc[df.CFOP_ID == REMITS, 'remit_value'] = df.product_value
+
+    print df[df.purchase_value > 0].head()
 
     # df["purchase_value"] = df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == PURCHASES else 0, axis=1)
     # df["transfer_value"] = df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == TRANSFERS else 0, axis=1)
@@ -78,9 +80,12 @@ def setup(df, blacklist_df):
                 "purchase_value" : pd.Series.sum,
                 "transfer_value" : pd.Series.sum,
                 "devolution_value" : pd.Series.sum,
+                "remit_value" : pd.Series.sum,
+
                 "icms_credit_value" : pd.Series.sum,
                 "icms_tax" : pd.Series.sum,
                 "tax" : pd.Series.sum,
+                "transportation_cost" : pd.Series.sum,
     })
 
     grouped_df = grouped_df.reset_index()
@@ -149,11 +154,13 @@ def rule1(grouped_df, blacklist_df, mode):
 
     ''' Update the bad_df to fix the rule 1 violation. Combine the bad and good columns to update all the values. '''
     bad_df['purchase_value'] = bad_df.purchase_value_bad + bad_df.purchase_value_good
+    bad_df['remit_value'] = bad_df.remit_value_bad + bad_df.remit_value_good
     bad_df['transfer_value'] = bad_df.transfer_value_bad + bad_df.transfer_value_good
     bad_df['devolution_value'] = bad_df.devolution_value_bad + bad_df.devolution_value_good
     bad_df['icms_credit_value'] = bad_df.icms_credit_value_bad + bad_df.icms_credit_value_good
     bad_df['icms_tax'] = bad_df.icms_tax_bad + bad_df.icms_tax_good
     bad_df['tax'] = bad_df.tax_bad + bad_df.tax_good
+    bad_df['transportation_cost'] = bad_df.transportation_cost_bad + bad_df.transportation_cost_good
 
     ''' Depending on whether we are doing a sender or receiver update, add the number of establishments and increment the number of CNAEs by 1 '''
     if mode == RECEIVER:
@@ -172,10 +179,11 @@ def rule1(grouped_df, blacklist_df, mode):
 
     ''' Track of the unique CNAEs that are in the new bad_df as a result of the updates with the good_df '''
     if mode == RECEIVER:
-        bad_df['cnae_r_og'] = list(set(list(bad_df.cnae_r_og_bad)).union(list(bad_df.cnae_r_og_good)))
+        # bad_df['cnae_r_og'] = list(set(list(bad_df.cnae_r_og_bad)).union(list(bad_df.cnae_r_og_good)))
+        bad_df['cnae_r_og'] = bad_df.apply(lambda x: set( set(x["cnae_r_og_bad"].union(x["cnae_r_og_good"])) ), axis=1)
         bad_df['cnae_s_og'] = bad_df.cnae_s_og_bad
     else:
-        bad_df['cnae_s_og'] = list(set(list(bad_df.cnae_s_og_bad)).union(list(bad_df.cnae_s_og_good)))
+        bad_df['cnae_s_og'] = bad_df.apply(lambda x: set( set(x["cnae_s_og_bad"].union(x["cnae_s_og_good"])) ), axis=1)
         bad_df['cnae_r_og'] = bad_df.cnae_r_og_bad
 
     ''' Now that we've updated the bad_df with some values from the good_df we need to go back to the master_df and remove the rows
@@ -189,7 +197,7 @@ def rule1(grouped_df, blacklist_df, mode):
 
 
     ''' After we delete the rows used to fix rule 1 violations, we now update the master dataframe with the updated values from bad_df '''
-    bad_df = bad_df[["bra_id_r", "cnae_id_r", "bra_id_s", "cnae_id_s", "hs_id", "purchase_value", "transfer_value", "devolution_value", "icms_credit_value", "icms_tax", "tax",  "num_est_r", "num_cnae_r", "num_est_s", "num_cnae_s", "cnae_r_og", "cnae_s_og"]]
+    bad_df = bad_df[["bra_id_r", "cnae_id_r", "bra_id_s", "cnae_id_s", "hs_id", "purchase_value", "remit_value", "transfer_value", "devolution_value", "icms_credit_value", "icms_tax", "tax", "transportation_cost", "num_est_r", "num_cnae_r", "num_est_s", "num_cnae_s", "cnae_r_og", "cnae_s_og"]]
     ''' Marker for which rows need updates '''
     bad_df["update_row"] = 1
     ''' Merge in preperation for dataframe update '''
@@ -201,12 +209,17 @@ def rule1(grouped_df, blacklist_df, mode):
     grouped_df.loc[grouped_df.update_row == 1, 'transfer_value'] = grouped_df.purchase_value_fixed
     grouped_df.loc[grouped_df.update_row != 1, 'devolution_value'] = grouped_df.devolution_value_orig
     grouped_df.loc[grouped_df.update_row == 1, 'devolution_value'] = grouped_df.devolution_value_fixed
+    grouped_df.loc[grouped_df.update_row != 1, 'remit_value'] = grouped_df.remit_value_orig
+    grouped_df.loc[grouped_df.update_row == 1, 'remit_value'] = grouped_df.remit_value_fixed
     grouped_df.loc[grouped_df.update_row != 1, 'icms_credit_value'] = grouped_df.icms_credit_value_orig
     grouped_df.loc[grouped_df.update_row == 1, 'icms_credit_value'] = grouped_df.icms_credit_value_fixed
     grouped_df.loc[grouped_df.update_row != 1, 'icms_tax'] = grouped_df.icms_tax_orig
     grouped_df.loc[grouped_df.update_row == 1, 'icms_tax'] = grouped_df.icms_tax_fixed
     grouped_df.loc[grouped_df.update_row != 1, 'tax'] = grouped_df.tax_orig
     grouped_df.loc[grouped_df.update_row == 1, 'tax'] = grouped_df.tax_fixed
+    grouped_df.loc[grouped_df.update_row != 1, 'transportation_cost'] = grouped_df.transportation_cost_orig
+    grouped_df.loc[grouped_df.update_row == 1, 'transportation_cost'] = grouped_df.transportation_cost_fixed
+
     grouped_df.loc[grouped_df.update_row != 1, 'num_cnae_r'] = grouped_df.num_cnae_r_orig
     grouped_df.loc[grouped_df.update_row == 1, 'num_cnae_r'] = grouped_df.num_cnae_r_fixed
     grouped_df.loc[grouped_df.update_row != 1, 'num_est_r'] = grouped_df.num_est_r_orig
@@ -221,7 +234,7 @@ def rule1(grouped_df, blacklist_df, mode):
     grouped_df.loc[grouped_df.update_row == 1, 'cnae_s_og'] = grouped_df.cnae_s_og_fixed
 
     ''' Keep only the columns we need and discard the rest '''
-    grouped_df = grouped_df[["bra_id_r", "cnae_id_r", "bra_id_s", "cnae_id_s", "hs_id", "cnae_s_og", "cnae_r_og", "purchase_value", "transfer_value", "devolution_value", "icms_credit_value", "icms_tax", "tax", "num_cnae_r", "num_est_r", "num_est_s","num_cnae_s"]]
+    grouped_df = grouped_df[["bra_id_r", "cnae_id_r", "bra_id_s", "cnae_id_s", "hs_id", "cnae_s_og", "cnae_r_og", "purchase_value", "remit_value", "transfer_value", "devolution_value", "icms_credit_value", "icms_tax", "tax", "transportation_cost", "num_cnae_r", "num_est_r", "num_est_s","num_cnae_s"]]
 
     return grouped_df
 
@@ -235,7 +248,7 @@ def rule2(grouped_df):
     ''' Blacklist any row where the sender or receiver CNAE is blacklisted and the total number of CNAEs is less than 3 '''
 
     ''' Compute total number of CNAEs '''
-    grouped_df['total_cnaes'] = grouped_df.apply(lambda x: len( set(x["cnae_r_og"].union(x["cnae_s_og"])) ), axis=1)
+    grouped_df['total_cnaes'] = grouped_df.apply(lambda x: len( set(set(x["cnae_r_og"]).union(x["cnae_s_og"])) ), axis=1)
     ''' Track original product for this row, before it is blacklisted '''
     grouped_df['hs_id_og'] = grouped_df['hs_id']
     ''' Blacklist products in violation of rule 2 (anywhere where there is a blacklisted CNAE and less than 3 products) '''
@@ -251,6 +264,8 @@ def rule2(grouped_df):
             "icms_credit_value": pd.Series.sum,
             "icms_tax": pd.Series.sum,
             "tax" : pd.Series.sum, 
+            "remit_value" : pd.Series.sum, 
+            "transportation_cost" : pd.Series.sum, 
             "num_cnae_r": pd.Series.sum,
             "num_cnae_s" : pd.Series.sum,
             "hs_id_og": lambda x: set.union(set(x)),
@@ -333,7 +348,7 @@ def main(fname, blpath, odir, year, month):
     print "Entering rule 2..."
     ei_df = rule2(ei_df)
     print ei_df
-    output_values = ["purchase_value", "transfer_value", "devolution_value", "icms_credit_value",  "remit_value", "tax", "icms_tax", "transportation_cost", "year", "month"]
+    output_values = ["purchase_value", "remit_value", "transfer_value", "devolution_value", "icms_credit_value",  "remit_value", "tax", "icms_tax", "transportation_cost", "year", "month"]
     output_name = "%s_%s" % (year,month)
     print "Making tables..."
     ymsrp = make_table(ei_df, "srp", output_values, odir, output_name, year=year, month=month)
