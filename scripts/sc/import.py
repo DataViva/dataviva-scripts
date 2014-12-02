@@ -11,6 +11,7 @@ pattern = re.compile('(\w+).tsv(.bz2)*')
 pattern1 = re.compile('(\w+)_(gender|color|loc|school_type|cid2).tsv(.bz2)*')
 
 def parse_table(t):
+    t = t.replace('_with_growth', '')
     m = pattern1.search(t)
     if m:
         return "sc_" + m.group(1)
@@ -44,7 +45,9 @@ def main(idir):
         fields = [x for x in fields if x!='schools']
         if 'class_id' in fields: fields[fields.index('class_id')] = 'classes'
         if 'enroll_id' in fields: fields[fields.index('enroll_id')] = 'enrolled'
-        if 'school_id' in fields: fields[fields.index('school_id')] = 'num_schools'
+        if 'enroll_id_growth' in fields: fields[fields.index('enroll_id_growth')] = 'enrolled_growth'
+        
+        if 'school_id' in fields and tablename != 'sc_ybs': fields[fields.index('school_id')] = 'num_schools'
 
         fields = ",".join(fields)
 
