@@ -90,12 +90,12 @@ def main(file_path, year, output_path):
         
         for dem in dems:
             print '''\nSTEP 2: Aggregate {0}'''.format(dem)
-            tbl = aggregate(pk, df, dem)
+            tbl = aggregate(table_name, pk, df, dem)
             
             if "c" in table_name:
                 pk2 = [x for x in pk]
                 pk2[pk2.index("course_sc_id")] = df.course_sc_id.str.slice(0, 2)
-                tbl_course2 = aggregate(pk2, df, dem, course_flag=True)
+                tbl_course2 = aggregate(table_name, pk2, df, dem, course_flag=True)
 
                 tbl = pd.concat([tbl, tbl_course2])
             

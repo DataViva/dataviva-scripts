@@ -31,7 +31,7 @@ def get_planning_regions():
 planning_regions = get_planning_regions()
 
 
-def aggregate(this_pk, tbl, dem, cid_len=None, course_flag=None):
+def aggregate(table_name, this_pk, tbl, dem, cid_len=None, course_flag=None):
 
     if dem:
         tbl["d_id"] = tbl[dem]
@@ -40,7 +40,7 @@ def aggregate(this_pk, tbl, dem, cid_len=None, course_flag=None):
         # this_pk = pk[:-1]
     
     # print "getting distances..."
-    if this_pk != ["year", "bra_id"]:
+    if table_name != "yb":
         this_agg_rules = agg_rules
     else:
         this_agg_rules = {
