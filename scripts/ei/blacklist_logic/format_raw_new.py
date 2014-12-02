@@ -17,7 +17,7 @@ python format_raw_new.py --fname path/to/ei_2013_01.csv --blpath path/to/BlackLi
 '''
 
 def mylen(x):
-    return len(x) if isinstance(x, collections.Iterable) else 1
+    return len(x) if isinstance(x, collections.Iterable) and not type(x) == str else 1
 
 def setup(df, blacklist_df):
     ''' Calculate value columns from the raw data that will eventually be stored in the database
@@ -26,12 +26,24 @@ def setup(df, blacklist_df):
 
     df['icms_tax'] = df.ICMS_ST_Value + df.ICMS_Value 
     df['tax'] = df.icms_tax + df.IPI_Value + df.PIS_Value + df.COFINS_Value + df.II_Value + df.ISSQN_Value
+    
+    df["product_value"] = 0
+    df["transfer_value"] = 0
+    df["devolution_value"] = 0
+    df["icms_credit_value"] = 0
+    df["remit_value"] = 0
 
-    df["purchase_value"] = df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == PURCHASES else 0, axis=1)
-    df["transfer_value"] = df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == TRANSFERS else 0, axis=1)
-    df["devolution_value"] = df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == DEVOLUTIONS else 0, axis=1)
-    df["icms_credit_value"] = df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == CREDITS else 0, axis=1)
-    df["remit_value"] = df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == REMITS else 0, axis=1)
+    df.loc[df.CFOP_ID == PURCHASES, 'purchase_value'] = df.product_value
+    df.loc[df.CFOP_ID == TRANSFERS, 'transfer_value'] = df.product_value
+    df.loc[df.CFOP_ID == DEVOLUTIONS, 'devolution_value'] = df.product_value
+    df.loc[df.CFOP_ID == CREDITS, 'icms_credit_value'] = df.product_value
+    df.loc[df.CFOP_ID == REMITS, 'remit_value'] = df.product_value
+
+    # df["purchase_value"] = df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == PURCHASES else 0, axis=1)
+    # df["transfer_value"] = df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == TRANSFERS else 0, axis=1)
+    # df["devolution_value"] = df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == DEVOLUTIONS else 0, axis=1)
+    # df["icms_credit_value"] = df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == CREDITS else 0, axis=1)
+    # df["remit_value"] = df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == REMITS else 0, axis=1)
 
     def uniq_ests(bra, cnae):
         ''' Given a BRA and a CNAE or a BRA and a list of CNAEs compute the total number of establishments'''
