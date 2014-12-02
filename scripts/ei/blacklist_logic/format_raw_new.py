@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import collections
+import os,sys
 import click
 from table_aggregator import make_table
 
@@ -136,7 +137,7 @@ def rule1(grouped_df, blacklist_df, mode):
         good_df_cond = (grouped_df.bra_id_s.isin(bad_df.bra_id_s)) & (grouped_df.cnae_id_s != CNAE_BLACKLISTED)
 
     # good df stores the minimum values
-    good_df = grouped_df[ good_df_cond ]
+    good_df = grouped_df[ good_df_cond  & grouped_df.purchase_value > 0 ]
     ''' Calculate the row with the minimum purchase_value to choose which row will be used to pad the values in violation of rule 1.
         Rows are aggregated by bra_id_x, bra_id_y, cnae_id_y, hs_id, where x & y can be sender or receiver respectively.  '''
     good_df = grouped_df.iloc[ good_df.groupby(agg_pk).agg({"purchase_value": pd.Series.idxmin}).purchase_value ]
@@ -170,8 +171,12 @@ def rule1(grouped_df, blacklist_df, mode):
     bad_df[cnae_lbl] = CNAE_BLACKLISTED
 
     ''' Track of the unique CNAEs that are in the new bad_df as a result of the updates with the good_df '''
-    bad_df['cnae_r_og'] = bad_df.apply(lambda x: x["cnae_r_og_bad"].union(x["cnae_r_og_good"]), axis=1)
-    bad_df['cnae_s_og'] = bad_df.apply(lambda x: x["cnae_s_og_bad"].union(x["cnae_s_og_good"]), axis=1)
+    if mode == RECEIVER:
+        bad_df['cnae_r_og'] = list(set(list(bad_df.cnae_r_og_bad)).union(list(bad_df.cnae_r_og_good)))
+        bad_df['cnae_s_og'] = bad_df.cnae_s_og_bad
+    else:
+        bad_df['cnae_s_og'] = list(set(list(bad_df.cnae_s_og_bad)).union(list(bad_df.cnae_s_og_good)))
+        bad_df['cnae_r_og'] = bad_df.cnae_r_og_bad
 
     ''' Now that we've updated the bad_df with some values from the good_df we need to go back to the master_df and remove the rows
         we used to fix bad_df from the master table, so we don't double count anything. '''
@@ -305,10 +310,23 @@ def bl_prepare(ei_df, blpath):
 @click.option('-m', '--month', prompt='Month', help='month of the data to convert', required=True)
 def main(fname, blpath, odir, year, month):
     print "Applying EI Rules 1 and 2."
-    ei_df = pd.read_csv(fname, header=0, sep=";", converters=converters, names=cols, quotechar="'", decimal=",")
-    ei_df, bl_df = bl_prepare(ei_df, blpath)
-    print "Doing setup..."
-    ei_df, bl_df = setup(ei_df, bl_df)
+    
+    hdf_filepath = odir + "/%s_%s_store_df.h5" % (year, month)
+    print "LOOKING for HDF file at location ", hdf_filepath
+
+    if os.path.exists(hdf_filepath):
+        print "READING HDF"
+        ei_df = pd.read_hdf(hdf_filepath, 'ei_df')
+        bl_df = pd.read_hdf(hdf_filepath, 'bl_df')
+    else:
+        ei_df = pd.read_csv(fname, header=0, sep=";", converters=converters, names=cols, quotechar="'", decimal=",")
+        ei_df, bl_df = bl_prepare(ei_df, blpath)
+        print "Doing setup..."
+        ei_df, bl_df = setup(ei_df, bl_df)
+        print "SAVING HDF to", hdf_filepath
+        ei_df.to_hdf(hdf_filepath, 'ei_df')
+        bl_df.to_hdf(hdf_filepath, 'bl_df')
+
     print "Entering rule 1..."
     ei_df = rule1(ei_df, bl_df, RECEIVER)
     ei_df = rule1(ei_df, bl_df, SENDER)

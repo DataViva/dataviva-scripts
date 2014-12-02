@@ -33,7 +33,7 @@ def main(idir):
         header = handle.readline().strip()
         fields = header.split(";")
         fields = ",".join(fields)
-        cmd = '''mysql -uroot $DATAVIVA_DB_NAME -e "LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY ';' LINES TERMINATED BY '\n' IGNORE 1 LINES (%s);" ''' % (f, tablename, fields)
+        cmd = '''mysql -uroot -h $DATAVIVA2_DB_HOST $DATAVIVA_DB_NAME -e "LOAD DATA LOCAL INFILE '%s' INTO TABLE %s FIELDS TERMINATED BY ';' LINES TERMINATED BY '\n' IGNORE 1 LINES (%s);" ''' % (f, tablename, fields)
         print cmd
         os.system(cmd)
 
