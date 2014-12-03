@@ -57,17 +57,22 @@ def do_growth(t_name, tbl, tbl_prev, cols, years_ago=1, edu_mode='hedu'):
 @click.option('-c', '--cols', prompt='Columns separated by commas to compute growth', type=str, required=True)
 @click.option('-y', '--years', prompt='years between data points', type=int, required=False)
 @click.option('-e', '--edu', prompt='hedu or sc', type=str, required=True)
+@click.option('-s', '--strcasts', prompt='Columns separed by commas to treat as strings', type=str, required=False)
 @click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
-def main(first_year_str, second_year_str, cols, output_path, edu, years=1):
+def main(first_year_str, second_year_str, cols, output_path, edu, years=1, strcasts=""):
     start = time.time()
     step = 0
+    
+
+    strcastlist = strcasts.split(",")
+    converters = {x:str for x in strcastlist}
     
     step+=1; print; print '''STEP {0}: \nCalculate 1 year growth'''.format(step)
     
     orig_path = get_file(first_year_str)
-    df1 = pd.read_csv(orig_path, sep="\t")
+    df1 = pd.read_csv(orig_path, sep="\t", converters=converters)
     new_path = get_file(second_year_str)
-    df2 = pd.read_csv(new_path, sep="\t")
+    df2 = pd.read_csv(new_path, sep="\t", converters=converters)
 
     col_names = cols.split(",")
     print "CALCULATING growth for the following columns:", col_names
