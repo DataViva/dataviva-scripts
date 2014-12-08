@@ -16,7 +16,7 @@ commute_rules = {
 
 # pk = ["year", "bra_id", "school_id", "course_sc_id", "d_id"]
 
-db = MySQLdb.connect(host=os.environ["DATAVIVA2_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"], 
+db = MySQLdb.connect(host=os.environ.get("DATAVIVA2_DB_HOST", "localhost"), user=os.environ["DATAVIVA_DB_USER"], 
                             passwd=os.environ["DATAVIVA_DB_PW"], 
                             db=os.environ["DATAVIVA_DB_NAME"])
 db.autocommit(1)

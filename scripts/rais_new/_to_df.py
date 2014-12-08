@@ -22,9 +22,10 @@ from helpers import get_file
 '''
 
 ''' Connect to DB '''
-db = MySQLdb.connect(host=os.environ["DATAVIVA2_DB_HOST"], user=os.environ["DATAVIVA2_DB_USER"], 
-                        passwd=os.environ["DATAVIVA2_DB_PW"], 
-                        db=os.environ["DATAVIVA2_DB_NAME"])
+db = MySQLdb.connect(host=os.environ.get("DATAVIVA2_DB_HOST", "localhost"), 
+                     user=os.environ["DATAVIVA2_DB_USER"], 
+                     passwd=os.environ["DATAVIVA2_DB_PW"], 
+                     db=os.environ["DATAVIVA2_DB_NAME"])
 db.autocommit(1)
 cursor = db.cursor()
 

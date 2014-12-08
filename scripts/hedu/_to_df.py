@@ -9,7 +9,7 @@ growth_lib_path = os.path.abspath(os.path.join(file_path, "..", "common"))
 sys.path.insert(0, growth_lib_path)
 
 ''' Connect to DB '''
-db = MySQLdb.connect(host=os.environ["DATAVIVA2_DB_HOST"], user=os.environ["DATAVIVA2_DB_USER"], passwd=os.environ["DATAVIVA2_DB_PW"], db=os.environ["DATAVIVA2_DB_NAME"])
+db = MySQLdb.connect(host=os.environ.get("DATAVIVA2_DB_HOST", "localhost"), user=os.environ["DATAVIVA2_DB_USER"], passwd=os.environ["DATAVIVA2_DB_PW"], db=os.environ["DATAVIVA2_DB_NAME"])
 cursor = db.cursor()
 
 missing = {
