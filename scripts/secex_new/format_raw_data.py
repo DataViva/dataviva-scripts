@@ -19,7 +19,7 @@
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     python scripts/secex_new/format_raw_data.py \
     data/secex/export/MDIC_2001.rar \
-    data/secex/import/MDIC_2001.rar \
+    -t export \
     -y 2001 \
     -e data/secex/observatory_ecis.csv \
     -p data/secex/observatory_pcis.csv \
@@ -36,7 +36,6 @@ import numpy as np
 
 from _to_df import to_df
 from _merge import merge
-from _val_per_unit import val_per_unit
 from _aggregate import aggregate
 from _shard import shard
 from _pci_wld_eci import pci_wld_eci
@@ -48,68 +47,55 @@ from _growth import calc_growth
 from _column_lengths import add_column_length
 
 @click.command()
-@click.argument('export_file_path', type=click.Path(exists=True))
-@click.argument('import_file_path', type=click.Path(exists=True))
+@click.argument('file_path', type=click.Path(exists=True))
+@click.option('-t', '--trade_flow', prompt='Trade flow', help='direction of trade export or import?', type=click.Choice(['export', 'import']), required=True)
 @click.option('-y', '--year', prompt='Year', help='year of the data to convert', required=True)
 @click.option('eci_file_path', '--eci', '-e', help='ECI file.', type=click.Path(exists=True), required=True, prompt="Path to ECI file")
 @click.option('pci_file_path', '--pci', '-p', help='PCI file.', type=click.Path(exists=True), required=True, prompt="Path to PCI file")
 @click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
 @click.option('prev_path', '--prev', '-g', help='Path to files from the previous year for calculating growth.', type=click.Path(exists=True), required=False)
 @click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.', type=click.Path(exists=True), required=False)
-def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path, output_path, prev_path, prev5_path):
+def main(file_path, trade_flow, year, eci_file_path, pci_file_path, output_path, prev_path, prev5_path):
     step = 0
-    # d = pd.HDFStore(os.path.abspath(os.path.join(output_path,'ymp.h5')))
     
-    geo_depths = [1, 3, 5, 7, 8, 9]
+    depths = {
+        "bra": [1, 3, 5, 7, 8, 9],
+        "hs": [2, 6],
+        "wld": [2, 5]
+    }
     
     step += 1; print '''\nSTEP {0}: \nImport file to pandas dataframe'''.format(step)
-    secex_exports = to_df(export_file_path, False)
-    secex_imports = to_df(import_file_path, False)
-    # secex_exports = secex_exports.head(1000)
-    # secex_imports = secex_imports.head(1000)
-
-    step += 1; print '''\nSTEP {0}: \nMerge imports and exports'''.format(step)
-    secex_df = merge(secex_exports, secex_imports)
+    secex_df = to_df(file_path, False)
+    # secex_df = secex_df.head(1000)
 
     step += 1; print '''\nSTEP {0}: \nAggregate'''.format(step)
-    ymbpw = aggregate(secex_df)
+    ybpw = aggregate(secex_df)
 
     step += 1; print '''\nSTEP {0}: \nShard'''.format(step)
-    [ymb, ymbp, ymbw, ymp, ympw, ymw] = shard(ymbpw)
-
-    step += 1; print '''\nSTEP {0}: \nPrice / unit'''.format(step)
-    # ymp = val_per_unit(ymp, secex_exports, "export")
-    # ymp = val_per_unit(ymp, secex_imports, "import")
+    [yb, ybp, ybw, yp, ypw, yw] = shard(ybpw, depths)
 
     step += 1; print '''\nSTEP {0}: \nCalculate PCI & ECI'''.format(step)
-    [ymp, ymw] = pci_wld_eci(eci_file_path, pci_file_path, ymp, ymw)
+    if trade_flow == "export":
+        [yp, yw] = pci_wld_eci(eci_file_path, pci_file_path, yp, yw)
 
     step += 1; print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
-    ymb = domestic_eci(ymp, ymb, ymbp, geo_depths)
+    yb = domestic_eci(yp, yb, ybp, depths)
 
     step += 1; print '''\nSTEP {0}: \nCalculate diversity'''.format(step)
-    ymb = calc_diversity(ymbp, ymb, "bra_id", "hs_id")
-    ymb = calc_diversity(ymbw, ymb, "bra_id", "wld_id")
-    ymp = calc_diversity(ymbp, ymp, "hs_id", "bra_id")
-    ymp = calc_diversity(ympw, ymp, "hs_id", "wld_id")
-    ymw = calc_diversity(ymbw, ymw, "wld_id", "bra_id")
-    ymw = calc_diversity(ympw, ymw, "wld_id", "hs_id")
+    yb = calc_diversity(ybp, yb, "bra_id", "hs_id", depths)
+    yb = calc_diversity(ybw, yb, "bra_id", "wld_id", depths)
+    yp = calc_diversity(ybp, yp, "hs_id", "bra_id", depths)
+    yp = calc_diversity(ypw, yp, "hs_id", "wld_id", depths)
+    yw = calc_diversity(ybw, yw, "wld_id", "bra_id", depths)
+    yw = calc_diversity(ypw, yw, "wld_id", "hs_id", depths)
 
     step += 1; print '''\nSTEP {0}: \nCalculate Brazilian RCA'''.format(step)
-    ymp = brazil_rca(ymp, year)
-    
-    # d["ymp"] = ymp
-    # d["ymbp"] = ymbp
-    # sys.exit()
-    # ymp = d["ymp"]
-    # ymbp = d["ymbp"]
+    yp = brazil_rca(yp, year)
     
     step += 1; print '''\nSTEP {0}: \nCalculate RCA, diversity and opp_gain aka RDO'''.format(step)
-    ymbp = rdo(ymbp, ymp, year, geo_depths)
-    # ymbp.to_csv('ymbp_temp.csv')
-    # print ymbp.head(); sys.exit();
+    ybp = rdo(ybp, yp, year, depths)
     
-    tables = {"ymb": ymb, "ymp": ymp, "ymw": ymw, "ymbp": ymbp, "ymbpw": ymbpw, "ymbw": ymbw, "ympw": ympw}
+    tables = {"yb": yb, "yp": yp, "yw": yw, "ybp": ybp, "ybpw": ybpw, "ybw": ybw, "ypw": ypw}
     
     if prev_path:
         step += 1; print '''\nSTEP {0}: \nCalculate 1 year growth'''.format(step)

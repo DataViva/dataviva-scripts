@@ -2,24 +2,23 @@ import sys
 import pandas as pd
 import numpy as np
 
-def get_deepest(column):
-    if column == "hs_id": return 6
-    if column == "bra_id": return 9
-    if column == "wld_id": return 5
+def get_deepest(column, depths):
+    if column == "hs_id": return depths["hs"][-1]
+    if column == "bra_id": return depths["bra"][-1]
+    if column == "wld_id": return depths["wld"][-1]
 
-def calc_diversity(diversity_tbl, return_tbl, index_col, diversity_col):
+def calc_diversity(diversity_tbl, return_tbl, index_col, diversity_col, depths):
     
     # filter table by deepest length
     diversity_tbl = diversity_tbl.reset_index()
     year = diversity_tbl['year'][0]
-    deepest_criterion = diversity_tbl[diversity_col].map(lambda x: len(x) == get_deepest(diversity_col))
-    month_criterion = diversity_tbl["month"].map(lambda x: x == "00")
-    diversity_tbl = diversity_tbl[deepest_criterion & month_criterion]
+    deepest_criterion = diversity_tbl[diversity_col].map(lambda x: len(x) == get_deepest(diversity_col, depths))
+    diversity_tbl = diversity_tbl[deepest_criterion]
     
     '''
         GET DIVERSITY
     '''
-    diversity = diversity_tbl.pivot(index=index_col, columns=diversity_col, values="export_val").fillna(0)
+    diversity = diversity_tbl.pivot(index=index_col, columns=diversity_col, values="val_usd").fillna(0)
     diversity[diversity >= 1] = 1
     diversity[diversity < 1] = 0
     diversity = diversity.sum(axis=1)
@@ -27,7 +26,7 @@ def calc_diversity(diversity_tbl, return_tbl, index_col, diversity_col):
     '''
         GET EFFECTIVE DIVERSITY
     '''
-    entropy = diversity_tbl.pivot(index=index_col, columns=diversity_col, values="export_val").fillna(0)
+    entropy = diversity_tbl.pivot(index=index_col, columns=diversity_col, values="val_usd").fillna(0)
     entropy = entropy.T / entropy.T.sum()
     entropy = entropy * np.log(entropy)
     
@@ -44,9 +43,8 @@ def calc_diversity(diversity_tbl, return_tbl, index_col, diversity_col):
         tbl, col = tbl_col
         tbl = pd.DataFrame(tbl, columns=[col])
         tbl["year"] = year
-        tbl["month"] = "00"
         tbl = tbl.reset_index()
-        tbl = tbl.set_index(["year", "month", index_col])
+        tbl = tbl.set_index(["year", index_col])
         return_tbl[col] = tbl[col]
 
     return return_tbl

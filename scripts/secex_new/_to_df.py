@@ -3,9 +3,9 @@ import rarfile, sys, os, MySQLdb, bz2
 from collections import defaultdict
 
 ''' Connect to DB '''
-db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA2_DB_USER"], 
-                        passwd=os.environ["DATAVIVA2_DB_PW"], 
-                        db=os.environ["DATAVIVA2_DB_NAME"])
+db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"], 
+                        passwd=os.environ["DATAVIVA_DB_PW"], 
+                        db=os.environ["DATAVIVA_DB_NAME"])
 db.autocommit(1)
 cursor = db.cursor()
 
@@ -72,12 +72,6 @@ def val_kg(raw):
     try: return int(raw)
     except: missing["val_kg"][raw] += 1
 
-def format_month(raw):
-    try: month = int(raw)
-    except: missing["month"][raw] += 1
-    if month in range(1, 13): return str(month).zfill(2)
-    missing["month"][raw] += 1
-
 def to_df(input_file_path, index=False, debug=False):
     if "rar" in input_file_path:
         rar_file = rarfile.RarFile(input_file_path)
@@ -90,18 +84,18 @@ def to_df(input_file_path, index=False, debug=False):
         input_file = open(input_file_path, "rU")
     
     if index:
-        index_lookup = {"y":"year", "m":"month", "b":"bra_id", "p":"hs_id", "w":"wld_id"}
+        index_lookup = {"y":"year", "b":"bra_id", "p":"hs_id", "w":"wld_id"}
         index_cols = [index_lookup[i] for i in index]
-        secex_df = pd.read_csv(input_file, sep="\t", converters={"month":str, "hs_id":str})
+        secex_df = pd.read_csv(input_file, sep="\t", converters={"hs_id":str})
         secex_df = secex_df.set_index(index_cols)
     else:
         cols = ["year", "month", "wld_id", "state_id", "customs", "bra_id", \
                 "val_kg", "val_usd", "hs_id"]
         delim = "|"
-        coerce_cols = {"bra_id":bra_replace, "month":format_month, "hs_id":hs_replace, \
+        coerce_cols = {"bra_id":bra_replace, "hs_id":hs_replace, \
                         "state_id":state_replace, "wld_id":wld_replace, "val_kg":val_kg, "val_usd":val_usd}
         secex_df = pd.read_csv(input_file, header=0, sep=delim, converters=coerce_cols, names=cols)
-        secex_df = secex_df[["year", "month", "state_id", "bra_id", "hs_id", "wld_id", "val_usd", "val_kg"]]
+        secex_df = secex_df[["year", "state_id", "bra_id", "hs_id", "wld_id", "val_usd", "val_kg"]]
         
         for col, missings in missing.items():
             if not len(missings): continue

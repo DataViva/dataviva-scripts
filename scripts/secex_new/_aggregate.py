@@ -4,9 +4,9 @@ import MySQLdb
 
 def get_lookup(type="bra"):
     ''' Connect to DB '''
-    db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA2_DB_USER"], 
-                            passwd=os.environ["DATAVIVA2_DB_PW"], 
-                            db=os.environ["DATAVIVA2_DB_NAME"])
+    db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"], 
+                            passwd=os.environ["DATAVIVA_DB_PW"], 
+                            db=os.environ["DATAVIVA_DB_NAME"])
     db.autocommit(1)
     cursor = db.cursor()
     
@@ -16,61 +16,49 @@ def get_lookup(type="bra"):
     return lookup
 
 def aggregate(secex_df):
-    ymbpw = secex_df.groupby(level=["year", "month", "state_id", "bra_id", "hs_id", "wld_id"]).sum()
-    
-    ''' TIME '''
-    ymbpw_years = ymbpw.groupby(level=["year", "state_id", "bra_id", "hs_id", "wld_id"]).sum()
-    ymbpw_years["month"] = "00"
-    ymbpw_years = ymbpw_years.set_index("month", append=True)
-    ymbpw_years = ymbpw_years.reorder_levels(["year", "month", "state_id", "bra_id", "hs_id", "wld_id"])
-    
-    ymbpw = pd.concat([ymbpw, ymbpw_years])
+    ybpw = secex_df.groupby(["year", "state_id", "bra_id", "hs_id", "wld_id"]).sum()
     
     ''' GEOGRAPHY '''
-    ymbpw_states = ymbpw.groupby(level=["year", "month", "state_id", "hs_id", "wld_id"]).sum()
-    ymbpw_states.index.names = ["year", "month", "bra_id", "hs_id", "wld_id"]
+    ybpw_states = ybpw.groupby(level=["year", "state_id", "hs_id", "wld_id"]).sum()
+    ybpw_states.index.names = ["year", "bra_id", "hs_id", "wld_id"]
     
-    ymbpw_munics = ymbpw.reset_index()
-    ymbpw_munics = ymbpw_munics.drop("state_id", axis=1)
-    ymbpw_munics = ymbpw_munics.groupby(["year", "month", "bra_id", "hs_id", "wld_id"]).sum()
+    ybpw_munics = ybpw.reset_index()
+    ybpw_munics = ybpw_munics.drop("state_id", axis=1)
+    ybpw_munics = ybpw_munics.groupby(["year", "bra_id", "hs_id", "wld_id"]).sum()
     
-    ymbpw_meso = ymbpw_munics.reset_index()
-    ymbpw_meso["bra_id"] = ymbpw_meso["bra_id"].apply(lambda x: x[:5])
-    ymbpw_meso = ymbpw_meso.groupby(["year", "month", "bra_id", "hs_id", "wld_id"]).sum()
+    ybpw_meso = ybpw_munics.reset_index()
+    ybpw_meso["bra_id"] = ybpw_meso["bra_id"].apply(lambda x: x[:5])
+    ybpw_meso = ybpw_meso.groupby(["year", "bra_id", "hs_id", "wld_id"]).sum()
     
-    ymbpw_regions = ymbpw_munics.reset_index()
-    ymbpw_regions["bra_id"] = ymbpw_regions["bra_id"].apply(lambda x: x[:1])
-    ymbpw_regions = ymbpw_regions.groupby(["year", "month", "bra_id", "hs_id", "wld_id"]).sum()
+    ybpw_regions = ybpw_munics.reset_index()
+    ybpw_regions["bra_id"] = ybpw_regions["bra_id"].apply(lambda x: x[:1])
+    ybpw_regions = ybpw_regions.groupby(["year", "bra_id", "hs_id", "wld_id"]).sum()
 
-    ymbpw_micro = ymbpw_munics.reset_index()
-    ymbpw_micro["bra_id"] = ymbpw_micro["bra_id"].apply(lambda x: x[:7])
-    ymbpw_micro = ymbpw_micro.groupby(["year", "month", "bra_id", "hs_id", "wld_id"]).sum()
+    ybpw_micro = ybpw_munics.reset_index()
+    ybpw_micro["bra_id"] = ybpw_micro["bra_id"].apply(lambda x: x[:7])
+    ybpw_micro = ybpw_micro.groupby(["year", "bra_id", "hs_id", "wld_id"]).sum()
     
-    ymbpw_pr = ymbpw_munics.reset_index()
-    ymbpw_pr = ymbpw_pr[ymbpw_pr["bra_id"].map(lambda x: x[:3] == "4mg")]
-    ymbpw_pr["bra_id"] = ymbpw_pr["bra_id"].astype(str).replace(get_lookup("pr"))
-    ymbpw_pr = ymbpw_pr.groupby(["year", "month", "bra_id", "hs_id", "wld_id"]).sum()
+    ybpw_pr = ybpw_munics.reset_index()
+    ybpw_pr = ybpw_pr[ybpw_pr["bra_id"].map(lambda x: x[:3] == "4mg")]
+    ybpw_pr["bra_id"] = ybpw_pr["bra_id"].astype(str).replace(get_lookup("pr"))
+    ybpw_pr = ybpw_pr.groupby(["year", "bra_id", "hs_id", "wld_id"]).sum()
     
-    ymbpw = pd.concat([ymbpw_regions, ymbpw_states, ymbpw_munics, ymbpw_meso, ymbpw_micro, ymbpw_pr])
+    ybpw = pd.concat([ybpw_regions, ybpw_states, ybpw_munics, ybpw_meso, ybpw_micro, ybpw_pr])
     
     ''' PRODUCTS '''
-    ymbpw_hs2 = ymbpw.reset_index()
-    ymbpw_hs2["hs_id"] = ymbpw_hs2["hs_id"].apply(lambda x: x[:2])
-    ymbpw_hs2 = ymbpw_hs2.groupby(["year", "month", "bra_id", "hs_id", "wld_id"]).sum()
+    ybpw_hs2 = ybpw.reset_index()
+    ybpw_hs2["hs_id"] = ybpw_hs2["hs_id"].apply(lambda x: x[:2])
+    ybpw_hs2 = ybpw_hs2.groupby(["year", "bra_id", "hs_id", "wld_id"]).sum()
     
-    # ymbpw_hs4 = ymbpw.reset_index()
-    # ymbpw_hs4["hs_id"] = ymbpw_hs4["hs_id"].apply(lambda x: x[:4])
-    # ymbpw_hs4 = ymbpw_hs4.groupby(["year", "month", "bra_id", "hs_id", "wld_id"]).sum()
-    
-    ymbpw = pd.concat([ymbpw, ymbpw_hs2])
+    ybpw = pd.concat([ybpw, ybpw_hs2])
     
     ''' COUNTRIES '''
-    ymbpw_continents = ymbpw.reset_index()
-    ymbpw_continents["wld_id"] = ymbpw_continents["wld_id"].apply(lambda x: x[:2])
-    ymbpw_continents = ymbpw_continents.groupby(["year", "month", "bra_id", "hs_id", "wld_id"]).sum()
+    ybpw_continents = ybpw.reset_index()
+    ybpw_continents["wld_id"] = ybpw_continents["wld_id"].apply(lambda x: x[:2])
+    ybpw_continents = ybpw_continents.groupby(["year", "bra_id", "hs_id", "wld_id"]).sum()
     
-    ymbpw = pd.concat([ymbpw, ymbpw_continents])
+    ybpw = pd.concat([ybpw, ybpw_continents])
     
-    ymbpw = ymbpw.sortlevel()
-    return ymbpw
+    ybpw = ybpw.sortlevel()
+    return ybpw
     

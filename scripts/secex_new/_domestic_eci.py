@@ -6,41 +6,40 @@ growth_lib_path = os.path.abspath(os.path.join(file_path, "..", "growth_lib"))
 sys.path.insert(0, growth_lib_path)
 import growth
 
-def get_ybp_rcas(ymbp, geo_level):
+def get_ybp_rcas(ybp, geo_level, depths):
     
-    ymbp = ymbp.reset_index()
-    month_criterion = ymbp['month'].map(lambda x: x == '00')
-    hs_criterion = ymbp['hs_id'].map(lambda x: len(x) == 6)
-    bra_criterion = ymbp['bra_id'].map(lambda x: len(x) == geo_level)
+    ybp = ybp.reset_index()
+    hs_criterion = ybp['hs_id'].map(lambda x: len(x) == depths["hs"][-1])
+    bra_criterion = ybp['bra_id'].map(lambda x: len(x) == geo_level)
     
-    ymbp = ymbp[month_criterion & hs_criterion & bra_criterion]
-    ymbp = ymbp[["bra_id","hs_id","export_val"]]
+    ybp = ybp[hs_criterion & bra_criterion]
+    ybp = ybp[["bra_id","hs_id","val_usd"]]
     
-    ymbp = ymbp.pivot(index="bra_id", columns="hs_id", values="export_val").fillna(0)
+    ybp = ybp.pivot(index="bra_id", columns="hs_id", values="val_usd").fillna(0)
     
-    rcas = growth.rca(ymbp)
+    rcas = growth.rca(ybp)
     rcas[rcas >= 1] = 1
     rcas[rcas < 1] = 0
     
     return rcas
 
-def domestic_eci(ymp, ymb, ymbp, geo_depths):
-    ymp = ymp.reset_index()
-    year = ymp['year'][0]
+def domestic_eci(yp, yb, ybp, depths):
+    yp = yp.reset_index()
+    year = yp['year'][0]
     
-    hs_criterion = ymp['hs_id'].map(lambda x: len(x) == 6)
+    hs_criterion = yp['hs_id'].map(lambda x: len(x) == depths["hs"][-1])
     
-    ymp = ymp[hs_criterion & pd.notnull(ymp['pci'])]
-    ymp = ymp[["hs_id", "pci"]]
-    ymp = ymp.set_index("hs_id")
+    yp = yp[hs_criterion & pd.notnull(yp['pci'])]
+    yp = yp[["hs_id", "pci"]]
+    yp = yp.set_index("hs_id")
     
-    pcis = ymp.T
+    pcis = yp.T
     
     ecis = []
-    for geo_level in geo_depths:
+    for geo_level in depths["bra"]:
         print "geo_level:",geo_level
 
-        rcas = get_ybp_rcas(ymbp, geo_level)
+        rcas = get_ybp_rcas(ybp, geo_level, depths)
         
         rcas = rcas.reindex(columns=pcis.columns)
 
@@ -55,12 +54,11 @@ def domestic_eci(ymp, ymb, ymbp, geo_depths):
     ecis = pd.concat(ecis)
     ecis = pd.DataFrame(ecis, columns=["eci"])
     ecis["year"] = year
-    ecis["month"] = "00"
     
     ecis = ecis.reset_index()
-    ecis = ecis.set_index(["year", "month", "bra_id"])
+    ecis = ecis.set_index(["year", "bra_id"])
     
-    ymb["eci"] = ecis["eci"]
+    yb["eci"] = ecis["eci"]
     
     
-    return ymb
+    return yb

@@ -1,26 +1,26 @@
-def shard(ymbpw):
-    ymbpw = ymbpw.reset_index()
+def shard(ybpw, depths):
+    ybpw = ybpw.reset_index()
     
-    bra_criterion = ymbpw.bra_id.map(lambda x: len(x) == 9)
-    hs_criterion = ymbpw.hs_id.map(lambda x: len(x) == 6)
-    wld_criterion = ymbpw.wld_id.map(lambda x: len(x) == 5)
+    bra_criterion = ybpw.bra_id.map(lambda x: len(x) == depths["bra"][-1])
+    hs_criterion = ybpw.hs_id.map(lambda x: len(x) == depths["hs"][-1])
+    wld_criterion = ybpw.wld_id.map(lambda x: len(x) == depths["wld"][-1])
     
-    ymb = ymbpw[wld_criterion & hs_criterion]
-    ymb = ymb.groupby(['year','month','bra_id']).sum()
+    yb = ybpw[wld_criterion & hs_criterion]
+    yb = yb.groupby(['year','bra_id']).sum()
     
-    ymbp = ymbpw[wld_criterion]
-    ymbp = ymbp.groupby(['year','month','bra_id','hs_id']).sum()
+    ybp = ybpw[wld_criterion]
+    ybp = ybp.groupby(['year','bra_id','hs_id']).sum()
     
-    ymbw = ymbpw[hs_criterion]
-    ymbw = ymbw.groupby(['year','month','bra_id','wld_id']).sum()
+    ybw = ybpw[hs_criterion]
+    ybw = ybw.groupby(['year','bra_id','wld_id']).sum()
     
-    ymp = ymbpw[bra_criterion & wld_criterion]
-    ymp = ymp.groupby(['year','month','hs_id']).sum()
+    yp = ybpw[bra_criterion & wld_criterion]
+    yp = yp.groupby(['year','hs_id']).sum()
     
-    ympw = ymbpw[bra_criterion]
-    ympw = ympw.groupby(['year','month','hs_id','wld_id']).sum()
+    ypw = ybpw[bra_criterion]
+    ypw = ypw.groupby(['year','hs_id','wld_id']).sum()
     
-    ymw = ymbpw[bra_criterion & hs_criterion]
-    ymw = ymw.groupby(['year','month','wld_id']).sum()
+    yw = ybpw[bra_criterion & hs_criterion]
+    yw = yw.groupby(['year','wld_id']).sum()
     
-    return [ymb, ymbp, ymbw, ymp, ympw, ymw]
+    return [yb, ybp, ybw, yp, ypw, yw]
