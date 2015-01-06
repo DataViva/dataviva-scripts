@@ -56,6 +56,7 @@ from _column_lengths import add_column_length
 @click.option('prev_path', '--prev', '-g', help='Path to files from the previous year for calculating growth.', type=click.Path(exists=True), required=False)
 @click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.', type=click.Path(exists=True), required=False)
 def main(file_path, trade_flow, year, eci_file_path, pci_file_path, output_path, prev_path, prev5_path):
+    start = time.time()
     step = 0
     
     depths = {
@@ -66,7 +67,7 @@ def main(file_path, trade_flow, year, eci_file_path, pci_file_path, output_path,
     
     step += 1; print '''\nSTEP {0}: \nImport file to pandas dataframe'''.format(step)
     secex_df = to_df(file_path, False)
-    secex_df = secex_df.head(1000)
+    # secex_df = secex_df.head(1000)
 
     step += 1; print '''\nSTEP {0}: \nAggregate'''.format(step)
     ybpw = aggregate(secex_df)
@@ -99,6 +100,9 @@ def main(file_path, trade_flow, year, eci_file_path, pci_file_path, output_path,
     if trade_flow == "import":
         step += 1; print '''\nSTEP {0}: \nCalculate RCD calculation'''.format(step)
         ybp = rcd(ybp, yp, year, depths)
+    
+    # print ybp.head(20)
+    # sys.exit()
     
     tables = {"yb": yb, "yp": yp, "yw": yw, "ybp": ybp, "ybpw": ybpw, "ybw": ybw, "ypw": ypw}
     
@@ -136,13 +140,11 @@ def main(file_path, trade_flow, year, eci_file_path, pci_file_path, output_path,
             os.makedirs(output_path)
         new_file_path = os.path.abspath(os.path.join(output_path, "{0}.tsv.bz2".format(t_name)))
         t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
-
-if __name__ == "__main__":
-    start = time.time()
-
-    main()
     
     total_run_time = (time.time() - start) / 60
     print; print;
     print "Total runtime: {0} minutes".format(int(total_run_time))
     print; print;
+
+if __name__ == "__main__":
+    main()

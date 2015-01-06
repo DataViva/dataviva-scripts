@@ -4,9 +4,9 @@ import pandas.io.sql as sql
 import numpy as np
 
 file_path = os.path.dirname(os.path.realpath(__file__))
-growth_lib_path = os.path.abspath(os.path.join(file_path, "..", "growth_lib"))
-sys.path.insert(0, growth_lib_path)
-import growth
+ps_calcs_lib_path = os.path.abspath(os.path.join(file_path, "../../", "lib/ps_calcs"))
+sys.path.insert(0, ps_calcs_lib_path)
+import ps_calcs
 
 def get_wld_rcas(geo_level, year, ybp, depths):
     ''' Connect to DB '''
@@ -58,7 +58,7 @@ def get_domestic_rcas(geo_level, year, ybp, depths):
     ybp = ybp[["bra_id", "hs_id", "val_usd"]]
     ybp = ybp.pivot(index="bra_id", columns="hs_id", values="val_usd").fillna(0)
     
-    rcas = growth.rca(ybp).fillna(0)
+    rcas = ps_calcs.rca(ybp).fillna(0)
     rcas[rcas == np.inf] = 0
     
     return rcas
@@ -79,11 +79,11 @@ def get_wld_proximity(year):
     table = table.fillna(0)
 
     '''Use growth library to run RCA calculation on data'''
-    mcp = growth.rca(table)
+    mcp = ps_calcs.rca(table)
     mcp[mcp >= 1] = 1
     mcp[mcp < 1] = 0
     
-    prox = growth.proximity(mcp)
+    prox = ps_calcs.proximity(mcp)
 
     return prox
 
@@ -131,8 +131,8 @@ def rdo(ybp, yp, year, depths):
             DISTANCES
         '''
         '''domestic distances'''
-        prox_dom = growth.proximity(rcas_dom_binary)
-        dist_dom = growth.distance(rcas_dom_binary, prox_dom).fillna(0)
+        prox_dom = ps_calcs.proximity(rcas_dom_binary)
+        dist_dom = ps_calcs.distance(rcas_dom_binary, prox_dom).fillna(0)
         
         '''world distances'''
         prox_wld = get_wld_proximity(year)
@@ -142,7 +142,7 @@ def rdo(ybp, yp, year, depths):
         prox_wld = prox_wld.reindex(columns=hs_wld, index=hs_wld)
         rcas_wld_binary = rcas_wld_binary.reindex(columns=hs_wld)
         
-        dist_wld = growth.distance(rcas_wld_binary, prox_wld).fillna(0)
+        dist_wld = ps_calcs.distance(rcas_wld_binary, prox_wld).fillna(0)
         
         '''
             OPP GAIN
@@ -166,8 +166,8 @@ def rdo(ybp, yp, year, depths):
         prox_wld = prox_wld.reindex(index = all_hs_wld, columns = all_hs_wld)
 
         # print rcas_dom_binary.shape, prox_dom.shape, pcis.shape
-        opp_gain_wld = growth.opportunity_gain(rcas_wld_binary, prox_wld, pcis_wld)
-        opp_gain_dom = growth.opportunity_gain(rcas_dom_binary, prox_dom, pcis_wld)
+        opp_gain_wld = ps_calcs.opportunity_gain(rcas_wld_binary, prox_wld, pcis_wld)
+        opp_gain_dom = ps_calcs.opportunity_gain(rcas_dom_binary, prox_dom, pcis_wld)
         
         '''
             SET RCAS TO NULL
@@ -239,6 +239,7 @@ def rcd(ybp, yp, year, depths):
     ybp_rcd = pd.DataFrame(rcds, columns=["year", "bra_id", "hs_id", "rcd"])
     ybp_rcd["year"] = ybp_rcd["year"].astype("int")
     ybp_rcd = ybp_rcd.set_index(["year", "bra_id", "hs_id"])
+    ybp_rcd = ybp_rcd.dropna()
 
     ybp = pd.merge(ybp, ybp_rcd, how="outer", left_index=True, right_index=True)
 

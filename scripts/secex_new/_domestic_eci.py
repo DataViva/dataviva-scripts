@@ -2,9 +2,9 @@ import sys, os
 import pandas as pd
 
 file_path = os.path.dirname(os.path.realpath(__file__))
-growth_lib_path = os.path.abspath(os.path.join(file_path, "..", "growth_lib"))
-sys.path.insert(0, growth_lib_path)
-import growth
+ps_calcs_lib_path = os.path.abspath(os.path.join(file_path, "../../", "lib/ps_calcs"))
+sys.path.insert(0, ps_calcs_lib_path)
+import ps_calcs
 
 def get_ybp_rcas(ybp, geo_level, depths):
     
@@ -17,7 +17,7 @@ def get_ybp_rcas(ybp, geo_level, depths):
     
     ybp = ybp.pivot(index="bra_id", columns="hs_id", values="val_usd").fillna(0)
     
-    rcas = growth.rca(ybp)
+    rcas = ps_calcs.rca(ybp)
     rcas[rcas >= 1] = 1
     rcas[rcas < 1] = 0
     
