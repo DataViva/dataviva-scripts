@@ -42,7 +42,7 @@ from _pci_wld_eci import pci_wld_eci
 from _domestic_eci import domestic_eci
 from _calc_diversity import calc_diversity
 from _brazil_rca import brazil_rca
-from _rdo import rdo
+from _rdo import rdo, rcd
 from _growth import calc_growth
 from _column_lengths import add_column_length
 
@@ -66,7 +66,7 @@ def main(file_path, trade_flow, year, eci_file_path, pci_file_path, output_path,
     
     step += 1; print '''\nSTEP {0}: \nImport file to pandas dataframe'''.format(step)
     secex_df = to_df(file_path, False)
-    # secex_df = secex_df.head(1000)
+    secex_df = secex_df.head(1000)
 
     step += 1; print '''\nSTEP {0}: \nAggregate'''.format(step)
     ybpw = aggregate(secex_df)
@@ -74,12 +74,12 @@ def main(file_path, trade_flow, year, eci_file_path, pci_file_path, output_path,
     step += 1; print '''\nSTEP {0}: \nShard'''.format(step)
     [yb, ybp, ybw, yp, ypw, yw] = shard(ybpw, depths)
 
-    step += 1; print '''\nSTEP {0}: \nCalculate PCI & ECI'''.format(step)
     if trade_flow == "export":
+        step += 1; print '''\nSTEP {0}: \nCalculate PCI & ECI'''.format(step)
         [yp, yw] = pci_wld_eci(eci_file_path, pci_file_path, yp, yw)
 
-    step += 1; print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
-    yb = domestic_eci(yp, yb, ybp, depths)
+        step += 1; print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
+        yb = domestic_eci(yp, yb, ybp, depths)
 
     step += 1; print '''\nSTEP {0}: \nCalculate diversity'''.format(step)
     yb = calc_diversity(ybp, yb, "bra_id", "hs_id", depths)
@@ -89,11 +89,16 @@ def main(file_path, trade_flow, year, eci_file_path, pci_file_path, output_path,
     yw = calc_diversity(ybw, yw, "wld_id", "bra_id", depths)
     yw = calc_diversity(ypw, yw, "wld_id", "hs_id", depths)
 
-    step += 1; print '''\nSTEP {0}: \nCalculate Brazilian RCA'''.format(step)
-    yp = brazil_rca(yp, year)
+    if trade_flow == "export":
+        step += 1; print '''\nSTEP {0}: \nCalculate Brazilian RCA'''.format(step)
+        yp = brazil_rca(yp, year)
     
-    step += 1; print '''\nSTEP {0}: \nCalculate RCA, diversity and opp_gain aka RDO'''.format(step)
-    ybp = rdo(ybp, yp, year, depths)
+    if trade_flow == "export":
+        step += 1; print '''\nSTEP {0}: \nCalculate RCA, diversity and opp_gain aka RDO'''.format(step)
+        ybp = rdo(ybp, yp, year, depths)
+    if trade_flow == "import":
+        step += 1; print '''\nSTEP {0}: \nCalculate RCD calculation'''.format(step)
+        ybp = rcd(ybp, yp, year, depths)
     
     tables = {"yb": yb, "yp": yp, "yw": yw, "ybp": ybp, "ybpw": ybpw, "ybw": ybw, "ypw": ypw}
     

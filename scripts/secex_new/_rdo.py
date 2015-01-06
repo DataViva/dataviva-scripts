@@ -206,3 +206,40 @@ def rdo(ybp, yp, year, depths):
     ybp = pd.merge(ybp, ybp_rdo, how="outer", left_index=True, right_index=True)
     
     return ybp
+
+def rcd(ybp, yp, year, depths):
+    hs = yp[["val_usd"]].groupby(level=["hs_id"]).sum().dropna()
+    hs = [h for h in hs.index if len(h) == depths["hs"][-1]]
+    
+    rcds = []
+    for geo_level in depths["bra"]:
+        print "geo_level",geo_level
+
+        '''
+            RCAS
+        '''
+        rcas_dom = get_domestic_rcas(geo_level, year, ybp, depths)
+        rcas_dom = rcas_dom.reindex(columns=hs)
+        
+        '''
+            SET RCAS TO NULL
+        '''
+        rcas_dom = rcas_dom.replace(0, np.nan)
+    
+        def tryto(df, col, ind):
+            if col in df.columns:
+                if ind in df.index:
+                    return df[col][ind]
+            return None
+    
+        for bra in rcas_dom.index:
+            for h in hs:
+                rcds.append([year, bra, h, tryto(rcas_dom, h, bra) ])
+    
+    ybp_rcd = pd.DataFrame(rcds, columns=["year", "bra_id", "hs_id", "rcd"])
+    ybp_rcd["year"] = ybp_rcd["year"].astype("int")
+    ybp_rcd = ybp_rcd.set_index(["year", "bra_id", "hs_id"])
+
+    ybp = pd.merge(ybp, ybp_rcd, how="outer", left_index=True, right_index=True)
+
+    return ybp
