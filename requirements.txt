@@ -28,4 +28,6 @@ rarfile
 # requests
 
 # for storing dataframes
+cython
+numexpr
 tables
