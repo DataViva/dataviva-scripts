@@ -24,24 +24,24 @@ def required(ybio, ybi, yi, year, depths):
     # print "reset index", ybio.index.is_unique
     ybio = ybio.reset_index()
     ybio_data = ybio[["bra_id","cnae_id","cbo_id","num_emp"]]
-    cnae_criterion = ybio_data['cnae_id'].str.len() == 6
-    cbo_criterion = ybio_data['cbo_id'].str.len() == 4
+    cnae_criterion = ybio_data['cnae_id'].str.len() == depths["cnae"][-1]
+    cbo_criterion = ybio_data['cbo_id'].str.len() == depths["cbo"][-1]
     ybio_data = ybio_data[cnae_criterion & cbo_criterion]
     
     ybi = ybi.reset_index()
-    ybi = ybi[ybi['cnae_id'].str.len() == 6]
+    ybi = ybi[ybi['cnae_id'].str.len() == depths["cnae"][-1]]
     ybi["num_emp_est"] = ybi["num_emp"] / ybi["num_est"]
     
     ybi = ybi[["bra_id", "cnae_id", "num_emp_est"]]
     
     yi = yi.reset_index()
-    yi = yi[yi['cnae_id'].str.len() == 6]
+    yi = yi[yi['cnae_id'].str.len() == depths["cnae"][-1]]
     yi["num_emp_est"] = yi["num_emp"] / yi["num_est"]
     yi = yi[["cnae_id", "num_emp_est"]]
     yi = yi.set_index("cnae_id")["num_emp_est"]
     
     ybio_required = []
-    for geo_level in [3, 9]:
+    for geo_level in depths["bra"]:
         bra_criterion = ybio_data['bra_id'].str.len() == geo_level
         ybio_panel = ybio_data[bra_criterion]
         ybio_panel = ybio_panel.pivot_table(index=["bra_id", "cbo_id"], \

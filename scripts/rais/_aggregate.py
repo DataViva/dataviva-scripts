@@ -64,7 +64,7 @@ def aggregate(rais_df, depths):
     
     for t_name in tables.keys():
         ss = time.time()
-        print t_name
+        print "aggregating",t_name
         tbl_pk = tables[t_name]
         
         if len(pk) != len(tbl_pk):
@@ -73,10 +73,10 @@ def aggregate(rais_df, depths):
             tables[t_name] = ybio_raw.copy()
 
         if "cbo_id" in tbl_pk:
-            print "cbo"
+            # print "cbo"
             ybio_new_depths = pd.DataFrame()
             for depth in cbo_depths[:-1]:
-                print "  ", depth
+                # print "  ", depth
                 ybio_depth = tables[t_name].reset_index()
                 ybio_depth["cbo_id"] = ybio_depth["cbo_id"].str.slice(0, depth)
                 ybio_depth = ybio_depth.groupby(tbl_pk).agg(agg_rules)
@@ -84,10 +84,10 @@ def aggregate(rais_df, depths):
             tables[t_name] = pd.concat([ybio_new_depths, tables[t_name]])
     
         if "cnae_id" in tbl_pk:
-            print "cnae"
+            # print "cnae"
             ybio_new_depths = pd.DataFrame()
             for depth in cnae_depths[:-1]:
-                print "  ", depth
+                # print "  ", depth
                 ybio_depth = tables[t_name].reset_index()
                 ybio_depth["cnae_id"] = ybio_depth["cnae_id"].str.slice(0, depth)
                 ybio_depth = ybio_depth.groupby(tbl_pk).agg(agg_rules)
@@ -95,10 +95,10 @@ def aggregate(rais_df, depths):
             tables[t_name] = pd.concat([ybio_new_depths, tables[t_name]])
     
         if "bra_id" in tbl_pk:
-            print "bra"
+            # print "bra"
             ybio_new_depths = pd.DataFrame()
             for depth in bra_depths[:-1]:
-                print "  ", depth
+                # print "  ", depth
                 ybio_depth = tables[t_name].reset_index()
                 if depth == 8:
                     ybio_depth = ybio_depth[ybio_depth["bra_id"].map(lambda x: x[:3] == "4mg")]
@@ -118,9 +118,9 @@ def aggregate(rais_df, depths):
         print "Is unique:",tables[t_name].index.is_unique
         
         # tables[t_name].to_csv(t_name+".csv")
-        print (time.time() - ss) / 60
+        print "time:",(time.time() - ss) / 60
     
-    print (time.time() - s) / 60
+    print "total aggregation time:",(time.time() - s) / 60
     
     return tables
 
