@@ -68,6 +68,22 @@ def lookup_cnae(x):
 		return CNAE_NO_INFO
 	return cnae_lookup[str(x)]
 
+HDF_CACHE = "hdf_cache"
+
+def _check_hdf_cache(input_file, output_path):
+    print "CHECK HDF"
+    print input_file
+    print output_path
+    file_name = os.path.basename(input_file)
+    target = os.path.join(output_path, file_name + ".h5")
+    if not os.path.exists(output_path):
+        # -- make directory if it doesn't exist
+        os.makedirs(output_path)
+
+    if not os.path.exists(target):
+        return (False, target)
+    df = pd.read_hdf(target, HDF_CACHE)
+    return (df, target)
 
 @click.command()
 @click.option('--fname', prompt='file name',
@@ -101,18 +117,30 @@ def main(fname, odir):
 
 	converters = {"hs_id": update_hs_id, "bra_id_s":lookup_location, "bra_id_r":lookup_location, "cnae_id_r": lookup_cnae, 
 				"cnae_id_s":lookup_cnae} 
+	
+	ei_df, target = _check_hdf_cache(fname, odir)
 
-	ei_df = pd.read_csv(fname, header=0, sep=";", converters=converters, names=cols, quotechar="'", decimal=",")    
+	if not ei_df:
+		ei_df = pd.read_csv(fname, header=0, sep=";", converters=converters, names=cols, quotechar="'", decimal=",")    
 
-	print "Processing..."
-	ei_df['icms_tax'] = ei_df.ICMS_ST_Value + ei_df.ICMS_Value 
-	ei_df['tax'] = ei_df.icms_tax + ei_df.IPI_Value + ei_df.PIS_Value + ei_df.COFINS_Value + ei_df.II_Value + ei_df.ISSQN_Value
+		print "Processing..."
+		ei_df['icms_tax'] = ei_df.ICMS_ST_Value + ei_df.ICMS_Value 
+		ei_df['tax'] = ei_df.icms_tax + ei_df.IPI_Value + ei_df.PIS_Value + ei_df.COFINS_Value + ei_df.II_Value + ei_df.ISSQN_Value
 
-	ei_df["purchase_value"] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == PURCHASES else 0, axis=1)
-	ei_df["transfer_value"] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == TRANSFERS else 0, axis=1)
-	ei_df["devolution_value"] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == DEVOLUTIONS else 0, axis=1)
-	ei_df["icms_credit_value"] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == CREDITS else 0, axis=1)
-	ei_df["remit_value"] = ei_df.apply(lambda x: x["product_value"] if x["CFOP_ID"] == REMITS else 0, axis=1)
+		ei_df["purchase_value"] = 0
+		ei_df["transfer_value"] = 0
+		ei_df["devolution_value"] = 0
+		ei_df["icms_credit_value"] = 0
+		ei_df["remit_value"] = 0
+
+		ei_df.loc[df.CFOP_ID == PURCHASES, "purchase_value"] = ei_df.product_value
+		ei_df.loc[df.CFOP_ID == TRANSFERS, "transfer_value"] = ei_df.product_value
+		ei_df.loc[df.CFOP_ID == DEVOLUTIONS, "devolution_value"] = ei_df.product_value
+		ei_df.loc[df.CFOP_ID == CREDITS, "icms_credit_value"] = ei_df.product_value
+		ei_df.loc[df.CFOP_ID == REMITS, "remit_value"] = ei_df.product_value
+		
+		ei_df.to_hdf(target, HDF_CACHE, append=False)
+
 
 	print "Aggregating..."
 	primary_key =  ['year', 'month', 'bra_id_s', 'cnae_id_s', 
