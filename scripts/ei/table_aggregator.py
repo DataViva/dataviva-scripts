@@ -4,7 +4,6 @@ import pandas as pd
 import os
 from pandas.tools.pivot import pivot_table
 import itertools
-from _helper_columns import add_helper_cols
 from database import DB
 from _column_lengths import add_column_length
 
@@ -97,8 +96,8 @@ def make_table(ymbibip, table_name, output_values, odir, output_name, ignore_lis
 
     print "Writing csv to disk..."
     big_table, added_cols = add_column_length(table_name, big_table)
-    output_values += added_cols
+    tmp = output_values + added_cols
     
     output_path = os.path.join(odir, "output_%s_%s.csv" % (table_name, output_name))
-    big_table.to_csv(output_path, ";", columns = output_values)
+    big_table.to_csv(output_path, ";", columns = tmp)
     return big_table

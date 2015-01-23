@@ -81,7 +81,7 @@ def _check_hdf_cache(input_file, output_path):
         os.makedirs(output_path)
 
     if not os.path.exists(target):
-        return (False, target)
+        return (None, target)
     df = pd.read_hdf(target, HDF_CACHE)
     return (df, target)
 
