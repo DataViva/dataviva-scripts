@@ -52,21 +52,21 @@ def lookup_location(x):
     if x == '-1':
         return BRA_UNREPORTED
     if x == '4128625':
-    	x = '5200605'
+        x = '5200605'
     muni = lookup[x]
     # if not muni.startswith("4mg"):
-    	# muni = muni[:3] # -- outside MG only use state level
+        # muni = muni[:3] # -- outside MG only use state level
     return muni
 
 def update_hs_id(old_hs_id):
-	return hs_lookup[str(old_hs_id)]
+    return hs_lookup[str(old_hs_id)]
 
 def lookup_cnae(x):
-	if x in ['1', '-1']:
-		return CNAE_NO_INFO
-	if x in ['2', '-2']:
-		return CNAE_NO_INFO
-	return cnae_lookup[str(x)]
+    if x in ['1', '-1']:
+        return CNAE_NO_INFO
+    if x in ['2', '-2']:
+        return CNAE_NO_INFO
+    return cnae_lookup[str(x)]
 
 HDF_CACHE = "hdf_cache"
 
@@ -89,72 +89,72 @@ def _check_hdf_cache(input_file, output_path):
 @click.option('--fname', prompt='file name',
               help='Original file path to CSV.')
 @click.option('--odir', default='.', prompt=False,
-			  help='Directory for script output.')
+              help='Directory for script output.')
 def main(fname, odir):
-	print "Reading data frame..."
+    print "Reading data frame..."
 
-	cols = ["ncm", "hs_id",
-			"EconomicAtivity_ID_CNAE_Receiver_5d",
-			"cnae_id_r",
-			"EconomicAtivity_ID_CNAE_Sender_5d",
-			"cnae_id_s",
-			"CFOP_ID",
-			"Receiver_foreign",
-			"Sender_foreign",
-			"bra_id_r",
-			"bra_id_s",
-			"year",
-			"month",
-			"transportation_cost",
-			"ICMS_ST_Value",
-			"ICMS_Value",
-			"IPI_Value",
-			"PIS_Value",
-			"COFINS_Value",
-			"II_Value",
-			"product_value",
-			"ISSQN_Value"]
+    cols = ["ncm", "hs_id",
+            "EconomicAtivity_ID_CNAE_Receiver_5d",
+            "cnae_id_r",
+            "EconomicAtivity_ID_CNAE_Sender_5d",
+            "cnae_id_s",
+            "CFOP_ID",
+            "Receiver_foreign",
+            "Sender_foreign",
+            "bra_id_r",
+            "bra_id_s",
+            "year",
+            "month",
+            "transportation_cost",
+            "ICMS_ST_Value",
+            "ICMS_Value",
+            "IPI_Value",
+            "PIS_Value",
+            "COFINS_Value",
+            "II_Value",
+            "product_value",
+            "ISSQN_Value"]
 
-	converters = {"hs_id": update_hs_id, "bra_id_s":lookup_location, "bra_id_r":lookup_location, "cnae_id_r": lookup_cnae, 
-				"cnae_id_s":lookup_cnae} 
-	
-	ei_df, target = _check_hdf_cache(fname, odir)
+    converters = {"hs_id": update_hs_id, "bra_id_s":lookup_location, "bra_id_r":lookup_location, "cnae_id_r": lookup_cnae, 
+                "cnae_id_s":lookup_cnae} 
+    
+    ei_df, target = _check_hdf_cache(fname, odir)
 
-	if not ei_df:
-		ei_df = pd.read_csv(fname, header=0, sep=";", converters=converters, names=cols, quotechar="'", decimal=",")    
+    if ei_df is None:
+        ei_df = pd.read_csv(fname, header=0, sep=";", converters=converters, names=cols, quotechar="'", decimal=",")    
 
-		print "Processing..."
-		ei_df['icms_tax'] = ei_df.ICMS_ST_Value + ei_df.ICMS_Value 
-		ei_df['tax'] = ei_df.icms_tax + ei_df.IPI_Value + ei_df.PIS_Value + ei_df.COFINS_Value + ei_df.II_Value + ei_df.ISSQN_Value
+        print "Processing..."
+        ei_df['icms_tax'] = ei_df.ICMS_ST_Value + ei_df.ICMS_Value 
+        ei_df['tax'] = ei_df.icms_tax + ei_df.IPI_Value + ei_df.PIS_Value + ei_df.COFINS_Value + ei_df.II_Value + ei_df.ISSQN_Value
 
-		ei_df["purchase_value"] = 0
-		ei_df["transfer_value"] = 0
-		ei_df["devolution_value"] = 0
-		ei_df["icms_credit_value"] = 0
-		ei_df["remit_value"] = 0
+        ei_df["purchase_value"] = 0
+        ei_df["transfer_value"] = 0
+        ei_df["devolution_value"] = 0
+        ei_df["icms_credit_value"] = 0
+        ei_df["remit_value"] = 0
 
-		ei_df.loc[ei_df.CFOP_ID == PURCHASES, "purchase_value"] = ei_df.product_value
-		ei_df.loc[ei_df.CFOP_ID == TRANSFERS, "transfer_value"] = ei_df.product_value
-		ei_df.loc[ei_df.CFOP_ID == DEVOLUTIONS, "devolution_value"] = ei_df.product_value
-		ei_df.loc[ei_df.CFOP_ID == CREDITS, "icms_credit_value"] = ei_df.product_value
-		ei_df.loc[ei_df.CFOP_ID == REMITS, "remit_value"] = ei_df.product_value
-		
-		ei_df.to_hdf(target, HDF_CACHE, append=False)
+        ei_df.loc[ei_df.CFOP_ID == PURCHASES, "purchase_value"] = ei_df.product_value
+        ei_df.loc[ei_df.CFOP_ID == TRANSFERS, "transfer_value"] = ei_df.product_value
+        ei_df.loc[ei_df.CFOP_ID == DEVOLUTIONS, "devolution_value"] = ei_df.product_value
+        ei_df.loc[ei_df.CFOP_ID == CREDITS, "icms_credit_value"] = ei_df.product_value
+        ei_df.loc[ei_df.CFOP_ID == REMITS, "remit_value"] = ei_df.product_value
+        
+        ei_df.to_hdf(target, HDF_CACHE, append=False)
 
 
-	print "Aggregating..."
-	primary_key =  ['year', 'month', 'bra_id_s', 'cnae_id_s', 
-					'bra_id_r', 'cnae_id_r',
-					'hs_id']
+    print "Aggregating..."
+    primary_key =  ['year', 'month', 'bra_id_s', 'cnae_id_s', 
+                    'bra_id_r', 'cnae_id_r',
+                    'hs_id']
 
-	output_values = ["purchase_value", "transfer_value", "devolution_value", "icms_credit_value",  "remit_value", "tax", "icms_tax", "transportation_cost"]
+    output_values = ["purchase_value", "transfer_value", "devolution_value", "icms_credit_value",  "remit_value", "tax", "icms_tax", "transportation_cost"]
 
-	output_name = ntpath.basename(fname).replace(".csv", "")
+    output_name = ntpath.basename(fname).replace(".csv", "")
 
-	print "Making tables..."
-	ymsr = make_table(ei_df, "ymsr", output_values, odir, output_name)
-	yms = make_table(ei_df, "yms", output_values, odir, output_name)
-	ymr = make_table(ei_df, "ymr", output_values, odir, output_name)
-	
+    print "Making tables..."
+    ymsr = make_table(ei_df, "ymsr", output_values, odir, output_name)
+    yms = make_table(ei_df, "yms", output_values, odir, output_name)
+    ymr = make_table(ei_df, "ymr", output_values, odir, output_name)
+    
 if __name__ == '__main__':
     main()

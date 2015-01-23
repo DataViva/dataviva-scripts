@@ -96,7 +96,7 @@ def make_table(ymbibip, table_name, output_values, odir, output_name, ignore_lis
     big_table = agg_depths(ymbibip, table_name)
 
     print "Writing csv to disk..."
-    big_table = add_column_length(table_name, tbl)
+    big_table = add_column_length(table_name, big_table)
 
     output_path = os.path.join(odir, "output_%s_%s.csv" % (table_name, output_name))
     big_table.to_csv(output_path, ";", columns = output_values)
