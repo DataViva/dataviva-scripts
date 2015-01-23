@@ -133,11 +133,11 @@ def main(fname, odir):
 		ei_df["icms_credit_value"] = 0
 		ei_df["remit_value"] = 0
 
-		ei_df.loc[df.CFOP_ID == PURCHASES, "purchase_value"] = ei_df.product_value
-		ei_df.loc[df.CFOP_ID == TRANSFERS, "transfer_value"] = ei_df.product_value
-		ei_df.loc[df.CFOP_ID == DEVOLUTIONS, "devolution_value"] = ei_df.product_value
-		ei_df.loc[df.CFOP_ID == CREDITS, "icms_credit_value"] = ei_df.product_value
-		ei_df.loc[df.CFOP_ID == REMITS, "remit_value"] = ei_df.product_value
+		ei_df.loc[ei_df.CFOP_ID == PURCHASES, "purchase_value"] = ei_df.product_value
+		ei_df.loc[ei_df.CFOP_ID == TRANSFERS, "transfer_value"] = ei_df.product_value
+		ei_df.loc[ei_df.CFOP_ID == DEVOLUTIONS, "devolution_value"] = ei_df.product_value
+		ei_df.loc[ei_df.CFOP_ID == CREDITS, "icms_credit_value"] = ei_df.product_value
+		ei_df.loc[ei_df.CFOP_ID == REMITS, "remit_value"] = ei_df.product_value
 		
 		ei_df.to_hdf(target, HDF_CACHE, append=False)
 
