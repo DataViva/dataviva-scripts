@@ -87,8 +87,13 @@ def main(file_path, year, output_path, prev_path, prev5_path):
             step+=1; print; print 'STEP {0}: \nRequired'.format(step)
             tables["ybio"] = required(tables["ybio"], tables["ybi"], tables["yi"], year, depths)
             
-            d["yb"] = tables["yb"]; d["yo"] =  tables["yo"]; d["yi"] =  tables["yi"]; d["ybi"] = tables["ybi"]; d["ybo"] = tables["ybo"]; d["yio"] = tables["yio"]; d["ybio"] = tables["ybio"]
-            d.close()
+            try:
+                d["yb"] = tables["yb"]; d["yo"] =  tables["yo"]; d["yi"] =  tables["yi"]; d["ybi"] = tables["ybi"]; d["ybo"] = tables["ybo"]; d["yio"] = tables["yio"]; d["ybio"] = tables["ybio"]
+                d.close()
+            except OverflowError:
+                print "WARNING: Unable to save dataframe, Overflow Error."
+                d.close()
+                os.remove(os.path.join(output_path, 'rais_df_raw.h5'))
 
         step+=1; print; print 'STEP {0}: \nDiversity'.format(step)
         tables["yb"] = calc_diversity(tables["ybi"], tables["yb"], "bra_id", "cnae_id", year, depths)
