@@ -41,7 +41,7 @@ print "Getting CNAE data from DB..."
 cnae_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
 cursor.close()
 
-BRA_UNREPORTED = '0XX000007'
+BRA_UNREPORTED = '0xx000007'
 CNAE_NO_INFO = 'x00'
 CNAE_BLACKLISTED = 'x01'
 CNAE_OTHER = 'x99'
