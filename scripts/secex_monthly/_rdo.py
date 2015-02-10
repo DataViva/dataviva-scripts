@@ -10,10 +10,10 @@ import ps_calcs
 
 def get_wld_rcas(geo_level, year, ymbp):
     ''' Connect to DB '''
-    db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA_DB_USER"], 
+    db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"], 
                             passwd=os.environ["DATAVIVA_DB_PW"], 
                             db=os.environ["DATAVIVA_DB_NAME"])
-    
+        
     def rca(bra_tbl, wld_tbl):
         col_sums = bra_tbl.sum(axis=1)
         col_sums = col_sums.reshape((len(col_sums), 1))
@@ -68,7 +68,7 @@ def get_domestic_rcas(geo_level, year, ymbp, trade_flow):
 
 def get_wld_proximity(year):
     ''' Connect to DB '''
-    db = MySQLdb.connect(host="localhost", user=os.environ["DATAVIVA_DB_USER"], 
+    db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"], 
                             passwd=os.environ["DATAVIVA_DB_PW"], 
                             db=os.environ["DATAVIVA_DB_NAME"])
 

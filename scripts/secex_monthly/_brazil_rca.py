@@ -13,7 +13,8 @@ def brazil_rca(ymp, year):
     '''Get world values from database'''
     q = "select year, hs_id, rca from comtrade_ypw where year = {0} and "\
         "wld_id = 'sabra'".format(year)
-    bra_rcas = sql.read_sql(q, db)
+    bra_rcas = sql.read_sql(q, db) 
+    
     bra_rcas["month"] = "00"
     bra_rcas = bra_rcas.set_index(["year", "month", "hs_id"])
     
