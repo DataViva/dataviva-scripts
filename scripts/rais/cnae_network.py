@@ -21,7 +21,7 @@ def main(output_path):
     edges = set([])
     for cnae in cnaes:
         nada = True
-        cutoffs = list(frange(0.4, 0.75, 0.01))
+        cutoffs = list(frange(0.5, 0.81, 0.01))
         cutoffs.reverse()
         # for cutoff in [0.8, 0.75, 0.725, 0.7, 0.675, 0.65, 0.6, 0.55, 0.5]:
         for cutoff in cutoffs:
