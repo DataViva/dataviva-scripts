@@ -1,19 +1,9 @@
-import MySQLdb, os, sys
-import pandas.io.sql as sql
+import pandas as pd
 
-def brazil_rca(ymp, year):
+def brazil_rca(ymp, ypw_file_path, year):
     
-    ''' Connect to DB '''
-    db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"], 
-                            passwd=os.environ["DATAVIVA_DB_PW"], 
-                            db=os.environ["DATAVIVA_DB_NAME"])
-    db.autocommit(1)
-    cursor = db.cursor()
-    
-    '''Get world values from database'''
-    q = "select year, hs_id, rca from comtrade_ypw where year = {0} and "\
-        "wld_id = 'sabra'".format(year)
-    bra_rcas = sql.read_sql(q, db) 
+    bra_rcas = pd.read_csv(ypw_file_path, compression="bz2", sep="\t", converters={"hs_id":str})
+    bra_rcas = bra_rcas[bra_rcas['wld_id'] == "sabra"]
     
     bra_rcas["month"] = "00"
     bra_rcas = bra_rcas.set_index(["year", "month", "hs_id"])

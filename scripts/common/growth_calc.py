@@ -29,7 +29,9 @@ def parse_table_name(t):
 def do_growth(t_name, tbl, tbl_prev, cols, years_ago=1, edu_mode='hedu'):
     '''Growth rate'''
     print "COLS", cols
-    pk_lookup = {"b": "bra_id", "s": "school_id", "u": "university_id", "d": "d_id", "c": "course_%s_id" % (edu_mode) }
+    pk_lookup = {"b": "bra_id", 
+                "m": "month", "p": "hs_id", "w":"wld_id",
+                "s": "school_id", "u": "university_id", "d": "d_id", "c": "course_%s_id" % (edu_mode)}
     t_namelook = t_name.split("_")[0]    
     pk = [pk_lookup[letter] for letter in t_namelook if letter != 'y']
 
@@ -52,22 +54,27 @@ def do_growth(t_name, tbl, tbl_prev, cols, years_ago=1, edu_mode='hedu'):
     return tbl
 
 @click.command()
+@click.argument('first_year_str', type=click.Path(exists=True))
 @click.argument('second_year_str', type=click.Path(exists=True))
-@click.option('-r', '--replacer', prompt='value to be replaced', type=str, required=True)
 @click.option('-c', '--cols', prompt='Columns separated by commas to compute growth', type=str, required=True)
-@click.option('-y', '--years', prompt='years between data points (seperate by comma for multiple years)', type=str, required=True)
-@click.option('-e', '--edu', prompt='hedu or sc', type=str, required=True)
-@click.option('-s', '--strcasts', prompt='Columns separed by commas to treat as strings', type=str, required=False)
+@click.option('-y', '--years', prompt='years between data points', type=int, required=False)
+@click.option('-e', '--edu', help='hedu or sc', type=str, required=False)
+@click.option('-s', '--strcasts', help='Columns separed by commas to treat as strings', type=str, required=False)
 @click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
-def main(second_year_str, replacer, cols, output_path, edu, years=1, strcasts=""):
+def main(first_year_str, second_year_str, cols, output_path, edu=None, years=1, strcasts=""):
     start = time.time()
     step = 0
-
-    strcastlist = strcasts.split(",")
-    converters = {x:str for x in strcastlist}
+    
+    if strcasts:
+        strcastlist = strcasts.split(",")
+        converters = {x:str for x in strcastlist}
+    else:
+        converters = {}
     
     step+=1; print; print '''STEP {0}: \nCalculate 1 year growth'''.format(step)
     
+    orig_path = get_file(first_year_str)
+    df1 = pd.read_csv(orig_path, sep="\t", converters=converters)
     new_path = get_file(second_year_str)
     df2 = pd.read_csv(new_path, sep="\t", converters=converters)
 
@@ -75,20 +82,14 @@ def main(second_year_str, replacer, cols, output_path, edu, years=1, strcasts=""
     print "CALCULATING growth for the following columns:", col_names
     t_name = parse_table_name(second_year_str) 
 
-    years = years.split(",")
-    for y in years:
-        y = int(y)
-        target_str = second_year_str.replace(replacer, str(int(replacer) - y))
-        orig_path = get_file(target_str)
-        df1 = pd.read_csv(orig_path, sep="\t", converters=converters)
-        df2 = do_growth(t_name, df2, df1, col_names, y, edu)
+    df2 = do_growth(t_name, df2, df1, col_names, years, edu)
     
     
     print "GOT TABLE NAME OF ", t_name
     if not t_name:
         t_name = "noname"
     new_file_path = os.path.abspath(os.path.join(output_path, "{0}_with_growth.tsv.bz2".format(t_name)))
-    df2.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=False, float_format="%.2f")
+    df2.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=False, float_format="%.4f")
     
     print("--- %s minutes ---" % str((time.time() - start)/60))
 

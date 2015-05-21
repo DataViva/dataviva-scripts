@@ -8,7 +8,7 @@ ps_calcs_lib_path = os.path.abspath(os.path.join(file_path, "../../", "lib/ps_ca
 sys.path.insert(0, ps_calcs_lib_path)
 import ps_calcs
 
-def get_wld_rcas(geo_level, year, ymbp):
+def get_wld_rcas(geo_level, year, ymbp, ypw_file_path):
     ''' Connect to DB '''
     db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"], 
                             passwd=os.environ["DATAVIVA_DB_PW"], 
@@ -36,13 +36,11 @@ def get_wld_rcas(geo_level, year, ymbp):
     ymbp = ymbp[["bra_id", "hs_id", "export_val"]]
     ymbp = ymbp.pivot(index="bra_id", columns="hs_id", values="export_val").fillna(0)
     
-    '''Get world values from database'''
-    q = "select wld_id, hs_id, val_usd from comtrade_ypw where year = {0}".format(year)
-    ybp_wld = sql.read_sql(q, db)
+    '''Get world values from ypw file'''
+    ybp_wld = pd.read_csv(ypw_file_path, compression="bz2", sep="\t", converters={"hs_id":str})
     ybp_wld = ybp_wld.rename(columns={"val_usd":"export_val"})
     ybp_wld = ybp_wld.pivot(index="wld_id", columns="hs_id", values="export_val")
-    ybp_wld = ybp_wld.reindex(columns=ymbp.columns)
-    ybp_wld = ybp_wld.fillna(0)
+    ybp_wld = ybp_wld.reindex(columns=ymbp.columns).fillna(0)
     
     mcp = rca(ymbp, ybp_wld).fillna(0)
     mcp[mcp == np.inf] = 0
@@ -66,20 +64,16 @@ def get_domestic_rcas(geo_level, year, ymbp, trade_flow):
     
     return rcas
 
-def get_wld_proximity(year):
+def get_wld_proximity(year, ypw_file_path):
     ''' Connect to DB '''
     db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"], 
                             passwd=os.environ["DATAVIVA_DB_PW"], 
                             db=os.environ["DATAVIVA_DB_NAME"])
 
-    '''Get values from database'''
-    q = "select wld_id, hs_id, val_usd " \
-        "from comtrade_ypw " \
-        "where year = {0} and length(hs_id) = 6".format(year)
-    table = sql.read_sql(q, db)
+    '''Get world values from ypw file'''
+    table = pd.read_csv(ypw_file_path, compression="bz2", sep="\t", converters={"hs_id":str})
     table = table.rename(columns={"val_usd":"export_val"})
-    table = table.pivot(index="wld_id", columns="hs_id", values="export_val")
-    table = table.fillna(0)
+    table = table.pivot(index="wld_id", columns="hs_id", values="export_val").fillna(0)    
 
     '''Use growth library to run RCA calculation on data'''
     mcp = ps_calcs.rca(table)
@@ -105,7 +99,7 @@ def get_pcis(geo_level, ymp):
     
     return ymp["pci"]
 
-def rdo(ymbp, ymp, year, geo_depths):
+def rdo(ymbp, ymp, year, geo_depths, ypw_file_path):
     
     export_hs = ymp[["export_val"]].groupby(level=["hs_id"]).sum().dropna()
     export_hs = [hs for hs in export_hs.index if len(hs) == 6]
@@ -128,7 +122,7 @@ def rdo(ymbp, ymp, year, geo_depths):
         # print rcd.ix["mg"]
         # sys.exit()
         
-        rcas_wld = get_wld_rcas(geo_level, year, ymbp)
+        rcas_wld = get_wld_rcas(geo_level, year, ymbp, ypw_file_path)
         rcas_wld = rcas_wld.reindex(columns=export_hs)
         # print rcas_wld.ix["mg"]
         # print rcas_wld['010204']
@@ -150,7 +144,7 @@ def rdo(ymbp, ymp, year, geo_depths):
         dist_dom = ps_calcs.distance(rcas_dom_binary, prox_dom).fillna(0)
         
         '''world distances'''
-        prox_wld = get_wld_proximity(year)
+        prox_wld = get_wld_proximity(year, ypw_file_path)
         hs_wld = set(rcas_wld_binary.columns).intersection(set(prox_wld.columns))
 
         # hs_wld = set(rcas_wld_binary.columns).union(set(prox_wld.columns))

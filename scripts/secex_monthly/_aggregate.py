@@ -1,19 +1,5 @@
 import sys, os
 import pandas as pd
-import MySQLdb
-
-def get_lookup(type="bra"):
-    ''' Connect to DB '''
-    db = MySQLdb.connect(host=os.environ.get("DATAVIVA_DB_HOST", "localhost"), user=os.environ["DATAVIVA_DB_USER"], 
-                            passwd=os.environ["DATAVIVA_DB_PW"], 
-                            db=os.environ["DATAVIVA_DB_NAME"])
-    db.autocommit(1)
-    cursor = db.cursor()
-    
-    if type == "pr":
-        cursor.execute("select bra_id, pr_id from attrs_bra_pr")
-        lookup = {r[0]:r[1] for r in cursor.fetchall()}
-    return lookup
 
 def aggregate(secex_df):
     ymbpw = secex_df.groupby(level=["year", "month", "state_id", "bra_id", "hs_id", "wld_id"]).sum()
@@ -28,7 +14,7 @@ def aggregate(secex_df):
     ymbpw = pd.concat([ymbpw, ymbpw_years])
     
     ''' GEOGRAPHY '''
-    print "stats..."
+    print "states..."
     ymbpw_states = ymbpw.groupby(level=["year", "month", "state_id", "hs_id", "wld_id"]).sum()
     ymbpw_states.index.names = ["year", "month", "bra_id", "hs_id", "wld_id"]
     
@@ -52,15 +38,8 @@ def aggregate(secex_df):
     ymbpw_micro["bra_id"] = ymbpw_micro["bra_id"].apply(lambda x: x[:7])
     ymbpw_micro = ymbpw_micro.groupby(["year", "month", "bra_id", "hs_id", "wld_id"]).sum()
     
-    print "planning regions..."
-    plr_lookup = get_lookup("pr")
-    ymbpw_pr = ymbpw_munics.reset_index()
-    ymbpw_pr = ymbpw_pr[ymbpw_pr["bra_id"].map(lambda x: x[:3] == "4mg")]
-    ymbpw_pr["bra_id"] = ymbpw_pr["bra_id"].astype(str).replace(plr_lookup)
-    ymbpw_pr = ymbpw_pr.groupby(["year", "month", "bra_id", "hs_id", "wld_id"]).sum()
-    
     print "concatenating..."
-    ymbpw = pd.concat([ymbpw_regions, ymbpw_states, ymbpw_munics, ymbpw_meso, ymbpw_micro, ymbpw_pr])
+    ymbpw = pd.concat([ymbpw_regions, ymbpw_states, ymbpw_munics, ymbpw_meso, ymbpw_micro])
     
     ''' PRODUCTS '''
     ymbpw_hs2 = ymbpw.reset_index()
