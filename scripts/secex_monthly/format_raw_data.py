@@ -3,19 +3,20 @@
     Example Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     python scripts/secex_monthly/format_raw_data.py \
-    data/secex_export/raw/MDIC_2000.rar \
-    data/secex_import/raw/MDIC_2000.rar \
-    -y 2000 \
-    -e data/secex_export/observatory_ecis.csv \
-    -p data/secex_export/observatory_pcis.csv \
-    -o data/secex/2000
-    
+    data/secex/export/MDIC_2011.rar \
+    data/secex/import/MDIC_2011.rar \
+    -y 2011 \
+    -e data/comtrade/2007/comtrade_eci.tsv.bz2 \
+    -p data/comtrade/2007/comtrade_pci.tsv.bz2 \
+    -r data/comtrade/2007/comtrade_ypw.tsv.bz2 \
+    -o data/secex/2011
+
     python scripts/secex_monthly/format_raw_data.py \
     data/secex_export/raw/MDIC_2001.rar \
     data/secex_import/raw/MDIC_2001.rar \
     -y 2001 \
-    -e data/secex_export/observatory_ecis.csv \
-    -p data/secex_export/observatory_pcis.csv \
+    -e data/comtrade/2007/comtrade_eci.tsv.bz2 \
+    -e data/comtrade/2007/comtrade_eci.tsv.bz2 \
     -o data/secex/2001 \
     -g data/secex/2000
 """
@@ -44,19 +45,20 @@ from _column_lengths import add_column_length
 @click.option('-y', '--year', prompt='Year', help='year of the data to convert', required=True)
 @click.option('eci_file_path', '--eci', '-e', help='ECI file.', type=click.Path(exists=True), required=True, prompt="Path to ECI file")
 @click.option('pci_file_path', '--pci', '-p', help='PCI file.', type=click.Path(exists=True), required=True, prompt="Path to PCI file")
+@click.option('ypw_file_path', '--ypw', '-r', help='YPW file.', type=click.Path(exists=True), required=True, prompt="Path to YPW file")
 @click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
 @click.option('prev_path', '--prev', '-g', help='Path to files from the previous year for calculating growth.', type=click.Path(exists=True), required=False)
 @click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.', type=click.Path(exists=True), required=False)
-def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path, output_path, prev_path, prev5_path):
+def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path, ypw_file_path, output_path, prev_path, prev5_path):
     start = time.time()
     step = 0
-    
+
     depths = {
         "bra": [1, 3, 5, 7, 8, 9],
         "hs": [2, 6],
         "wld": [2, 5]
     }
-    
+
     if not os.path.exists(output_path): os.makedirs(output_path)
     d = pd.HDFStore(os.path.join(output_path, 'secex.h5'))
     if "ymb" in d:
@@ -66,8 +68,6 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
         step += 1; print '''\nSTEP {0}: \nImport file to pandas dataframe'''.format(step)
         secex_exports = to_df(export_file_path, False)
         secex_imports = to_df(import_file_path, False)
-        # secex_exports = secex_exports.head(1000)
-        # secex_imports = secex_imports.head(1000)
 
         step += 1; print '''\nSTEP {0}: \nMerge imports and exports'''.format(step)
         secex_df = merge(secex_exports, secex_imports)
@@ -79,10 +79,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
         [ymb, ymbp, ymbw, ymp, ympw, ymw] = shard(ymbpw)
 
         step += 1; print '''\nSTEP {0}: \nCalculate PCI & ECI'''.format(step)
-        [ymp, ymw] = pci_wld_eci(eci_file_path, pci_file_path, ymp, ymw)
-    
-        step += 1; print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
-        ymb = domestic_eci(ymp, ymb, ymbp, depths["bra"])
+        [ymp, ymw] = pci_wld_eci(eci_file_path, pci_file_path, ymp, ymw, year)
 
         step += 1; print '''\nSTEP {0}: \nCalculate diversity'''.format(step)
         ymb = calc_diversity(ymbp, ymb, "bra_id", "hs_id")
@@ -92,33 +89,19 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
         ymw = calc_diversity(ymbw, ymw, "wld_id", "bra_id")
         ymw = calc_diversity(ympw, ymw, "wld_id", "hs_id")
 
+        step += 1; print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
+        ymb = domestic_eci(ymp, ymb, ymbp, depths["bra"], output_path)
+
         step += 1; print '''\nSTEP {0}: \nCalculate Brazilian RCA'''.format(step)
-        ymp = brazil_rca(ymp, year)
-    
+        ymp = brazil_rca(ymp, ypw_file_path, year)
+
         step += 1; print '''\nSTEP {0}: \nCalculate RCA, diversity and opp_gain aka RDO'''.format(step)
-        ymbp = rdo(ymbp, ymp, year, depths["bra"])
-    
+        ymbp = rdo(ymbp, ymp, year, depths["bra"], ypw_file_path)
+
         tables = {"ymb": ymb, "ymp": ymp, "ymw": ymw, "ymbp": ymbp, "ymbpw": ymbpw, "ymbw": ymbw, "ympw": ympw}
         for tbln, tbl in tables.items():
             d[tbln] = tbl
-    
-    '''
-    # print tables["ymbpw"].head()
-    t_prev = to_df("data/secex/2005/ymbpw.tsv.bz2", "ymbpw")
-    
-    t_prev = t_prev.reset_index(level="year")
-    t_prev["year"] = int(year)
-    t_prev = t_prev.set_index("year", append=True)
-    t_prev = t_prev.reorder_levels(["year"] + list(t_prev.index.names)[:-1])
-    # print t_prev.head()
-    # print t_prev.dtypes
-    years_ago = 1
-    tables["ymbpw"]["growth"] = (tables["ymbpw"]["export_val"] / t_prev["export_val"]) ** (1.0/years_ago) - 1
-    # print tables["ymbpw"].index.is_unique
-    # print t_prev.index.is_unique    
-    sys.exit()
-    '''
-    
+
     if prev_path:
         step += 1; print '''\nSTEP {0}: \nCalculate 1 year growth'''.format(step)
         if prev5_path:
@@ -131,9 +114,9 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
             t_prev["year"] = int(year)
             t_prev = t_prev.set_index("year", append=True)
             t_prev = t_prev.reorder_levels(["year"] + list(t_prev.index.names)[:-1])
-            
+
             t = calc_growth(t, t_prev)
-            
+
             if prev5_path:
                 prev_file = os.path.join(prev5_path, "{0}.tsv.bz2".format(t_name))
                 t_prev = to_df(prev_file, t_name)
@@ -141,7 +124,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
                 t_prev["year"] = int(year)
                 t_prev = t_prev.set_index("year", append=True)
                 t_prev = t_prev.reorder_levels(["year"] + list(t_prev.index.names)[:-1])
-                
+
                 t = calc_growth(t, t_prev, 5)
 
     print "computing column lengths"
