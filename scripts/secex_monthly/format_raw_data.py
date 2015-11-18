@@ -22,7 +22,7 @@
 """
 
 ''' Import statements '''
-import os, sys, time, bz2, click
+import os, sys, time, bz2, click, MySQLdb
 import pandas as pd
 import pandas.io.sql as sql
 import numpy as np
@@ -54,14 +54,15 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
     step = 0
 
     depths = {
-        "bra": [1, 3, 5, 7, 8, 9],
+        "bra": [1, 3, 5, 7, 9],
         "hs": [2, 6],
         "wld": [2, 5]
     }
 
     if not os.path.exists(output_path): os.makedirs(output_path)
     d = pd.HDFStore(os.path.join(output_path, 'secex.h5'))
-    if "ymb" in d:
+    # if "ymb" in d:
+    if "ymbp" in d:
         tables = {}
         tables["ymb"] = d["ymb"]; tables["ymp"] = d["ymp"]; tables["ymw"] = d["ymw"]; tables["ymbp"] = d["ymbp"]; tables["ymbw"] = d["ymbw"]; tables["ympw"] = d["ympw"]; tables["ymbpw"] = d["ymbpw"]
     else:
@@ -88,16 +89,19 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
         ymp = calc_diversity(ympw, ymp, "hs_id", "wld_id")
         ymw = calc_diversity(ymbw, ymw, "wld_id", "bra_id")
         ymw = calc_diversity(ympw, ymw, "wld_id", "hs_id")
+        
+        step += 1; print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
+        ymb = domestic_eci(ymp, ymb, ymbp, depths["bra"])
 
         step += 1; print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
         ymb = domestic_eci(ymp, ymb, ymbp, depths["bra"], output_path)
 
         step += 1; print '''\nSTEP {0}: \nCalculate Brazilian RCA'''.format(step)
         ymp = brazil_rca(ymp, ypw_file_path, year)
-
+            
         step += 1; print '''\nSTEP {0}: \nCalculate RCA, diversity and opp_gain aka RDO'''.format(step)
         ymbp = rdo(ymbp, ymp, year, depths["bra"], ypw_file_path)
-
+        
         tables = {"ymb": ymb, "ymp": ymp, "ymw": ymw, "ymbp": ymbp, "ymbpw": ymbpw, "ymbw": ymbw, "ympw": ympw}
         for tbln, tbl in tables.items():
             d[tbln] = tbl

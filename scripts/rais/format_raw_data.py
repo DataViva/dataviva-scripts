@@ -15,7 +15,13 @@
     
     Example Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    python scripts/rais_new/format_raw_data.py data/rais/Rais_2002.csv.bz2 -y 2002 -o data/rais/2002
+    python scripts/rais/format_raw_data.py data/rais/Rais_2002.csv.bz2 -y 2002 -o data/rais/2002
+    or
+    python scripts/rais/format_raw_data.py data/rais/Rais_2003.csv.bz2 -y 2003 -o data/rais/2003 -g -o data/rais/2002
+    or
+    python scripts/rais/format_raw_data.py data/rais/Rais_2007.csv.bz2 -y 2007 -o data/rais/2007 -g -o data/rais/2006 -g5 -o data/rais/2002
+    or (for debugging)
+    %run -b scripts/rais/_required.py:87 -d scripts/rais/format_raw_data.py data/rais/Rais_2002.csv.bz2 -y 2002 -o data/rais/2002
 
 """
 
@@ -46,7 +52,9 @@ def findFiles (path, filter):
 @click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
 @click.option('prev_path', '--prev', '-g', help='Path to files from the previous year for calculating growth.', type=click.Path(exists=True), required=False)
 @click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.', type=click.Path(exists=True), required=False)
-def main(file_path, year, output_path, prev_path, prev5_path):
+@click.option('requireds_only', '--ro', '-ro', help='Only perform required operation.', is_flag=True, default=False, required=False)
+def main(file_path, year, output_path, prev_path, prev5_path, requireds_only):
+    
     print; print "~~~**** YEAR: {0} ****~~~".format(year); print;
     start = time.time()
     step = 0
@@ -75,7 +83,7 @@ def main(file_path, year, output_path, prev_path, prev5_path):
                 os.remove(os.path.join(output_path, 'rais_df_raw.h5'))
         # rais_df = to_df(file_path, False)
         
-        if "yb" in d:
+        if "yb" in d and not requireds_only:
             tables = {"yb":d["yb"], "yo":d["yo"], "yi":d["yi"], "ybi":d["ybi"], "ybo":d["ybo"], "yio":d["yio"], "ybio":d["ybio"]}
         else:
             step+=1; print; print '''STEP {0}: \nAggregate'''.format(step)
@@ -83,9 +91,6 @@ def main(file_path, year, output_path, prev_path, prev5_path):
         
             step+=1; print; print 'STEP {0}: \nImportance'.format(step)
             tables["yio"] = importance(tables["ybio"], tables["ybi"], tables["yio"], tables["yo"], year, depths)
-        
-            step+=1; print; print 'STEP {0}: \nRequired'.format(step)
-            tables["ybio"] = required(tables["ybio"], tables["ybi"], tables["yi"], year, depths)
             
             try:
                 d["yb"] = tables["yb"]; d["yo"] =  tables["yo"]; d["yi"] =  tables["yi"]; d["ybi"] = tables["ybi"]; d["ybo"] = tables["ybo"]; d["yio"] = tables["yio"]; d["ybio"] = tables["ybio"]
@@ -94,43 +99,49 @@ def main(file_path, year, output_path, prev_path, prev5_path):
                 print "WARNING: Unable to save dataframe, Overflow Error."
                 d.close()
                 os.remove(os.path.join(output_path, 'rais_df_raw.h5'))
-
-        step+=1; print; print 'STEP {0}: \nDiversity'.format(step)
-        tables["yb"] = calc_diversity(tables["ybi"], tables["yb"], "bra_id", "cnae_id", year, depths)
-        tables["yb"] = calc_diversity(tables["ybo"], tables["yb"], "bra_id", "cbo_id", year, depths)
-        tables["yi"] = calc_diversity(tables["ybi"], tables["yi"], "cnae_id", "bra_id", year, depths)
-        tables["yi"] = calc_diversity(tables["yio"], tables["yi"], "cnae_id", "cbo_id", year, depths)
-        tables["yo"] = calc_diversity(tables["ybo"], tables["yo"], "cbo_id", "bra_id", year, depths)
-        tables["yo"] = calc_diversity(tables["yio"], tables["yo"], "cbo_id", "cnae_id", year, depths)
-
-        step+=1; print; print 'STEP {0}: \nCalculate RCA, diversity and opportunity gain aka RDO'.format(step)
-        tables["ybi"] = rdo(tables["ybi"], tables["yi"], year, depths)
-
-        for table_name, table_data in tables.items():
-            table_data = add_column_length(table_name, table_data)
         
-        print; print '''FINAL STEP: \nSave files to output path'''
-        for t_name, t in tables.items():
-            new_file_path = os.path.abspath(os.path.join(output_path, "{0}.tsv.bz2".format(t_name)))
-            t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
-    
-    if prev_path:
-        print; print '''Calculating growth:'''
-        for current_year_file_path in findFiles(output_path, '*.tsv.bz2'):
-            if "growth" in current_year_file_path: continue
-            current_year_file_name = os.path.basename(current_year_file_path)
-            prev_year_file_path = os.path.join(prev_path, current_year_file_name)
-            prev5_year_file_path = None
-            if prev5_path:
-                prev5_year_file_path = os.path.join(prev5_path, current_year_file_name)
-            if not os.path.exists(prev_year_file_path):
-                print "Unable to find", current_year_file_name, "for previous year."
-                continue
-            tbl_name, tbl_w_growth = calc_growth(year, current_year_file_path, prev_year_file_path, prev5_year_file_path)
-            print tbl_name
-            new_file_path = os.path.abspath(os.path.join(output_path, "{0}_growth.tsv.bz2".format(tbl_name)))
-            tbl_w_growth.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
-            # os.remove(current_year_file_path)
+        step+=1; print; print 'STEP {0}: \nRequired'.format(step)
+        [tables["ybi"], tables["ybio"]] = required(tables["ybio"], tables["ybi"], tables["yi"], year, depths, output_path)
+        
+    #     print tables["ybi"].head()
+    #     sys.exit()
+    #
+    #     step+=1; print; print 'STEP {0}: \nDiversity'.format(step)
+    #     tables["yb"] = calc_diversity(tables["ybi"], tables["yb"], "bra_id", "cnae_id", year, depths)
+    #     tables["yb"] = calc_diversity(tables["ybo"], tables["yb"], "bra_id", "cbo_id", year, depths)
+    #     tables["yi"] = calc_diversity(tables["ybi"], tables["yi"], "cnae_id", "bra_id", year, depths)
+    #     tables["yi"] = calc_diversity(tables["yio"], tables["yi"], "cnae_id", "cbo_id", year, depths)
+    #     tables["yo"] = calc_diversity(tables["ybo"], tables["yo"], "cbo_id", "bra_id", year, depths)
+    #     tables["yo"] = calc_diversity(tables["yio"], tables["yo"], "cbo_id", "cnae_id", year, depths)
+    #
+    #     step+=1; print; print 'STEP {0}: \nCalculate RCA, diversity and opportunity gain aka RDO'.format(step)
+    #     tables["ybi"] = rdo(tables["ybi"], tables["yi"], year, depths)
+    #
+    #     for table_name, table_data in tables.items():
+    #         table_data = add_column_length(table_name, table_data)
+    #
+    #     print; print '''FINAL STEP: \nSave files to output path'''
+    #     for t_name, t in tables.items():
+    #         new_file_path = os.path.abspath(os.path.join(output_path, "{0}.tsv.bz2".format(t_name)))
+    #         t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
+    #
+    # if prev_path:
+    #     print; print '''Calculating growth:'''
+    #     for current_year_file_path in findFiles(output_path, '*.tsv.bz2'):
+    #         if "growth" in current_year_file_path: continue
+    #         current_year_file_name = os.path.basename(current_year_file_path)
+    #         prev_year_file_path = os.path.join(prev_path, current_year_file_name)
+    #         prev5_year_file_path = None
+    #         if prev5_path:
+    #             prev5_year_file_path = os.path.join(prev5_path, current_year_file_name)
+    #         if not os.path.exists(prev_year_file_path):
+    #             print "Unable to find", current_year_file_name, "for previous year."
+    #             continue
+    #         tbl_name, tbl_w_growth = calc_growth(year, current_year_file_path, prev_year_file_path, prev5_year_file_path)
+    #         print tbl_name
+    #         new_file_path = os.path.abspath(os.path.join(output_path, "{0}_growth.tsv.bz2".format(tbl_name)))
+    #         tbl_w_growth.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
+    #         # os.remove(current_year_file_path)
 
     
     print("--- %s minutes ---" % str((time.time() - start)/60))

@@ -28,7 +28,7 @@ db = MySQLdb.connect(host=os.environ.get("DATAVIVA_DB_HOST", "localhost"),
 db.autocommit(1)
 cursor = db.cursor()
 
-def required(ybio, ybi, yi, year, depths, output_path, output_bras=False):
+def required(ybio, ybi, yi, year, depths, output_bras=False):
     
     # print "reset index", ybio.index.is_unique
     ybio = ybio.reset_index()
@@ -65,44 +65,36 @@ def required(ybio, ybi, yi, year, depths, output_path, output_bras=False):
         
         bra_criterion = ybi_calc['bra_id'].str.len() == geo_level
         ybi_ras = ybi_calc[bra_criterion]
-        ybi_ras = ybi_ras.pivot(index="bra_id", columns="cnae_id", values="num_emp_est")
-        
-        rea = ybi_ras / yi
+        ybi_ras = ybi_ras.pivot(index="bra_id", columns="cnae_id", values="num_emp_est").fillna(0)
+        ybi_ras = ybi_ras / yi
         
         bras = ybi_ras.index
         for bra in bras:
             sys.stdout.write('\r current location: ' + bra + ' ' * 10)
             sys.stdout.flush() # important
             
-            rea_diff = rea - rea.ix[bra]
-            rea_diff_abs = rea_diff.abs()
-            rea_std = rea.std()
+            half_std = ybi_ras.std() / 2
+            ras_similar_df = ((ybi_ras - ybi_ras.ix[bra]) / ybi_ras.std()).abs()
             
-            # rea_diff_std = (rea_diff / rea_std).abs()
+            # ras_similar_df = ras_similar_df <= half_std
             
             cnaes = ybi_ras.columns
             for cnae in cnaes:
-                half_std = rea_std/2
-                
-                similar_locs = rea_diff_abs[cnae][rea_diff_abs[cnae] <= half_std[cnae]]
+                # print isic
+                ras_similar = ras_similar_df[cnae][ras_similar_df[cnae] <= half_std[cnae]]
                 
                 # max only use top 20% of all locations
-                max_cutoff = int(len(bras)*.2)
+                max_cutoff = len(bras)*.2
                 max_cutoff = max_cutoff if max_cutoff > 50 else 50
-                similar_locs = similar_locs.order().ix[1:max_cutoff].index
+                ras_similar = ras_similar.order(ascending=False).index[:max_cutoff]
                 
-                if not len(similar_locs):
+                if not len(ras_similar):
                     continue
-                
-                req_bras_fp = os.path.abspath(os.path.join(output_path, "req_bras_test.tsv"))
-                with open(req_bras_fp, "a") as myfile:
-                    csvfile = csv.writer(myfile, delimiter='\t')
-                    csvfile.writerow([year, bra, cnae, ",".join(similar_locs[:10])])
                 
                 # ybi.loc[(year, bra, cnae), 'required_bras'] = '[' + ','.join(['"{}"'.format(r) for r in ras_similar]) + ']'
                 
                 # ybi_required.append([year, bra, cnae, '[' + ','.join(['{}'.format(r) for r in ras_similar]) + ']'])
-                # cursor.execute("INSERT INTO rais_ybi_required VALUES(%s, %s, %s, %s);", (year, bra, cnae, '[' + ','.join(['{}'.format(r) for r in ras_similar]) + ']'))
+                cursor.execute("INSERT INTO rais_ybi_required VALUES(%s, %s, %s, %s);", (year, bra, cnae, '[' + ','.join(['{}'.format(r) for r in ras_similar]) + ']'))
                 # print [year, bra, cnae, '[' + ','.join(['"{}"'.format(r) for r in ras_similar]) + ']']
                 # sys.exit()
                 
@@ -117,10 +109,10 @@ def required(ybio, ybi, yi, year, depths, output_path, output_bras=False):
             if output_bras:
                 cursor.executemany("update rais_ybi set required_bras = %s where year=%s and bra_id=%s and cnae_id=%s;", required_bras)
     
-    
-    
-    # sys.exit('FINISHED required bras output!')
-    
+        print
+        print "total required rows added:", len(ybio_required)
+        # print ybio_required[:10]
+        # sys.exit()
     if output_bras:
         return required_bras
     else:
@@ -151,3 +143,4 @@ def required(ybio, ybi, yi, year, depths, output_path, output_bras=False):
         # sys.exit()
     
         return [ybi, ybio]
+
