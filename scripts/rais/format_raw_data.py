@@ -12,10 +12,10 @@
     6 Employee_ID
     7 Establishment_ID
     8 Year
-    
+
     Example Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    python scripts/rais_new/format_raw_data.py data/rais/Rais_2002.csv.bz2 -y 2002 -o data/rais/2002
+    python scripts/rais/format_raw_data.py data/rais/Rais_2002.csv.bz2 -y 2002 -o data/rais/2002
 
 """
 
@@ -57,7 +57,7 @@ def main(file_path, year, output_path, prev_path, prev5_path):
         "cbo": [1, 4],
         "demo": [1, 4]
     }
-    
+
     if file_path:
         if not os.path.exists(output_path): os.makedirs(output_path)
         d = pd.HDFStore(os.path.join(output_path, 'rais_df_raw.h5'))
@@ -74,19 +74,19 @@ def main(file_path, year, output_path, prev_path, prev5_path):
                 d.close()
                 os.remove(os.path.join(output_path, 'rais_df_raw.h5'))
         # rais_df = to_df(file_path, False)
-        
+
         if "yb" in d:
             tables = {"yb":d["yb"], "yo":d["yo"], "yi":d["yi"], "ybi":d["ybi"], "ybo":d["ybo"], "yio":d["yio"], "ybio":d["ybio"]}
         else:
             step+=1; print; print '''STEP {0}: \nAggregate'''.format(step)
             tables = aggregate(rais_df, depths)
-        
+
             step+=1; print; print 'STEP {0}: \nImportance'.format(step)
             tables["yio"] = importance(tables["ybio"], tables["ybi"], tables["yio"], tables["yo"], year, depths)
-        
+
             step+=1; print; print 'STEP {0}: \nRequired'.format(step)
             tables["ybio"] = required(tables["ybio"], tables["ybi"], tables["yi"], year, depths)
-            
+
             try:
                 d["yb"] = tables["yb"]; d["yo"] =  tables["yo"]; d["yi"] =  tables["yi"]; d["ybi"] = tables["ybi"]; d["ybo"] = tables["ybo"]; d["yio"] = tables["yio"]; d["ybio"] = tables["ybio"]
                 d.close()
@@ -108,12 +108,12 @@ def main(file_path, year, output_path, prev_path, prev5_path):
 
         for table_name, table_data in tables.items():
             table_data = add_column_length(table_name, table_data)
-        
+
         print; print '''FINAL STEP: \nSave files to output path'''
         for t_name, t in tables.items():
             new_file_path = os.path.abspath(os.path.join(output_path, "{0}.tsv.bz2".format(t_name)))
             t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
-    
+
     if prev_path:
         print; print '''Calculating growth:'''
         for current_year_file_path in findFiles(output_path, '*.tsv.bz2'):
@@ -132,7 +132,7 @@ def main(file_path, year, output_path, prev_path, prev5_path):
             tbl_w_growth.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
             # os.remove(current_year_file_path)
 
-    
+
     print("--- %s minutes ---" % str((time.time() - start)/60))
 
 if __name__ == "__main__":
