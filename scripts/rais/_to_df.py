@@ -22,9 +22,9 @@ from helpers import get_file
 '''
 
 ''' Connect to DB '''
-db = MySQLdb.connect(host=os.environ.get("DATAVIVA_DB_HOST", "localhost"), 
-                     user=os.environ["DATAVIVA_DB_USER"], 
-                     passwd=os.environ["DATAVIVA_DB_PW"], 
+db = MySQLdb.connect(host=os.environ.get("DATAVIVA_DB_HOST", "localhost"),
+                     user=os.environ["DATAVIVA_DB_USER"],
+                     passwd=os.environ["DATAVIVA_DB_PW"],
                      db=os.environ["DATAVIVA_DB_NAME"])
 db.autocommit(1)
 cursor = db.cursor()
@@ -77,7 +77,7 @@ def convertint(x):
 def to_df(input_file_path, index=False):
     input_file = get_file(input_file_path)
     s = time.time()
-    
+
     if index:
         index_lookup = {"y":"year", "b":"bra_id", "i":"cnae_id", "o":"cbo_id", "d": "d_id"}
         index_cols = [index_lookup[i] for i in index]
@@ -88,7 +88,7 @@ def to_df(input_file_path, index=False):
         cols = ["cbo_id", "cnae_id", "literacy", "age", "est_id", "simple", "bra_id", "num_emp", "color", "wage_dec", "wage", "gender", "est_size", "year"]
         delim = ";"
         coerce_cols = {"bra_id": bra_replace, "cnae_id":cnae_replace, "cbo_id":cbo_replace, \
-                        "emp_id":str, "est_id": str, "age": convertint}
+                        "emp_id":str, "est_id": str, "age": convertint, "wage": float}
         rais_df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols, engine='c', decimal=',')
         rais_df = rais_df[["year", "bra_id", "cnae_id", "cbo_id", "wage", "num_emp", "est_id", "age"]]
 
@@ -97,7 +97,7 @@ def to_df(input_file_path, index=False):
         if count > 0:
             print "** REMOVED", count, "rows due to empty ages"
         rais_df = rais_df[ rais_df.age != -999 ]
-        
+
         print "finding missing attrs..."
         for col, missings in missing.items():
             if not len(missings): continue
@@ -108,7 +108,7 @@ def to_df(input_file_path, index=False):
             # rais_df = rais_df[drop_criterion]
             rais_df = rais_df.dropna(subset=[col])
             print; print "{0} rows deleted.".format(num_rows - rais_df.shape[0]); print;
-                
+
         print (time.time() - s) / 60.0, "minutes to read."
 
     return rais_df

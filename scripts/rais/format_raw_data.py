@@ -61,6 +61,7 @@ def main(file_path, year, output_path, prev_path, prev5_path):
     if file_path:
         if not os.path.exists(output_path): os.makedirs(output_path)
         d = pd.HDFStore(os.path.join(output_path, 'rais_df_raw.h5'))
+
         if "rais_df" in d:
             rais_df = d['rais_df']
         else:
