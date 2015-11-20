@@ -53,15 +53,12 @@ def aggregate(rais_df, depths):
         "wage": np.sum,
         "num_jobs": np.sum,
         "num_emp" : pd.Series.nunique,
-        "est_id" : lambda x: set.union(set(x)),
+        "est_id" : lambda est_id: set.union(set(est_id)),
         "age": np.sum
     }
 
     rais_df['num_jobs'] = 1
-    print rais_df.head()
-
     ybio_raw = rais_df.groupby(pk).agg(agg_rules)
-    print ybio_raw.head()
 
     agg_rules["est_id"] = lambda x: set.union(*list(x))
     agg_rules["num_emp"] = np.sum
