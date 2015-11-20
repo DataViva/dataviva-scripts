@@ -7,7 +7,7 @@ from collections import defaultdict
 file_path = os.path.dirname(os.path.realpath(__file__))
 utils_path = os.path.abspath(os.path.join(file_path, ".."))
 sys.path.insert(0, utils_path)
-from helpers import get_file
+from helpers import get_file, zero_on_left
 
 '''
 0 Municipality_ID
@@ -55,7 +55,9 @@ def bra_replace(raw):
 
 def cnae_replace(raw):
     try:
-        return cnae_lookup[str(raw).strip()]
+        if len(raw) <= 4:
+            raw = zero_on_left(raw, 5 - len(raw))
+        return cnae_lookup[raw]
     except:
         missing["cnae_id"][raw] += 1
         return None
@@ -67,12 +69,12 @@ def cbo_replace(raw):
         missing["cbo_id"][raw] += 1
         return None
 
-def convertint(x):
-    if not x:
+def convertint(age):
+    if not age:
         return -999
-    elif "\r" in str(x):
+    elif "\r" in str(age):
         return -999
-    return int(x)
+    return int(age)
 
 def to_df(input_file_path, index=False):
     input_file = get_file(input_file_path)
@@ -84,12 +86,14 @@ def to_df(input_file_path, index=False):
         rais_df = pd.read_csv(input_file, sep="\t", converters={"bra_id":str, "cbo_id":str, "cnae_id":str})
         rais_df = rais_df.set_index(index_cols)
     else:
+
         orig_cols = ['BrazilianOcupation_ID', 'EconomicAtivity_ID_CNAE', 'Literacy', 'Age', 'Establishment_ID', 'Simple', 'Municipality_ID', 'Employee_ID', 'Color', 'WageReceived', 'AverageMonthlyWage', 'Gender', 'Establishment_Size', 'Year', 'Establishment_ID_len']
         cols = ["cbo_id", "cnae_id", "literacy", "age", "est_id", "simple", "bra_id", "num_emp", "color", "wage_dec", "wage", "gender", "est_size", "year"]
         delim = ";"
-        coerce_cols = {"bra_id": bra_replace, "cnae_id":cnae_replace, "cbo_id":cbo_replace, \
-                        "emp_id":str, "est_id": str, "age": convertint, "wage": float}
-        rais_df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols, engine='c', decimal=',')
+        coerce_cols = {"bra_id": bra_replace, "cnae_id":cnae_replace, "cbo_id":cbo_replace, "age": convertint, "wage": float}
+        dtype = {'cnae_id': str, "est_id": str, "emp_id":str}
+
+        rais_df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols, engine='c', decimal=',', dtype=dtype)
         rais_df = rais_df[["year", "bra_id", "cnae_id", "cbo_id", "wage", "num_emp", "est_id", "age"]]
 
         print "first remove rows with empty ages, if any..."
@@ -101,11 +105,10 @@ def to_df(input_file_path, index=False):
         print "finding missing attrs..."
         for col, missings in missing.items():
             if not len(missings): continue
+
             num_rows = rais_df.shape[0]
             print; print "[WARNING]"; print "The following {0} IDs are not in the DB and will be dropped from the data.".format(col);
             print list(missings)
-            # drop_criterion = rais_df[col].map(lambda x: x not in vals)
-            # rais_df = rais_df[drop_criterion]
             rais_df = rais_df.dropna(subset=[col])
             print; print "{0} rows deleted.".format(num_rows - rais_df.shape[0]); print;
 
