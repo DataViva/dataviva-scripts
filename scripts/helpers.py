@@ -2,7 +2,7 @@
 """
     Helpers
     ~~~~~~~
-    
+
 """
 
 ''' Import statements '''
@@ -27,6 +27,9 @@ def get_env_variable(var_name, default=-1):
 def d(x):
   return Decimal(x).quantize(Decimal(".01"), rounding=ROUND_HALF_UP)
 
+def zero_on_left(number, zeros):
+    return zeros*'0'+number
+
 def get_file(full_path):
     file_name = basename(full_path)
     file_path_no_ext, file_ext = splitext(file_name)
@@ -37,19 +40,19 @@ def get_file(full_path):
         '.zip': zipfile.ZipFile,
         '.rar': rarfile.RarFile
     }
-    
+
     try:
         file = extensions[file_ext](full_path)
     except KeyError:
         file = open(full_path)
     except IOError:
         return None
-    
+
     if file_ext == '.zip':
         file = zipfile.ZipFile.open(file, file_path_no_ext)
     elif file_ext == '.rar':
         file = rarfile.RarFile.open(file, file_path_no_ext)
-    
+
     # print "Reading from file", file_name
     return file
 
