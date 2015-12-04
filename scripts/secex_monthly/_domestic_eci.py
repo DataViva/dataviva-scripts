@@ -14,7 +14,7 @@ db = MySQLdb.connect(host=os.environ.get("DATAVIVA_DB_HOST", "localhost"),
 db.autocommit(1)
 cursor = db.cursor()
 
-def get_shares(ymbp, geo_level, output_path):
+def get_shares(ymbp, geo_level):
 
     ymbp = ymbp.reset_index()
     month_criterion = ymbp['month'].map(lambda x: x == '00')
@@ -41,7 +41,7 @@ def get_shares(ymbp, geo_level, output_path):
     return shares
 
 
-def domestic_eci(ymp, ymb, ymbp, geo_depths, output_path):
+def domestic_eci(ymp, ymb, ymbp, geo_depths):
     ymp = ymp.reset_index()
     year = ymp['year'][0]
 
@@ -58,7 +58,7 @@ def domestic_eci(ymp, ymb, ymbp, geo_depths, output_path):
     for geo_level in geo_depths:
         print "geo_level:",geo_level
 
-        shares = get_shares(ymbp, geo_level, output_path)
+        shares = get_shares(ymbp, geo_level)
         shares = shares.reindex(columns=pcis.columns)
         shares = (shares / shares.sum(axis=0)).T
 

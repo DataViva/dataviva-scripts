@@ -94,7 +94,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
         ymb = domestic_eci(ymp, ymb, ymbp, depths["bra"])
 
         step += 1; print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
-        ymb = domestic_eci(ymp, ymb, ymbp, depths["bra"], output_path)
+        ymb = domestic_eci(ymp, ymb, ymbp, depths["bra"])
 
         step += 1; print '''\nSTEP {0}: \nCalculate Brazilian RCA'''.format(step)
         ymp = brazil_rca(ymp, ypw_file_path, year)

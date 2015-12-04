@@ -1,4 +1,4 @@
-import MySQLdb, sys, os
+import sys, os
 import pandas as pd
 import pandas.io.sql as sql
 import numpy as np
@@ -9,10 +9,6 @@ sys.path.insert(0, ps_calcs_lib_path)
 import ps_calcs
 
 def get_wld_rcas(geo_level, year, ymbp, ypw_file_path):
-    ''' Connect to DB '''
-    db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"], 
-                            passwd=os.environ["DATAVIVA_DB_PW"], 
-                            db=os.environ["DATAVIVA_DB_NAME"])
         
     def rca(bra_tbl, wld_tbl):
         col_sums = bra_tbl.sum(axis=1)
@@ -65,10 +61,6 @@ def get_domestic_rcas(geo_level, year, ymbp, trade_flow):
     return rcas
 
 def get_wld_proximity(year, ypw_file_path):
-    ''' Connect to DB '''
-    db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"], 
-                            passwd=os.environ["DATAVIVA_DB_PW"], 
-                            db=os.environ["DATAVIVA_DB_NAME"])
 
     '''Get world values from ypw file'''
     table = pd.read_csv(ypw_file_path, compression="bz2", sep="\t", converters={"hs_id":str})
