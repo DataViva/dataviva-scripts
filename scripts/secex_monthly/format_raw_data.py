@@ -3,13 +3,13 @@
     Example Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     python scripts/secex_monthly/format_raw_data.py \
-    data/secex/export/MDIC_2011.rar \
-    data/secex/import/MDIC_2011.rar \
-    -y 2011 \
+    data/secex/raw_export/MDIC_2007.rar \
+    data/secex/raw_import/MDIC_2007.rar \
+    -y 2007 \
     -e data/comtrade/2007/comtrade_eci.tsv.bz2 \
     -p data/comtrade/2007/comtrade_pci.tsv.bz2 \
     -r data/comtrade/2007/comtrade_ypw.tsv.bz2 \
-    -o data/secex/2011
+    -o data/secex/2007
 
     python scripts/secex_monthly/format_raw_data.py \
     data/secex_export/raw/MDIC_2001.rar \
