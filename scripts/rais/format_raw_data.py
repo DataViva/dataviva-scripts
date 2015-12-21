@@ -103,45 +103,45 @@ def main(file_path, year, output_path, prev_path, prev5_path, requireds_only):
         step+=1; print; print 'STEP {0}: \nRequired'.format(step)
         [tables["ybi"], tables["ybio"]] = required(tables["ybio"], tables["ybi"], tables["yi"], year, depths, output_path)
         
-    #     print tables["ybi"].head()
-    #     sys.exit()
-    #
-    #     step+=1; print; print 'STEP {0}: \nDiversity'.format(step)
-    #     tables["yb"] = calc_diversity(tables["ybi"], tables["yb"], "bra_id", "cnae_id", year, depths)
-    #     tables["yb"] = calc_diversity(tables["ybo"], tables["yb"], "bra_id", "cbo_id", year, depths)
-    #     tables["yi"] = calc_diversity(tables["ybi"], tables["yi"], "cnae_id", "bra_id", year, depths)
-    #     tables["yi"] = calc_diversity(tables["yio"], tables["yi"], "cnae_id", "cbo_id", year, depths)
-    #     tables["yo"] = calc_diversity(tables["ybo"], tables["yo"], "cbo_id", "bra_id", year, depths)
-    #     tables["yo"] = calc_diversity(tables["yio"], tables["yo"], "cbo_id", "cnae_id", year, depths)
-    #
-    #     step+=1; print; print 'STEP {0}: \nCalculate RCA, diversity and opportunity gain aka RDO'.format(step)
-    #     tables["ybi"] = rdo(tables["ybi"], tables["yi"], year, depths)
-    #
-    #     for table_name, table_data in tables.items():
-    #         table_data = add_column_length(table_name, table_data)
-    #
-    #     print; print '''FINAL STEP: \nSave files to output path'''
-    #     for t_name, t in tables.items():
-    #         new_file_path = os.path.abspath(os.path.join(output_path, "{0}.tsv.bz2".format(t_name)))
-    #         t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
-    #
-    # if prev_path:
-    #     print; print '''Calculating growth:'''
-    #     for current_year_file_path in findFiles(output_path, '*.tsv.bz2'):
-    #         if "growth" in current_year_file_path: continue
-    #         current_year_file_name = os.path.basename(current_year_file_path)
-    #         prev_year_file_path = os.path.join(prev_path, current_year_file_name)
-    #         prev5_year_file_path = None
-    #         if prev5_path:
-    #             prev5_year_file_path = os.path.join(prev5_path, current_year_file_name)
-    #         if not os.path.exists(prev_year_file_path):
-    #             print "Unable to find", current_year_file_name, "for previous year."
-    #             continue
-    #         tbl_name, tbl_w_growth = calc_growth(year, current_year_file_path, prev_year_file_path, prev5_year_file_path)
-    #         print tbl_name
-    #         new_file_path = os.path.abspath(os.path.join(output_path, "{0}_growth.tsv.bz2".format(tbl_name)))
-    #         tbl_w_growth.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
-    #         # os.remove(current_year_file_path)
+        # print tables["ybi"].head()
+        # sys.exit()
+
+        step+=1; print; print 'STEP {0}: \nDiversity'.format(step)
+        tables["yb"] = calc_diversity(tables["ybi"], tables["yb"], "bra_id", "cnae_id", year, depths)
+        tables["yb"] = calc_diversity(tables["ybo"], tables["yb"], "bra_id", "cbo_id", year, depths)
+        tables["yi"] = calc_diversity(tables["ybi"], tables["yi"], "cnae_id", "bra_id", year, depths)
+        tables["yi"] = calc_diversity(tables["yio"], tables["yi"], "cnae_id", "cbo_id", year, depths)
+        tables["yo"] = calc_diversity(tables["ybo"], tables["yo"], "cbo_id", "bra_id", year, depths)
+        tables["yo"] = calc_diversity(tables["yio"], tables["yo"], "cbo_id", "cnae_id", year, depths)
+
+        step+=1; print; print 'STEP {0}: \nCalculate RCA, diversity and opportunity gain aka RDO'.format(step)
+        tables["ybi"] = rdo(tables["ybi"], tables["yi"], year, depths)
+
+        for table_name, table_data in tables.items():
+            table_data = add_column_length(table_name, table_data)
+
+        print; print '''FINAL STEP: \nSave files to output path'''
+        for t_name, t in tables.items():
+            new_file_path = os.path.abspath(os.path.join(output_path, "{0}.tsv.bz2".format(t_name)))
+            t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
+
+    if prev_path:
+        print; print '''Calculating growth:'''
+        for current_year_file_path in findFiles(output_path, '*.tsv.bz2'):
+            if "growth" in current_year_file_path: continue
+            current_year_file_name = os.path.basename(current_year_file_path)
+            prev_year_file_path = os.path.join(prev_path, current_year_file_name)
+            prev5_year_file_path = None
+            if prev5_path:
+                prev5_year_file_path = os.path.join(prev5_path, current_year_file_name)
+            if not os.path.exists(prev_year_file_path):
+                print "Unable to find", current_year_file_name, "for previous year."
+                continue
+            tbl_name, tbl_w_growth = calc_growth(year, current_year_file_path, prev_year_file_path, prev5_year_file_path)
+            print tbl_name
+            new_file_path = os.path.abspath(os.path.join(output_path, "{0}_growth.tsv.bz2".format(tbl_name)))
+            tbl_w_growth.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True, float_format="%.3f")
+            # os.remove(current_year_file_path)
 
     
     print("--- %s minutes ---" % str((time.time() - start)/60))
