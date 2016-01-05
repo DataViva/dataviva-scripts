@@ -23,7 +23,7 @@ from collections import defaultdict
 '''
 
 ''' Connect to DB '''
-db = MySQLdb.connect(host=os.environ.get("DATAVIVA2_DB_HOST", "localhost"), user=os.environ["DATAVIVA_DB_USER"], passwd=os.environ["DATAVIVA_DB_PW"], db=os.environ["DATAVIVA_DB_NAME"])
+db = MySQLdb.connect(host=os.environ.get("DATAVIVA_DB_HOST", "localhost"), user=os.environ["DATAVIVA_DB_USER"], passwd=os.environ["DATAVIVA_DB_PW"], db=os.environ["DATAVIVA_DB_NAME"])
 cursor = db.cursor()
 
 missing = {
@@ -77,7 +77,7 @@ def school_replace(raw):
     except: missing["school_id"][raw] += 1; return None
 
 def course_replace(raw):
-    try: return course_lookup[str(raw).strip()]
+    try: return course_lookup[str(raw).strip().zfill(5)]
     except: return BASIC_EDU_CODE # -- if missing give BASIC edu code
 
 def to_df(input_file_path, index=False, debug=False):

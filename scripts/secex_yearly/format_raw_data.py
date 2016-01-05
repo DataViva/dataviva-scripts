@@ -67,7 +67,8 @@ def main(file_path, trade_flow, year, eci_file_path, pci_file_path, output_path,
     
     step += 1; print '''\nSTEP {0}: \nImport file to pandas dataframe'''.format(step)
     secex_df = to_df(file_path, False)
-    # secex_df = secex_df.head(1000)
+    secex_df = secex_df.head(1000)
+    sys.exit()
 
     step += 1; print '''\nSTEP {0}: \nAggregate'''.format(step)
     ybpw = aggregate(secex_df)

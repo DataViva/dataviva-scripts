@@ -88,17 +88,10 @@ def main(first_year_str, second_year_str, cols, output_path, edu=None, years=1, 
     print "GOT TABLE NAME OF ", t_name
     if not t_name:
         t_name = "noname"
-    new_file_path = os.path.abspath(os.path.join(output_path, "{0}_with_growth.tsv.bz2".format(t_name)))
+    new_file_path = os.path.abspath(os.path.join(output_path, "{0}.tsv.bz2".format(t_name)))
     df2.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=False, float_format="%.4f")
     
     print("--- %s minutes ---" % str((time.time() - start)/60))
 
 if __name__ == "__main__":
-    start = time.time()
-
     main()
-    
-    total_run_time = (time.time() - start) / 60
-    print; print;
-    print "Total runtime: {0} minutes".format(int(total_run_time))
-    print; print;
