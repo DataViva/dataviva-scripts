@@ -16,7 +16,12 @@
     Example Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     python scripts/rais/format_raw_data.py data/rais/Rais_2002.csv.bz2 -y 2002 -o data/rais/2002
-
+    or
+    python scripts/rais/format_raw_data.py data/rais/Rais_2003.csv.bz2 -y 2003 -o data/rais/2003 -g -o data/rais/2002
+    or
+    python scripts/rais/format_raw_data.py data/rais/Rais_2007.csv.bz2 -y 2007 -o data/rais/2007 -g -o data/rais/2006 -g5 -o data/rais/2002
+    or (for debugging)
+    run -b scripts/rais/_required.py:87 -d scripts/rais/format_raw_data.py data/rais/Rais_2002.csv.bz2 -y 2002 -o data/rais/2002
 """
 
 ''' Import statements '''
@@ -46,7 +51,9 @@ def findFiles (path, filter):
 @click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
 @click.option('prev_path', '--prev', '-g', help='Path to files from the previous year for calculating growth.', type=click.Path(exists=True), required=False)
 @click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.', type=click.Path(exists=True), required=False)
-def main(file_path, year, output_path, prev_path, prev5_path):
+@click.option('requireds_only', '--ro', '-ro', help='Only perform required operation.', is_flag=True, default=False, required=False)
+def main(file_path, year, output_path, prev_path, prev5_path, requireds_only):
+
     print; print "~~~**** YEAR: {0} ****~~~".format(year); print;
     start = time.time()
     step = 0
@@ -74,7 +81,6 @@ def main(file_path, year, output_path, prev_path, prev5_path):
                 print "WARNING: Unable to save dataframe, Overflow Error."
                 d.close()
                 os.remove(os.path.join(output_path, 'rais_df_raw.h5'))
-        # rais_df = to_df(file_path, False)
 
         if "yb" in d:
             tables = {"yb":d["yb"], "yo":d["yo"], "yi":d["yi"], "ybi":d["ybi"], "ybo":d["ybo"], "yio":d["yio"], "ybio":d["ybio"]}
