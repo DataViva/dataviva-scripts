@@ -21,7 +21,8 @@
     or
     python scripts/rais/format_raw_data.py data/rais/Rais_2007.csv.bz2 -y 2007 -o data/rais/2007 -g -o data/rais/2006 -g5 -o data/rais/2002
     or (for debugging)
-    run -b scripts/rais/_required.py:87 -d scripts/rais/format_raw_data.py data/rais/Rais_2002.csv.bz2 -y 2002 -o data/rais/2002
+    %run -b scripts/rais/_required.py:87 -d scripts/rais/format_raw_data.py data/rais/Rais_2002.csv.bz2 -y 2002 -o data/rais/2002
+
 """
 
 ''' Import statements '''
@@ -68,7 +69,6 @@ def main(file_path, year, output_path, prev_path, prev5_path, requireds_only):
     if file_path:
         if not os.path.exists(output_path): os.makedirs(output_path)
         d = pd.HDFStore(os.path.join(output_path, 'rais_df_raw.h5'))
-
         if "rais_df" in d:
             rais_df = d['rais_df']
         else:
@@ -81,8 +81,9 @@ def main(file_path, year, output_path, prev_path, prev5_path, requireds_only):
                 print "WARNING: Unable to save dataframe, Overflow Error."
                 d.close()
                 os.remove(os.path.join(output_path, 'rais_df_raw.h5'))
+        # rais_df = to_df(file_path, False)
 
-        if "yb" in d:
+        if "yb" in d and not requireds_only:
             tables = {"yb":d["yb"], "yo":d["yo"], "yi":d["yi"], "ybi":d["ybi"], "ybo":d["ybo"], "yio":d["yio"], "ybio":d["ybio"]}
         else:
             step+=1; print; print '''STEP {0}: \nAggregate'''.format(step)
@@ -91,9 +92,6 @@ def main(file_path, year, output_path, prev_path, prev5_path, requireds_only):
             step+=1; print; print 'STEP {0}: \nImportance'.format(step)
             tables["yio"] = importance(tables["ybio"], tables["ybi"], tables["yio"], tables["yo"], year, depths)
 
-            step+=1; print; print 'STEP {0}: \nRequired'.format(step)
-            tables["ybio"] = required(tables["ybio"], tables["ybi"], tables["yi"], year, depths)
-
             try:
                 d["yb"] = tables["yb"]; d["yo"] =  tables["yo"]; d["yi"] =  tables["yi"]; d["ybi"] = tables["ybi"]; d["ybo"] = tables["ybo"]; d["yio"] = tables["yio"]; d["ybio"] = tables["ybio"]
                 d.close()
@@ -101,6 +99,12 @@ def main(file_path, year, output_path, prev_path, prev5_path, requireds_only):
                 print "WARNING: Unable to save dataframe, Overflow Error."
                 d.close()
                 os.remove(os.path.join(output_path, 'rais_df_raw.h5'))
+
+        step+=1; print; print 'STEP {0}: \nRequired'.format(step)
+        [tables["ybi"], tables["ybio"]] = required(tables["ybio"], tables["ybi"], tables["yi"], year, depths, output_path)
+
+        # print tables["ybi"].head()
+        # sys.exit()
 
         step+=1; print; print 'STEP {0}: \nDiversity'.format(step)
         tables["yb"] = calc_diversity(tables["ybi"], tables["yb"], "bra_id", "cnae_id", year, depths)
