@@ -5,7 +5,7 @@ from __init__ import country_lookup
 '''
     Columns:
     v - value in thousands of US dollars
-    q - quantity in tons 
+    q - quantity in tons
     i - exporter
     j - importer
     k - hs6
@@ -22,24 +22,24 @@ def get_file(full_path):
         '.zip': zipfile.ZipFile,
         '.rar': rarfile.RarFile
     }
-    
+
     try:
         file = extensions[file_ext](full_path)
     except KeyError:
         file = open(full_path)
     except IOError:
         return None
-    
+
     if file_ext == '.zip':
         file = zipfile.ZipFile.open(file, file_path_no_ext)
     elif file_ext == '.rar':
         file = rarfile.RarFile.open(file, file_path_no_ext+".csv")
-    
+
     # print "Reading from file", file_name
     return file
 
 def import_file(file_path):
-    
+
     def hs6_converter(hs6):
         leading2 = int(hs6[:2])
         if leading2 <= 5: return "{}{}".format("01", hs6[:-2])
@@ -65,28 +65,31 @@ def import_file(file_path):
         if leading2 <= 97: return "{}{}".format("21", hs6[:-2])
         if leading2 <= 99: return "{}{}".format("22", hs6[:-2])
         return "{}{}".format("xx", hs6[:-2])
-    
+
     ''' Need to multiply by $1000 for nominal val'''
     def val_converter(val):
-        return float(val)*1000
-    
+        try:
+            value = float(val)
+        except ValueError:
+            return 0
+
+        return value*1000
+
+
     def country_converter(c):
         try:
             return country_lookup[int(c)]
         except:
             raise Exception("Can't find country with ID: {}".format(c))
-    
-    f = get_file(file_path)
-    
+
+    raw_file = get_file(file_path)
+
     '''Open CSV file'''
-    baci_df = pd.read_csv(f, \
-                            sep=',', \
-                            converters={
-                                "hs6":hs6_converter, 
-                                "v":val_converter, 
-                                "i":country_converter, 
-                                "j":country_converter})
-    baci_df = baci_df[["hs6", "i", "j", "v"]]
-    baci_df.columns = ["hs_id", "wld_id", "dest_id", "val_usd"]
-    
-    return baci_df
+    comtrade_df = pd.read_csv(raw_file, sep=';', converters={
+                                "hs_id":hs6_converter,
+                                "val_usd":val_converter,
+                                "wld_id":country_converter
+                                })
+
+
+    return comtrade_df.drop('year', 1)
