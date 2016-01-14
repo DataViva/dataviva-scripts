@@ -15,7 +15,6 @@ import pandas as pd
 import numpy as np
 from helpers.import_file import import_file
 from helpers.calc_rca import calc_rca
-from helpers.calc_complexity import calc_complexity
 
 file_path = os.path.dirname(os.path.realpath(__file__))
 ps_calcs_lib_path = os.path.abspath(os.path.join(file_path, "../../../lib/ps_calcs"))
@@ -51,30 +50,24 @@ def main(input_file, year, output_dir):
     '''
     Calculate RCA
     '''
-    ypw_rca = ypw.reset_index()
-    ypw_rca = ypw_rca.pivot(index="wld_id", columns="hs_id", values="val_usd")
-    ypw_rca = ps_calcs.rca(ypw_rca)
+    ypw_rca = calc_rca(ypw)
 
-    ypw_rca_binary = ypw_rca.copy()
-
-    ypw_rca_binary[ypw_rca_binary >= 1] = 1
-    ypw_rca_binary[ypw_rca_binary < 1] = 0
 
     '''
         DISTANCES
     '''
-    ypw_prox = ps_calcs.proximity(ypw_rca_binary)
-    ypw_dist = ps_calcs.distance(ypw_rca_binary, ypw_prox).fillna(0)
+    ypw_prox = ps_calcs.proximity(ypw_rca)
+    ypw_dist = ps_calcs.distance(ypw_rca, ypw_prox).fillna(0)
 
     '''
         COMPLEXITY
     '''
-    eci, pci = calc_complexity(ypw)
+    eci, pci = ps_calcs.complexity(ypw_rca)
 
     '''
         OPP GAIN
     '''
-    ypw_opp_gain = ps_calcs.opportunity_gain(ypw_rca_binary[pci.index], ypw_prox[pci.index].reindex(pci.index), pci)
+    ypw_opp_gain = ps_calcs.opportunity_gain(ypw_rca[pci.index], ypw_prox[pci.index].reindex(pci.index), pci)
 
     '''
         MERGE DATA
