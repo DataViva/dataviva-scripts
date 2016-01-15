@@ -45,7 +45,4 @@ def calc_rca(ypw):
     ypw_rca = ypw_rca.pivot(index="wld_id", columns="hs_id", values="val_usd")
     ypw_rca = ps_calcs.rca(ypw_rca)
 
-    ypw_rca[ypw_rca >= 1] = 1
-    ypw_rca[ypw_rca < 1] = 0
-
     return ypw_rca.fillna(0)

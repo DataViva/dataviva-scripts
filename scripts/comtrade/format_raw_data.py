@@ -51,23 +51,26 @@ def main(input_file, year, output_dir):
     Calculate RCA
     '''
     ypw_rca = calc_rca(ypw)
+    ypw_rca_binary = ypw_rca.copy()
 
+    ypw_rca_binary[ypw_rca_binary >= 1] = 1
+    ypw_rca_binary[ypw_rca_binary < 1] = 0
 
     '''
         DISTANCES
     '''
-    ypw_prox = ps_calcs.proximity(ypw_rca)
-    ypw_dist = ps_calcs.distance(ypw_rca, ypw_prox).fillna(0)
+    ypw_prox = ps_calcs.proximity(ypw_rca_binary)
+    ypw_dist = ps_calcs.distance(ypw_rca_binary, ypw_prox).fillna(0)
 
     '''
         COMPLEXITY
     '''
-    eci, pci = ps_calcs.complexity(ypw_rca)
+    eci, pci = ps_calcs.complexity(ypw_rca_binary)
 
     '''
         OPP GAIN
     '''
-    ypw_opp_gain = ps_calcs.opportunity_gain(ypw_rca[pci.index], ypw_prox[pci.index].reindex(pci.index), pci)
+    ypw_opp_gain = ps_calcs.opportunity_gain(ypw_rca_binary[pci.index], ypw_prox[pci.index].reindex(pci.index), pci)
 
     '''
         MERGE DATA
