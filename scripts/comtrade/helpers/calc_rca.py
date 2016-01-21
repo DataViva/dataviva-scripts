@@ -37,7 +37,6 @@ def calc_rca(ypw):
     origins_to_drop = set(ypw.index.get_level_values('wld_id')).difference(filtered_origins)
     products_to_drop = set(ypw.index.get_level_values('hs_id')).difference(filtered_products)
 
-    import pdb; pdb.set_trace()
     ypw = ypw.drop(list(origins_to_drop), axis=0, level='wld_id')
     ypw = ypw.drop(list(products_to_drop), axis=0, level='hs_id')
 
