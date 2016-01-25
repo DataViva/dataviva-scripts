@@ -2,23 +2,9 @@
 """
     Example Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    python scripts/secex_monthly/format_raw_data.py \
-    data/secex/raw_export/MDIC_2007.rar \
-    data/secex/raw_import/MDIC_2007.rar \
-    -y 2007 \
-    -e data/comtrade/2007/comtrade_eci.tsv.bz2 \
-    -p data/comtrade/2007/comtrade_pci.tsv.bz2 \
-    -r data/comtrade/2007/comtrade_ypw.tsv.bz2 \
-    -o data/secex/2007
+    python scripts/secex_monthly/format_raw_data.py data/secex/raw_export/MDIC_2007.rar data/secex/raw_import/MDIC_2007.rar y 2007 e data/comtrade/2007/comtrade_eci.tsv.bz2 p data/comtrade/2007/comtrade_pci.tsv.bz2 r data/comtrade/2007/comtrade_ypw.tsv.bz2 o data/secex/2007
 
-    python scripts/secex_monthly/format_raw_data.py \
-    data/secex_export/raw/MDIC_2001.rar \
-    data/secex_import/raw/MDIC_2001.rar \
-    -y 2001 \
-    -e data/comtrade/2007/comtrade_eci.tsv.bz2 \
-    -e data/comtrade/2007/comtrade_eci.tsv.bz2 \
-    -o data/secex/2001 \
-    -g data/secex/2000
+    python scripts/secex_monthly/format_raw_data.py data/secex_export/raw/MDIC_2001.rar data/secex_import/raw/MDIC_2001.rar y 2001 e data/comtrade/2007/comtrade_eci.tsv.bz2 e data/comtrade/2007/comtrade_eci.tsv.bz2 o data/secex/2001 g data/secex/2000
 """
 
 ''' Import statements '''
@@ -89,7 +75,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
         ymp = calc_diversity(ympw, ymp, "hs_id", "wld_id")
         ymw = calc_diversity(ymbw, ymw, "wld_id", "bra_id")
         ymw = calc_diversity(ympw, ymw, "wld_id", "hs_id")
-        
+
         step += 1; print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
         ymb = domestic_eci(ymp, ymb, ymbp, depths["bra"])
 
@@ -98,10 +84,10 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
 
         step += 1; print '''\nSTEP {0}: \nCalculate Brazilian RCA'''.format(step)
         ymp = brazil_rca(ymp, ypw_file_path, year)
-            
+
         step += 1; print '''\nSTEP {0}: \nCalculate RCA, diversity and opp_gain aka RDO'''.format(step)
         ymbp = rdo(ymbp, ymp, year, depths["bra"], ypw_file_path)
-        
+
         tables = {"ymb": ymb, "ymp": ymp, "ymw": ymw, "ymbp": ymbp, "ymbpw": ymbpw, "ymbw": ymbw, "ympw": ympw}
         for tbln, tbl in tables.items():
             d[tbln] = tbl
