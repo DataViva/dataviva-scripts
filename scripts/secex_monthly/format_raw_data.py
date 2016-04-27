@@ -36,6 +36,7 @@ from _column_lengths import add_column_length
 @click.option('prev_path', '--prev', '-g', help='Path to files from the previous year for calculating growth.', type=click.Path(exists=True), required=False)
 @click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.', type=click.Path(exists=True), required=False)
 def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path, ypw_file_path, output_path, prev_path, prev5_path):
+    output_path = os.path.join(output_path, str(year))
     start = time.time()
     step = 0
 
