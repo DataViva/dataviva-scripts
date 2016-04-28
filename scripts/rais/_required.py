@@ -89,23 +89,7 @@ def required(ybio, ybi, yi, year, depths, output_path, output_bras=False):
                 max_cutoff = max_cutoff if max_cutoff > 50 else 50
                 similar_locs = similar_locs.order().ix[1:max_cutoff].index
 
-                if not len(similar_locs):
-                    continue
-
-                req_bras_fp = os.path.abspath(os.path.join(output_path, "req_bras_test.tsv"))
-                with open(req_bras_fp, "a") as myfile:
-                    csvfile = csv.writer(myfile, delimiter='\t')
-                    csvfile.writerow([year, bra, cnae, ",".join(similar_locs[:10])])
-
-                # ybi.loc[(year, bra, cnae), 'required_bras'] = '[' + ','.join(['"{}"'.format(r) for r in ras_similar]) + ']'
-
-                # ybi_required.append([year, bra, cnae, '[' + ','.join(['{}'.format(r) for r in ras_similar]) + ']'])
-                # cursor.execute("INSERT INTO rais_ybi_required VALUES(%s, %s, %s, %s);", (year, bra, cnae, '[' + ','.join(['{}'.format(r) for r in ras_similar]) + ']'))
-                # print [year, bra, cnae, '[' + ','.join(['"{}"'.format(r) for r in ras_similar]) + ']']
-                # sys.exit()
-
-
-                required_cbos = ybio_panel[cnae].ix[list(ras_similar)].fillna(0).mean(axis=0)
+                required_cbos = ybio_panel[cnae].ix[list(similar_locs)].fillna(0).mean(axis=0)
                 required_cbos = required_cbos[required_cbos >= 1]
 
                 for cbo in required_cbos.index:
