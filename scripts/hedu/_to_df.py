@@ -39,10 +39,10 @@ def map_color(color):
     MULTI=3
     ASIAN=4
     INDIAN=5
-    UNIDENTIFIED = 6    
+    UNIDENTIFIED = 6
     UNKNOWN = 9
     color_dict = {UNIDENTIFIED: 'H' , INDIAN:'C', WHITE:'D', BLACK:'E', ASIAN:'F', MULTI:'G', 9:'H', -1:'H', 0:'H'}
-    try: 
+    try:
         return str(color_dict[int(color)])
     except Exception, e:
         raise Exception("Unknown color: error %s" % e)
@@ -55,8 +55,8 @@ def map_loc(loc):
     except: print loc; sys.exit()
 
 def map_school_type(st):
-    FEDERAL, STATE, LOCAL, PROFIT_PRIVATE, NONPROFIT_PRIVATE, SPECIAL = 1, 2, 3, 4, 5, 6
-    loc_dict = {FEDERAL:'P', STATE:'Q', LOCAL:'R', PROFIT_PRIVATE:'S', NONPROFIT_PRIVATE:'T', SPECIAL:'U'}
+    FEDERAL, STATE, LOCAL, PROFIT_PRIVATE, NONPROFIT_PRIVATE, SPECIAL, NOT_REPORTED = 1, 2, 3, 4, 5, 6, 7
+    loc_dict = {FEDERAL:'P', STATE:'Q', LOCAL:'R', PROFIT_PRIVATE:'S', NONPROFIT_PRIVATE:'T', SPECIAL:'U', NOT_REPORTED:'X'}
     try: return str(loc_dict[int(st)])
     except: print st; sys.exit()
 
@@ -81,7 +81,7 @@ def to_df(file_path, year):
 
     if "bz2" in file_path: input_file = bz2.BZ2File(file_path)
     else: input_file = open(file_path, "rU")
-    
+
     cols = ["university_id","school_type","academic_organization","course_id_bad",\
             "degree","modality","level","student_id","enrolled","graduates","entrants",\
             "Year_entry","gender","age", "ethnicity", "bra_id","course_hedu_id","course_name",\
@@ -90,10 +90,11 @@ def to_df(file_path, year):
     coerce_cols = {"bra_id":bra_replace, "university_id":university_replace, \
                     "course_hedu_id":course_replace, "ethnicity":map_color, "gender":map_gender, \
                     "school_type":map_school_type}
+
     df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
     df = df.drop(["course_name","modality", "Year_entry","degree","course_id_bad","academic_organization","level"], axis=1)
     df = df[df["year"]==int(year)]
-    
+
     for col, missings in missing.items():
         if not len(missings): continue
         num_rows = df.shape[0]
@@ -103,7 +104,7 @@ def to_df(file_path, year):
         # rais_df = rais_df[drop_criterion]
         # df = df.dropna(subset=[col])
         # print; print "{0} rows deleted.".format(num_rows - df.shape[0]); print;
-    
+
     # print df.head()
     # sys.exit()
 
