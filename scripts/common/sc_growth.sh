@@ -10,5 +10,5 @@ YEAR=2015
 for i in $listOfNames
 do
 echo "$i\n";
-  python -u scripts/common/growth_calc.py data/sc/$YEAR/$i data/sc/$YEAR/$i -c enroll_id -y $YEAR -e sc -o data/sc/growth_1_5_sc/$YEAR -s school_id &>> sc_growth.log
+  python scripts/common/growth_calc.py data/sc/$YEAR/$i data/sc/$YEAR/$i -c enroll_id -y $YEAR -e sc -o data/sc/growth_1_5_sc/$YEAR -s school_id
 done
