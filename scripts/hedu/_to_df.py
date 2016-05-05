@@ -55,8 +55,8 @@ def map_loc(loc):
     except: print loc; sys.exit()
 
 def map_school_type(st):
-    FEDERAL, STATE, LOCAL, PROFIT_PRIVATE, NONPROFIT_PRIVATE, SPECIAL, NOT_REPORTED = 1, 2, 3, 4, 5, 6, 7
-    loc_dict = {FEDERAL:'P', STATE:'Q', LOCAL:'R', PROFIT_PRIVATE:'S', NONPROFIT_PRIVATE:'T', SPECIAL:'U', NOT_REPORTED:'X'}
+    FEDERAL, STATE, LOCAL, PROFIT_PRIVATE, NONPROFIT_PRIVATE, SPECIAL, SPECIAL_2015 = 1, 2, 3, 4, 5, 6, 7
+    loc_dict = {FEDERAL:'P', STATE:'Q', LOCAL:'R', PROFIT_PRIVATE:'S', NONPROFIT_PRIVATE:'T', SPECIAL:'U', SPECIAL_2015:'U'}
     try: return str(loc_dict[int(st)])
     except: print st; sys.exit()
 
