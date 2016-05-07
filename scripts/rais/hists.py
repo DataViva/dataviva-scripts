@@ -7,7 +7,7 @@ from time import sleep
 
 '''
     Usage:
-    python hist.py -y 2013 -o data/rais/ -a bra -t rais_yb
+    python hist.py -y 2013 -o data/rais/ -a bra
 '''
 
 latest_year = 2013
