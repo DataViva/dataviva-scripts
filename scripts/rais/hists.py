@@ -68,7 +68,7 @@ def main(year, output_path, attr_type):
         if "rais_df" in d:
             rais_df = d['rais_df']
         else:
-            file_path = os.path.join(output_path,'Rais_{}.csv.bz2'.format(year))
+            file_path = os.path.join(output_path,'Rais_{}.csv'.format(year))
             rais_df = to_df(file_path)
             d['rais_df'] = rais_df
 
