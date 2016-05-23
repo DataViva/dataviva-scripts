@@ -81,36 +81,29 @@ def main(file_path, year, output_path):
         print "SAVING HDF to", hdf_filepath
         df.to_hdf(hdf_filepath, 'table')
 
-    print
-    print "Step 2: aggregate"
-
     pk_lookup = {"y": "year", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
 
     tables_list = ["yb", "yc", "ys", "ybs", "ybc", "ysc", "ybsc"]
 
     for table_name in tables_list:
         pk = [pk_lookup[l] for l in table_name]
-        print "working on", table_name
 
-        dems = ['gender', 'color', 'loc', 'school_type'] if "d" in table_name else ['']
+        print '''\nAggregating {0}'''.format(table_name)
+        tbl = aggregate(table_name, pk, df)
 
-        for dem in dems:
-            print '''\nSTEP 2: Aggregate {0}'''.format(dem)
-            tbl = aggregate(table_name, pk, df, dem)
+        if "c" in table_name:
+            pk2 = [x for x in pk]
+            pk2[pk2.index("course_sc_id")] = df.course_sc_id.str.slice(0, 2)
+            tbl_course2 = aggregate(table_name, pk2, df, course_flag=True)
 
-            if "c" in table_name:
-                pk2 = [x for x in pk]
-                pk2[pk2.index("course_sc_id")] = df.course_sc_id.str.slice(0, 2)
-                tbl_course2 = aggregate(table_name, pk2, df, dem, course_flag=True)
+            tbl = pd.concat([tbl, tbl_course2])
 
-                tbl = pd.concat([tbl, tbl_course2])
-
-            tbl = add_column_length(table_name, tbl)
-            # tbl.rename(columns={"student_id": "students"}, inplace=True)
-            file_name = table_name + "_" + dem + ".tsv.bz2" if "d" in table_name else table_name + ".tsv.bz2"
-            print '''Save {0} to output path'''.format(file_name)
-            new_file_path = os.path.abspath(os.path.join(output_path, file_name))
-            tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+        tbl = add_column_length(table_name, tbl)
+        # tbl.rename(columns={"student_id": "students"}, inplace=True)
+        file_name = table_name + ".tsv.bz2"
+        print '''Save {0} to output path'''.format(file_name)
+        new_file_path = os.path.abspath(os.path.join(output_path, file_name))
+        tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
 
 if __name__ == "__main__":
