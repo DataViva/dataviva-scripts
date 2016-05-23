@@ -1,25 +1,8 @@
-import sys
-import MySQLdb
-import os
 import pandas as pd
 import numpy as np
 
 
-def get_planning_regions():
-    ''' Connect to DB '''
-    db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ[
-                         "DATAVIVA_DB_USER"], passwd=os.environ["DATAVIVA_DB_PW"], db=os.environ["DATAVIVA_DB_NAME"])
-    db.autocommit(1)
-    cursor = db.cursor()
-
-    cursor.execute("select bra_id, pr_id from attrs_bra_pr")
-    return {r[0]: r[1] for r in cursor.fetchall()}
-
-
-def aggregate(this_pk, tbl, dem):
-    if dem:
-        tbl["d_id"] = tbl[dem]
-
+def aggregate(this_pk, tbl):
     tbl = tbl.drop(['gender', 'ethnicity', 'school_type'], axis=1)
 
     # -- For aggregation make sure we are only looking at the deepest level!!
@@ -51,22 +34,22 @@ def aggregate(this_pk, tbl, dem):
         print test.head()
     test = None
 
-    tbl_all = tbl.groupby(this_pk).agg(agg_rules)
+    df_municipality = tbl.groupby(this_pk).agg(agg_rules)
 
-    tbl_region = tbl.reset_index()
-    tbl_region["bra_id"] = tbl_region["bra_id"].str.slice(0, 1)
-    tbl_region = tbl_region.groupby(this_pk).agg(agg_rules)
+    df_region = tbl.reset_index()
+    df_region["bra_id"] = df_region["bra_id"].str.slice(0, 1)
+    df_region = df_region.groupby(this_pk).agg(agg_rules)
 
-    tbl_state = tbl.reset_index()
-    tbl_state["bra_id"] = tbl_state["bra_id"].str.slice(0, 3)
-    tbl_state = tbl_state.groupby(this_pk).agg(agg_rules)
+    df_state = tbl.reset_index()
+    df_state["bra_id"] = df_state["bra_id"].str.slice(0, 3)
+    df_state = df_state.groupby(this_pk).agg(agg_rules)
 
-    tbl_meso = tbl.reset_index()
-    tbl_meso["bra_id"] = tbl_meso["bra_id"].str.slice(0, 5)
-    tbl_meso = tbl_meso.groupby(this_pk).agg(agg_rules)
+    df_meso = tbl.reset_index()
+    df_meso["bra_id"] = df_meso["bra_id"].str.slice(0, 5)
+    df_meso = df_meso.groupby(this_pk).agg(agg_rules)
 
-    tbl_micro = tbl.reset_index()
-    tbl_micro["bra_id"] = tbl_micro["bra_id"].str.slice(0, 7)
-    tbl_micro = tbl_micro.groupby(this_pk).agg(agg_rules)
+    df_micro = tbl.reset_index()
+    df_micro["bra_id"] = df_micro["bra_id"].str.slice(0, 7)
+    df_micro = df_micro.groupby(this_pk).agg(agg_rules)
 
-    return pd.concat([tbl_all, tbl_state, tbl_meso, tbl_micro, tbl_pr, tbl_region])
+    return pd.concat([df_municipality, df_state, df_meso, df_micro, df_region])

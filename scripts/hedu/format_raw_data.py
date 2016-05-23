@@ -17,7 +17,7 @@
     11 Graduates
     12 Entrants
     13 Degree
-    
+
     Example Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     python scripts/higher_edu/format_raw_data.py data/higher_edu/undergraduate.csv -o -y data/higher_edu/
@@ -25,7 +25,11 @@
 """
 
 ''' Import statements '''
-import os, sys, time, bz2, click
+import os
+import sys
+import time
+import bz2
+import click
 import pandas as pd
 import pandas.io.sql as sql
 import numpy as np
@@ -45,6 +49,7 @@ def pre_check():
     if len(failed):
         sys.exit("The following environment variables need to be set: {0}".format(", ".join(failed)))
 
+
 @click.command()
 @click.argument('file_path', type=click.Path(exists=True))
 @click.option('-y', '--year', prompt='Year', help='year of the data to convert', required=True, default='all')
@@ -55,46 +60,46 @@ def main(file_path, year, output_path):
 
     print "\nYEAR: {0}\n".format(year)
     this_output_path = os.path.join(output_path)
-    if not os.path.exists(this_output_path): os.makedirs(this_output_path)
-    
+    if not os.path.exists(this_output_path):
+        os.makedirs(this_output_path)
+
     step = 0
-    step+=1; print '''STEP {0}: Import file to pandas dataframe'''.format(step)
+    step += 1
+    print '''STEP {0}: Import file to pandas dataframe'''.format(step)
     df = to_df(file_path, year)
-    
+
     tables_list = ["yb", "yu", "yc", "ybc", "ybu", "yuc", "ybuc"]
     pk_lookup = {"y": "year", "b": "bra_id", "c": "course_hedu_id", "u": "university_id"}
 
     ybuc = None
 
     for table_name in tables_list:
-        pk = [pk_lookup[l] for l in table_name]
+        pk = [pk_lookup[l] for l in table_name]  # table dimensions
         print "working on", table_name
-        
-        dems = ['gender', 'ethnicity', 'school_type'] if "d" in table_name else ['']
-        
-        for dem in dems:
-            print '''\nSTEP 2: Aggregate {0}'''.format(dem)
-            tbl = aggregate(pk, df, dem)
-            
-            if "c" in table_name:
-                pk2 = [x for x in pk]
-                pk2[pk2.index("course_hedu_id")] = df.course_hedu_id.str.slice(0, 2)
-                # df2.course_hedu_id = df.course_hedu_id.str.slice(0, 2)
-                tbl_course2 = aggregate(pk2, df, dem)
 
-                tbl = pd.concat([tbl, tbl_course2])
-            
-            tbl = add_column_length(table_name, tbl)
-            tbl.rename(columns={"student_id": "students"}, inplace=True)   
-            if table_name == "yb":
-                tbl.rename(columns={"university_id": "num_universities"}, inplace=True)   
-            if table_name == "ybuc":
-                print tbl.head()
-                ybuc = tbl
-            file_name = table_name + "_" + dem + ".tsv.bz2" if "d" in table_name else table_name + ".tsv.bz2"
-            print '''Save {0} to output path'''.format(file_name)
-            new_file_path = os.path.abspath(os.path.join(output_path, file_name))
-            tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+        step += 1
+        print '''\nSTEP {0}: Aggregate'''.format(step)
+        tbl = aggregate(pk, df)  # df_aggregated
+
+        if "c" in table_name:
+            pk2 = [x for x in pk]
+            pk2[pk2.index("course_hedu_id")] = df.course_hedu_id.str.slice(0, 2)
+            # df2.course_hedu_id = df.course_hedu_id.str.slice(0, 2)
+            tbl_course2 = aggregate(pk2, df)
+
+            tbl = pd.concat([tbl, tbl_course2])
+
+        tbl = add_column_length(table_name, tbl)
+        tbl.rename(columns={"student_id": "students"}, inplace=True)
+        if table_name == "yb":
+            tbl.rename(columns={"university_id": "num_universities"}, inplace=True)
+        if table_name == "ybuc":
+            print tbl.head()
+            ybuc = tbl
+        file_name = table_name + ".tsv.bz2"
+        print '''Save {0} to output path'''.format(file_name)
+        new_file_path = os.path.abspath(os.path.join(output_path, file_name))
+        tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
         # if "c" in table_name:
         #     print '''\nSTEP 3: Aggregate {0}'''
@@ -104,15 +109,16 @@ def main(file_path, year, output_path):
         #     file_name = table_name + "_cid2.tsv.bz2"
         #     print '''Save {0} to output path'''.format(file_name)
         #     new_file_path = os.path.abspath(os.path.join(output_path, file_name))
-        #     tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)        
-    
+        #     tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+
     if ybuc is not None:
-        step+=1; print '''STEP {0}: Calculating RCAs'''.format(step)
+        step += 1
+        print '''STEP {0}: Calculating RCAs'''.format(step)
         ybc = calc_rca(ybuc, year)
         new_file_path = os.path.abspath(os.path.join(output_path, "ybc_rca.tsv.bz2"))
         ybc.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
         print "writing", new_file_path
-    
+
 
 if __name__ == "__main__":
     main()
