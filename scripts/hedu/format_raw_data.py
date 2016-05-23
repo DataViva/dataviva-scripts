@@ -69,8 +69,6 @@ def main(file_path, year, output_path):
     tables_list = ["yb", "yu", "yc", "ybc", "ybu", "yuc", "ybuc"]
     index_lookup = {"y": "year", "b": "bra_id", "c": "course_hedu_id", "u": "university_id"}
 
-    ybuc = None
-
     for table_name in tables_list:
         indexes = [index_lookup[l] for l in table_name]
 
@@ -86,21 +84,15 @@ def main(file_path, year, output_path):
             aggregated_df.rename(columns={"university_id": "num_universities"}, inplace=True)
 
         if table_name == "ybuc":
-            print aggregated_df.head()
-            ybuc = aggregated_df
+            print '''Calculating RCAs'''
+            ybc = calc_rca(aggregated_df, year)
+            new_file_path = os.path.abspath(os.path.join(output_path, "ybc_rca.tsv.bz2"))
+            ybc.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
         file_name = table_name + ".tsv.bz2"
         print '''Save {0} to output path'''.format(file_name)
         new_file_path = os.path.abspath(os.path.join(output_path, file_name))
         aggregated_df.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
-
-    if ybuc is not None:
-        print '''Calculating RCAs'''
-        ybc = calc_rca(ybuc, year)
-        new_file_path = os.path.abspath(os.path.join(output_path, "ybc_rca.tsv.bz2"))
-        ybc.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
-        print "writing", new_file_path
-
 
 if __name__ == "__main__":
     main()
