@@ -38,7 +38,7 @@ import numpy as np
 
 from _to_df import to_df
 from _replace_vals import replace_vals
-from _aggregate import aggregate, agg_rules
+from _aggregate import aggregate
 from _shard import shard
 from _calc_rca import calc_rca
 from _column_lengths import add_column_length
