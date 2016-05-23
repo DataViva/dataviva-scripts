@@ -8,7 +8,12 @@
 """
 
 ''' Import statements '''
-import os, sys, time, bz2, click, MySQLdb
+import os
+import sys
+import time
+import bz2
+import click
+import MySQLdb
 import pandas as pd
 import pandas.io.sql as sql
 import numpy as np
@@ -24,6 +29,7 @@ from _brazil_rca import brazil_rca
 from _rdo import rdo
 from _growth import calc_growth
 from _column_lengths import add_column_length
+
 
 @click.command()
 @click.argument('export_file_path', type=click.Path(exists=True))
@@ -46,30 +52,43 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
         "wld": [2, 5]
     }
 
-    if not os.path.exists(output_path): os.makedirs(output_path)
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
     d = pd.HDFStore(os.path.join(output_path, 'secex.h5'))
     # if "ymb" in d:
     if "ymbp" in d:
         tables = {}
-        tables["ymb"] = d["ymb"]; tables["ymp"] = d["ymp"]; tables["ymw"] = d["ymw"]; tables["ymbp"] = d["ymbp"]; tables["ymbw"] = d["ymbw"]; tables["ympw"] = d["ympw"]; tables["ymbpw"] = d["ymbpw"]
+        tables["ymb"] = d["ymb"]
+        tables["ymp"] = d["ymp"]
+        tables["ymw"] = d["ymw"]
+        tables["ymbp"] = d["ymbp"]
+        tables["ymbw"] = d["ymbw"]
+        tables["ympw"] = d["ympw"]
+        tables["ymbpw"] = d["ymbpw"]
     else:
-        step += 1; print '''\nSTEP {0}: \nImport file to pandas dataframe'''.format(step)
+        step += 1
+        print '''\nSTEP {0}: \nImport file to pandas dataframe'''.format(step)
         secex_exports = to_df(export_file_path, False)
         secex_imports = to_df(import_file_path, False)
 
-        step += 1; print '''\nSTEP {0}: \nMerge imports and exports'''.format(step)
+        step += 1
+        print '''\nSTEP {0}: \nMerge imports and exports'''.format(step)
         secex_df = merge(secex_exports, secex_imports)
 
-        step += 1; print '''\nSTEP {0}: \nAggregate'''.format(step)
+        step += 1
+        print '''\nSTEP {0}: \nAggregate'''.format(step)
         ymbpw = aggregate(secex_df)
 
-        step += 1; print '''\nSTEP {0}: \nShard'''.format(step)
+        step += 1
+        print '''\nSTEP {0}: \nShard'''.format(step)
         [ymb, ymbp, ymbw, ymp, ympw, ymw] = shard(ymbpw)
 
-        step += 1; print '''\nSTEP {0}: \nCalculate PCI & ECI'''.format(step)
+        step += 1
+        print '''\nSTEP {0}: \nCalculate PCI & ECI'''.format(step)
         [ymp, ymw] = pci_wld_eci(eci_file_path, pci_file_path, ymp, ymw, year)
 
-        step += 1; print '''\nSTEP {0}: \nCalculate diversity'''.format(step)
+        step += 1
+        print '''\nSTEP {0}: \nCalculate diversity'''.format(step)
         ymb = calc_diversity(ymbp, ymb, "bra_id", "hs_id")
         ymb = calc_diversity(ymbw, ymb, "bra_id", "wld_id")
         ymp = calc_diversity(ymbp, ymp, "hs_id", "bra_id")
@@ -77,16 +96,20 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
         ymw = calc_diversity(ymbw, ymw, "wld_id", "bra_id")
         ymw = calc_diversity(ympw, ymw, "wld_id", "hs_id")
 
-        step += 1; print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
+        step += 1
+        print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
         ymb = domestic_eci(ymp, ymb, ymbp, depths["bra"])
 
-        step += 1; print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
+        step += 1
+        print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
         ymb = domestic_eci(ymp, ymb, ymbp, depths["bra"])
 
-        step += 1; print '''\nSTEP {0}: \nCalculate Brazilian RCA'''.format(step)
+        step += 1
+        print '''\nSTEP {0}: \nCalculate Brazilian RCA'''.format(step)
         ymp = brazil_rca(ymp, ypw_file_path, year)
 
-        step += 1; print '''\nSTEP {0}: \nCalculate RCA, diversity and opp_gain aka RDO'''.format(step)
+        step += 1
+        print '''\nSTEP {0}: \nCalculate RCA, diversity and opp_gain aka RDO'''.format(step)
         ymbp = rdo(ymbp, ymp, year, depths["bra"], ypw_file_path)
 
         tables = {"ymb": ymb, "ymp": ymp, "ymw": ymw, "ymbp": ymbp, "ymbpw": ymbpw, "ymbw": ymbw, "ympw": ympw}
@@ -94,9 +117,11 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
             d[tbln] = tbl
 
     if prev_path:
-        step += 1; print '''\nSTEP {0}: \nCalculate 1 year growth'''.format(step)
+        step += 1
+        print '''\nSTEP {0}: \nCalculate 1 year growth'''.format(step)
         if prev5_path:
-            step += 1; print '''\nSTEP {0}: \nCalculate 5 year growth'''.format(step)
+            step += 1
+            print '''\nSTEP {0}: \nCalculate 5 year growth'''.format(step)
         for t_name, t in tables.items():
             print t_name
             prev_file = os.path.join(prev_path, "{0}.tsv.bz2".format(t_name))
@@ -130,9 +155,11 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
         t.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
     total_run_time = (time.time() - start) / 60
-    print; print;
+    print
+    print
     print "Total runtime: {0} minutes".format(int(total_run_time))
-    print; print;
+    print
+    print
 
 if __name__ == "__main__":
     main()
