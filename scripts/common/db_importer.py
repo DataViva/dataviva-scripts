@@ -10,7 +10,7 @@ USAGE:
 python db_importer.py --idir=data/hedu/2012/ --name=hedu
 '''
 
-pattern = re.compile('(\w+).tsv(.bz2)*')
+pattern = re.compile('(\w+).csv(.bz2)*')
 
 
 def parse_table(t, dbname):
@@ -28,14 +28,14 @@ def findFiles(path, filter):
 
 
 @click.command()
-@click.option('--idir', '-i', default='.', type=click.Path(exists=True), prompt=False, help='Directory for tsv files.')
+@click.option('--idir', '-i', default='.', type=click.Path(exists=True), prompt=False, help='Directory for csv files.')
 @click.option('--name', '-n', prompt=True, help='Name of database eg rais or secex.')
 @click.option('--host', '-h', prompt=True, help='Database host ip.')
 @click.option('--user', '-u', prompt=True, help='Database user.')
 @click.option('--password', '-p', prompt=True, help='Database password.')
 @click.option('--database', '-d', prompt=True, help='Database name.')
 def main(idir, name, host, user, password, database):
-    for f in findFiles(idir, '*.tsv*'):
+    for f in findFiles(idir, '*.csv*'):
         bzipped = False
         # print f, "Processing"
         if f.endswith("bz2"):
@@ -46,7 +46,7 @@ def main(idir, name, host, user, password, database):
         tablename = parse_table(f, name)
         print "importing", f, "into", tablename
         header = handle.readline().strip()
-        fields = header.split('\t')
+        fields = header.split(',')
         fields_null = ["{0} = nullif(@v{0},'')".format(fi) for fi in fields]
         # print "fields", fields
 
@@ -56,7 +56,7 @@ def main(idir, name, host, user, password, database):
         fields_null = ",".join(fields_null)
 
         cmd = '''mysql -h %s -u%s -p%s %s --local-infile=1 -e "LOAD DATA LOCAL INFILE '%s' INTO TABLE %s
-                 FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' IGNORE 1 LINES (%s) SET %s;" ''' % (
+                 FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' IGNORE 1 LINES (%s) SET %s;" ''' % (
             host, user, password, database, f, tablename, fields, fields_null)
         # print cmd
         os.system(cmd)

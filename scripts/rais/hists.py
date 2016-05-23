@@ -2,19 +2,19 @@
 from __future__ import print_function
 import os, sys, math, MySQLdb, click, time
 import pandas as pd
-from scripts.rais._to_df import to_df
+from _to_df import to_df
 from time import sleep
 
 '''
     Usage:
-    python hist.py -y 2013 -o data/rais/ -a bra -t rais_yb
+    python hist.py -y 2013 -o data/rais/ -a bra
 '''
 
 latest_year = 2013
 
 ''' Connect to DB '''
-db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"], 
-                        passwd=os.environ["DATAVIVA_DB_PW"], 
+db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"],
+                        passwd=os.environ["DATAVIVA_DB_PW"],
                         db=os.environ["DATAVIVA_DB_NAME"])
 db.autocommit(1)
 cursor = db.cursor()
@@ -54,32 +54,32 @@ def hist(id, df, min_val, max_val, bin_size, attr_type, year):
 @click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
 @click.option('--attr_type', '-a', type=click.Choice(['bra','cbo','cnae']), required=True, prompt="Attr Type")
 def main(year, output_path, attr_type):
-    
+
     if "-" in year:
         years = range(int(year.split('-')[0]), int(year.split('-')[1])+1)
     else:
         years = [int(year)]
     print("years:", str(years))
-    
+
     for year in years:
         start = time.time()
-        
+
         d = pd.HDFStore(os.path.join(output_path, str(year), 'rais_df_raw.h5'))
         if "rais_df" in d:
             rais_df = d['rais_df']
         else:
-            file_path = os.path.join(output_path,'Rais_{}.csv.bz2'.format(year))
+            file_path = os.path.join(output_path,'Rais_{}.csv'.format(year))
             rais_df = to_df(file_path)
             d['rais_df'] = rais_df
-        
+
         hist_bins = pd.HDFStore(os.path.join(output_path, '{}_hist_bins.h5'.format(attr_type)))
 
         for depth in depths_lookup[attr_type]:
             print("\n{} depth: {}\n".format(attr_type, depth))
-            
+
             this_depth_df = rais_df.copy()
             this_depth_df['{}_id'.format(attr_type)] = this_depth_df['{}_id'.format(attr_type)].str.slice(0, depth)
-            
+
             # uniqs = ['1112', '8401', '8202', '7842', '7621']:
             uniqs = this_depth_df["{}_id".format(attr_type)].unique()
             for i, id in enumerate(uniqs):
@@ -89,7 +89,7 @@ def main(year, output_path, attr_type):
                     continue
                 print("********* {}: {} ({}/{}) *********".format(year, id, i+1, len(uniqs)), end='\r')
                 sys.stdout.flush()
-                
+
                 if int(year) == latest_year:
                     wage = this_id_df["wage"]
                     wmin = rounddown(wage.mean() - (wage.std()*2))
@@ -104,22 +104,22 @@ def main(year, output_path, attr_type):
                         bin_size = 500
                     if wrange > 10000:
                         bin_size = 1000
-                
+
                     ''' !!! exception for regions (all need to have same bins!) !!! '''
                     if attr_type == "bra" and depth == 1:
                         bin_size = 200
                         wmin = 0
                         wmax = 5200
-                    
+
                     hist_bins["{}_{}".format(attr_type, id)] = pd.Series([wmin, wmax, bin_size])
                 else:
                     if "{}_{}".format(attr_type, id) in hist_bins:
                         wmin, wmax, bin_size = hist_bins["{}_{}".format(attr_type, id)]
                     else:
                         continue
-                
+
                 hist(id, this_id_df, wmin, wmax, bin_size, attr_type, year)
-        
+
         d.close()
         hist_bins.close()
         print("\n\n--- %s minutes ---\n\n" % str((time.time() - start)/60))
