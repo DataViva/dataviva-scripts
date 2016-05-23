@@ -1,4 +1,5 @@
-import sys, os
+import sys
+import os
 import pandas as pd
 import numpy as np
 
@@ -6,6 +7,7 @@ file_path = os.path.dirname(os.path.realpath(__file__))
 ps_calcs_lib_path = os.path.abspath(os.path.join(file_path, "../../", "lib/ps_calcs"))
 sys.path.insert(0, ps_calcs_lib_path)
 import ps_calcs
+
 
 def calc_rca(ybuc, year):
 
