@@ -73,20 +73,22 @@ def main(file_path, year, output_path):
 
     for table_name in tables_list:
         indexes = [index_lookup[l] for l in table_name]
-        print "working on", table_name
 
         print '''\nAggregate {0}'''.format(table_name)
         aggregated_df = aggregate(indexes, df)
 
+        print '''\nAdds length column to {0}'''.format(table_name)
         aggregated_df = add_column_length(table_name, aggregated_df)
-        aggregated_df.rename(columns={"student_id": "students"}, inplace=True)
 
+        print '''\nRenaming {0} columns'''.format(table_name)
+        aggregated_df.rename(columns={"student_id": "students"}, inplace=True)
         if 'u' not in table_name:
             aggregated_df.rename(columns={"university_id": "num_universities"}, inplace=True)
 
         if table_name == "ybuc":
             print aggregated_df.head()
             ybuc = aggregated_df
+
         file_name = table_name + ".tsv.bz2"
         print '''Save {0} to output path'''.format(file_name)
         new_file_path = os.path.abspath(os.path.join(output_path, file_name))
