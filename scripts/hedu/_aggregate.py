@@ -1,16 +1,20 @@
-import sys, MySQLdb, os
+import sys
+import MySQLdb
+import os
 import pandas as pd
 import numpy as np
 
 
 def get_planning_regions():
     ''' Connect to DB '''
-    db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"], passwd=os.environ["DATAVIVA_DB_PW"], db=os.environ["DATAVIVA_DB_NAME"])
+    db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ[
+                         "DATAVIVA_DB_USER"], passwd=os.environ["DATAVIVA_DB_PW"], db=os.environ["DATAVIVA_DB_NAME"])
     db.autocommit(1)
     cursor = db.cursor()
 
     cursor.execute("select bra_id, pr_id from attrs_bra_pr")
-    return {r[0]:r[1] for r in cursor.fetchall()}
+    return {r[0]: r[1] for r in cursor.fetchall()}
+
 
 def aggregate(this_pk, tbl, dem):
     if dem:
@@ -23,13 +27,13 @@ def aggregate(this_pk, tbl, dem):
     deepestCourse = tbl.course_hedu_id.str.len() == 6
 
     agg_rules = {
-        "age" : np.mean,
+        "age": np.mean,
         "enrolled": np.sum,
         "entrants": np.sum,
         "graduates": np.sum,
         "student_id": pd.Series.nunique,
         "morning": np.sum,
-        "afternoon" : np.sum,
+        "afternoon": np.sum,
         "night": np.sum,
         "full_time": np.sum,
         "entrants": np.sum,
@@ -39,8 +43,8 @@ def aggregate(this_pk, tbl, dem):
     if pk_types == set([str]) and this_pk == ["year", "bra_id"]:
         agg_rules["university_id"] = pd.Series.nunique
 
-    test = tbl[ ~(deepestBra & deepestCourse) ]
-    tbl = tbl[ deepestBra & deepestCourse ]
+    test = tbl[~(deepestBra & deepestCourse)]
+    tbl = tbl[deepestBra & deepestCourse]
 
     if not test.empty:
         print "ROWS REMOVED! On table", this_pk
