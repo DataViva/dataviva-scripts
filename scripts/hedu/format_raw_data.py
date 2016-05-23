@@ -72,13 +72,13 @@ def main(file_path, year, output_path):
     for table_name in tables_list:
         indexes = [index_lookup[l] for l in table_name]
 
-        print '''\nAggregate {0}'''.format(table_name)
+        print '''\nAggregating {0}'''.format(table_name)
         aggregated_df = aggregate(indexes, df)
 
-        print '''\nAdds length column to {0}'''.format(table_name)
+        print '''Adding length column to {0}'''.format(table_name)
         aggregated_df = add_column_length(table_name, aggregated_df)
 
-        print '''\nRenaming {0} columns'''.format(table_name)
+        print '''Renaming {0} columns'''.format(table_name)
         aggregated_df.rename(columns={"student_id": "students"}, inplace=True)
         if 'u' not in table_name:
             aggregated_df.rename(columns={"university_id": "num_universities"}, inplace=True)
