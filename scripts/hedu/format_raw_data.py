@@ -69,47 +69,47 @@ def main(file_path, year, output_path):
     df = to_df(file_path, year)
 
     tables_list = ["yb", "yu", "yc", "ybc", "ybu", "yuc", "ybuc"]
-    pk_lookup = {"y": "year", "b": "bra_id", "c": "course_hedu_id", "u": "university_id"}
+    index_lookup = {"y": "year", "b": "bra_id", "c": "course_hedu_id", "u": "university_id"}
 
     ybuc = None
 
     for table_name in tables_list:
-        pk = [pk_lookup[l] for l in table_name]  # table dimensions
+        pk = [index_lookup[l] for l in table_name]  # table dimensions
         print "working on", table_name
 
         step += 1
         print '''\nSTEP {0}: Aggregate'''.format(step)
-        tbl = aggregate(pk, df)  # df_aggregated
+        aggregated_df = aggregate(pk, df)  # df_aggregated
 
         if "c" in table_name:
             pk2 = [x for x in pk]
             pk2[pk2.index("course_hedu_id")] = df.course_hedu_id.str.slice(0, 2)
             # df2.course_hedu_id = df.course_hedu_id.str.slice(0, 2)
-            tbl_course2 = aggregate(pk2, df)
+            courses_aggregated = aggregate(pk2, df)
 
-            tbl = pd.concat([tbl, tbl_course2])
+            aggregated_df = pd.concat([aggregated_df, courses_aggregated])
 
-        tbl = add_column_length(table_name, tbl)
-        tbl.rename(columns={"student_id": "students"}, inplace=True)
+        aggregated_df = add_column_length(table_name, aggregated_df)
+        aggregated_df.rename(columns={"student_id": "students"}, inplace=True)
         if table_name == "yb":
-            tbl.rename(columns={"university_id": "num_universities"}, inplace=True)
+            aggregated_df.rename(columns={"university_id": "num_universities"}, inplace=True)
         if table_name == "ybuc":
-            print tbl.head()
-            ybuc = tbl
+            print aggregated_df.head()
+            ybuc = aggregated_df
         file_name = table_name + ".tsv.bz2"
         print '''Save {0} to output path'''.format(file_name)
         new_file_path = os.path.abspath(os.path.join(output_path, file_name))
-        tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+        aggregated_df.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
         # if "c" in table_name:
         #     print '''\nSTEP 3: Aggregate {0}'''
-        #     tbl = aggregate(pk, df, '', 2)
-        #     tbl = add_column_length(table_name, tbl)
-        #     # print tbl.reset_index().course_hedu_id.nunique()
+        #     aggregated_df = aggregate(pk, df, '', 2)
+        #     aggregated_df = add_column_length(table_name, aggregated_df)
+        #     # print aggregated_df.reset_index().course_hedu_id.nunique()
         #     file_name = table_name + "_cid2.tsv.bz2"
         #     print '''Save {0} to output path'''.format(file_name)
         #     new_file_path = os.path.abspath(os.path.join(output_path, file_name))
-        #     tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+        #     aggregated_df.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
     if ybuc is not None:
         step += 1
