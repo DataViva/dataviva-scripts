@@ -92,16 +92,6 @@ def main(file_path, year, output_path):
         new_file_path = os.path.abspath(os.path.join(output_path, file_name))
         aggregated_df.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
-        # if "c" in table_name:
-        #     print '''\nSTEP 3: Aggregate {0}'''
-        #     aggregated_df = aggregate(indexes, df, '', 2)
-        #     aggregated_df = add_column_length(table_name, aggregated_df)
-        #     # print aggregated_df.reset_index().course_hedu_id.nunique()
-        #     file_name = table_name + "_cid2.tsv.bz2"
-        #     print '''Save {0} to output path'''.format(file_name)
-        #     new_file_path = os.path.abspath(os.path.join(output_path, file_name))
-        #     aggregated_df.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
-
     if ybuc is not None:
         print '''Calculating RCAs'''
         ybc = calc_rca(ybuc, year)
