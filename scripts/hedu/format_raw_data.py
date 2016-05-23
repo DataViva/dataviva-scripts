@@ -72,19 +72,11 @@ def main(file_path, year, output_path):
     ybuc = None
 
     for table_name in tables_list:
-        pk = [index_lookup[l] for l in table_name]  # table dimensions
+        indexes = [index_lookup[l] for l in table_name]
         print "working on", table_name
 
         print '''\nAggregate {0}'''.format(table_name)
-        aggregated_df = aggregate(pk, df)  # df_aggregated
-
-        if "c" in table_name:
-            pk2 = [x for x in pk]
-            pk2[pk2.index("course_hedu_id")] = df.course_hedu_id.str.slice(0, 2)
-            # df2.course_hedu_id = df.course_hedu_id.str.slice(0, 2)
-            courses_aggregated = aggregate(pk2, df)
-
-            aggregated_df = pd.concat([aggregated_df, courses_aggregated])
+        aggregated_df = aggregate(indexes, df)
 
         aggregated_df = add_column_length(table_name, aggregated_df)
         aggregated_df.rename(columns={"student_id": "students"}, inplace=True)
@@ -102,7 +94,7 @@ def main(file_path, year, output_path):
 
         # if "c" in table_name:
         #     print '''\nSTEP 3: Aggregate {0}'''
-        #     aggregated_df = aggregate(pk, df, '', 2)
+        #     aggregated_df = aggregate(indexes, df, '', 2)
         #     aggregated_df = add_column_length(table_name, aggregated_df)
         #     # print aggregated_df.reset_index().course_hedu_id.nunique()
         #     file_name = table_name + "_cid2.tsv.bz2"
