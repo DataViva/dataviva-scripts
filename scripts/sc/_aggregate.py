@@ -2,8 +2,8 @@ import pandas as pd
 import numpy as np
 
 
-def aggregate(table_name, this_pk, tbl, course_flag=None):
-    tbl = tbl.drop(['gender', 'color', 'loc', 'school_type'], axis=1)
+def aggregate(table_name, indexes, df):
+    df = df.drop(['gender', 'color', 'loc', 'school_type'], axis=1)
 
     agg_rules = {
         "age": np.mean,
@@ -12,35 +12,27 @@ def aggregate(table_name, this_pk, tbl, course_flag=None):
         "distorted_age": np.sum,
     }
 
-    pk_types = set([type(t) for t in this_pk])
-    if pk_types == set([str]) and this_pk == ["year", "bra_id"]:
+    pk_types = set([type(t) for t in indexes])
+    if pk_types == set([str]) and indexes == ["year", "bra_id"]:
         agg_rules["school_id"] = pd.Series.nunique
 
-    tbl_all = tbl.groupby(this_pk).agg(agg_rules)
-    # print tbl_all[tbl_all.commute_distance > 0].head()
+    aggregated_dfs = []
+    aggregated_dfs.append(df.groupby(indexes).agg(agg_rules))
 
-    tbl_region = tbl.reset_index()
-    tbl_region["bra_id"] = tbl_region["bra_id"].str.slice(0, 1)
-    tbl_region = tbl_region.groupby(this_pk).agg(agg_rules)
+    df_region = df.reset_index()
+    df_region["bra_id"] = df_region["bra_id"].str.slice(0, 1)
+    df_region = df_region.groupby(indexes).agg(agg_rules)
 
-    tbl_state = tbl.reset_index()
-    tbl_state["bra_id"] = tbl_state["bra_id"].str.slice(0, 3)
-    tbl_state = tbl_state.groupby(this_pk).agg(agg_rules)
+    df_state = df.reset_index()
+    df_state["bra_id"] = df_state["bra_id"].str.slice(0, 3)
+    df_state = df_state.groupby(indexes).agg(agg_rules)
 
-    tbl_meso = tbl.reset_index()
-    tbl_meso["bra_id"] = tbl_meso["bra_id"].str.slice(0, 5)
-    tbl_meso = tbl_meso.groupby(this_pk).agg(agg_rules)
+    df_meso = df.reset_index()
+    df_meso["bra_id"] = df_meso["bra_id"].str.slice(0, 5)
+    df_meso = df_meso.groupby(indexes).agg(agg_rules)
 
-    tbl_micro = tbl.reset_index()
-    tbl_micro["bra_id"] = tbl_micro["bra_id"].str.slice(0, 7)
-    tbl_micro = tbl_micro.groupby(this_pk).agg(agg_rules)
+    df_micro = df.reset_index()
+    df_micro["bra_id"] = df_micro["bra_id"].str.slice(0, 7)
+    df_micro = df_micro.groupby(indexes).agg(agg_rules)
 
-    master_table = pd.concat([tbl_all, tbl_state, tbl_meso, tbl_micro, tbl_region])
-
-    if course_flag:
-        print "Step G. (course_sc_id step) compute distortion rate"
-        master_table['distortion_rate'] = master_table["distorted_age"] / master_table["enroll_id"]
-        master_table.loc[master_table['distorted_age'].isnull(), 'distortion_rate'] = '\N'
-
-    master_table.drop('distorted_age', axis=1, inplace=True)
-    return master_table
+    return pd.concat(aggregated_dfs)
