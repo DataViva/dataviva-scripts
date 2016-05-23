@@ -39,7 +39,7 @@ def aggregate(indexes, df):
 
     if 'course_hedu_id' in indexes:
         df_fields = df.reset_index()
-        df_fields["course_hedu_id"] = df_fields["course_hedu_id"].str.slice(0, 1)
+        df_fields["course_hedu_id"] = df_fields["course_hedu_id"].str.slice(0, 2)
         aggregated_dfs.append(df_fields.groupby(indexes).agg(agg_rules))
 
     if 'bra_id' in indexes:
