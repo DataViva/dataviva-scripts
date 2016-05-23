@@ -63,9 +63,7 @@ def main(file_path, year, output_path):
     if not os.path.exists(this_output_path):
         os.makedirs(this_output_path)
 
-    step = 0
-    step += 1
-    print '''STEP {0}: Import file to pandas dataframe'''.format(step)
+    print '''Import file to pandas dataframe'''
     df = to_df(file_path, year)
 
     tables_list = ["yb", "yu", "yc", "ybc", "ybu", "yuc", "ybuc"]
@@ -77,8 +75,7 @@ def main(file_path, year, output_path):
         pk = [index_lookup[l] for l in table_name]  # table dimensions
         print "working on", table_name
 
-        step += 1
-        print '''\nSTEP {0}: Aggregate'''.format(step)
+        print '''\nAggregate {0}'''.format(table_name)
         aggregated_df = aggregate(pk, df)  # df_aggregated
 
         if "c" in table_name:
@@ -91,8 +88,10 @@ def main(file_path, year, output_path):
 
         aggregated_df = add_column_length(table_name, aggregated_df)
         aggregated_df.rename(columns={"student_id": "students"}, inplace=True)
-        if table_name == "yb":
+
+        if 'u' not in table_name:
             aggregated_df.rename(columns={"university_id": "num_universities"}, inplace=True)
+
         if table_name == "ybuc":
             print aggregated_df.head()
             ybuc = aggregated_df
@@ -112,8 +111,7 @@ def main(file_path, year, output_path):
         #     aggregated_df.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
     if ybuc is not None:
-        step += 1
-        print '''STEP {0}: Calculating RCAs'''.format(step)
+        print '''Calculating RCAs'''
         ybc = calc_rca(ybuc, year)
         new_file_path = os.path.abspath(os.path.join(output_path, "ybc_rca.tsv.bz2"))
         ybc.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
