@@ -27,12 +27,9 @@
 ''' Import statements '''
 import os
 import sys
-import time
 import bz2
 import click
 import pandas as pd
-import pandas.io.sql as sql
-import numpy as np
 
 from _to_df import to_df
 from _aggregate import aggregate
@@ -53,10 +50,29 @@ def pre_check():
 @click.command()
 @click.argument('file_path', type=click.Path(exists=True))
 @click.option('-y', '--year', prompt='Year', help='year of the data to convert', required=True, default='all')
-@click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
+@click.option('output_path', '--output', '-o', help='Path to save files to.',
+              type=click.Path(), required=True, prompt="Output path")
 def main(file_path, year, output_path):
     pre_check()
     output_path = os.path.join(output_path, str(year))
+
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+
+    hdf_store = pd.HDFStore(os.path.abspath(os.path.join(output_path, 'hedu_data.h5')))
+
+    print '''\nImport file to pandas dataframe'''
+
+    if "hedu_df" in hdf_store:
+        hedu_df = hdf_store['hedu_df']
+    else:
+        hedu_df = to_df(file_path, False)
+        try:
+            hdf_store['hedu_df'] = hedu_df
+        except OverflowError:
+            print "WARNING: Unable to save dataframe, Overflow Error."
+            hdf_store.close()
+            os.remove(os.path.join(output_path, 'hedu_data.h5'))
 
     print "\nYEAR: {0}\n".format(year)
     this_output_path = os.path.join(output_path)
