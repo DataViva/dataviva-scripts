@@ -19,20 +19,26 @@ def aggregate(table_name, indexes, df):
     aggregated_dfs = []
     aggregated_dfs.append(df.groupby(indexes).agg(agg_rules))
 
-    df_region = df.reset_index()
-    df_region["bra_id"] = df_region["bra_id"].str.slice(0, 1)
-    df_region = df_region.groupby(indexes).agg(agg_rules)
+    if 'course_sc_id' in indexes:
+        df_fields = df.reset_index()
+        df_fields["course_sc_id"] = df_fields["course_sc_id"].str.slice(0, 2)
+        aggregated_dfs.append(df_fields.groupby(indexes).agg(agg_rules))
 
-    df_state = df.reset_index()
-    df_state["bra_id"] = df_state["bra_id"].str.slice(0, 3)
-    df_state = df_state.groupby(indexes).agg(agg_rules)
+    if 'bra_id' in indexes:
+        df_region = df.reset_index()
+        df_region["bra_id"] = df_region["bra_id"].str.slice(0, 1)
+        aggregated_dfs.append(df_region.groupby(indexes).agg(agg_rules))
 
-    df_meso = df.reset_index()
-    df_meso["bra_id"] = df_meso["bra_id"].str.slice(0, 5)
-    df_meso = df_meso.groupby(indexes).agg(agg_rules)
+        df_state = df.reset_index()
+        df_state["bra_id"] = df_state["bra_id"].str.slice(0, 3)
+        aggregated_dfs.append(df_state.groupby(indexes).agg(agg_rules))
 
-    df_micro = df.reset_index()
-    df_micro["bra_id"] = df_micro["bra_id"].str.slice(0, 7)
-    df_micro = df_micro.groupby(indexes).agg(agg_rules)
+        df_meso = df.reset_index()
+        df_meso["bra_id"] = df_meso["bra_id"].str.slice(0, 5)
+        aggregated_dfs.append(df_meso.groupby(indexes).agg(agg_rules))
+
+        df_micro = df.reset_index()
+        df_micro["bra_id"] = df_micro["bra_id"].str.slice(0, 7)
+        aggregated_dfs.append(df_micro.groupby(indexes).agg(agg_rules))
 
     return pd.concat(aggregated_dfs)

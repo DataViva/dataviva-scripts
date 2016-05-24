@@ -91,13 +91,6 @@ def main(file_path, year, output_path):
         print '''\nAggregating {0}'''.format(table_name)
         tbl = aggregate(table_name, pk, df)
 
-        if "c" in table_name:
-            pk2 = [x for x in pk]
-            pk2[pk2.index("course_sc_id")] = df.course_sc_id.str.slice(0, 2)
-            tbl_course2 = aggregate(table_name, pk2, df, course_flag=True)
-
-            tbl = pd.concat([tbl, tbl_course2])
-
         tbl = add_column_length(table_name, tbl)
         # tbl.rename(columns={"student_id": "students"}, inplace=True)
         file_name = table_name + ".tsv.bz2"
