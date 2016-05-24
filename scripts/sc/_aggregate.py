@@ -17,6 +17,12 @@ def aggregate(table_name, indexes, df):
     aggregated_dfs = []
     aggregated_dfs.append(df.groupby(indexes).agg(agg_rules))
 
+    # if cid_len or course_flag:
+    #    print "Step G. (course_sc_id step) compute distortion rate"
+    #    df['distortion_rate'] = df["distorted_age"] / df["enroll_id"]
+    #    df.loc[df['distorted_age'].isnull() , 'distortion_rate'] = '\N'
+    # df.drop('distorted_age', axis=1, inplace=True)
+
     if 'course_sc_id' in indexes:
         df_fields = df.reset_index()
         df_fields["course_sc_id"] = df_fields["course_sc_id"].str.slice(0, 2)
