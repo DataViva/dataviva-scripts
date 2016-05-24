@@ -3,8 +3,6 @@ import numpy as np
 
 
 def aggregate(table_name, indexes, df):
-    df = df.drop(['gender', 'color', 'loc', 'school_type'], axis=1)
-
     agg_rules = {
         "age": np.mean,
         "enroll_id": pd.Series.count,

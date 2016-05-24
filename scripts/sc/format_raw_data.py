@@ -63,36 +63,34 @@ def main(file_path, year, output_path):
 
     if not os.path.exists(output_path):
         os.makedirs(output_path)
-    print "Output Path=", output_path
-    d = pd.HDFStore(os.path.abspath(os.path.join(output_path, 'sc_data.h5')))
-    print
-    print '''STEP 1: \nImport file to pandas dataframe'''
 
-    hdf_filepath = output_path + "/store_df.h5"
+    hdf_store = pd.HDFStore(os.path.abspath(os.path.join(output_path, 'sc_data.h5')))
 
-    print "LOOKING for HDF file at location ", hdf_filepath
+    print '''\nImport file to pandas dataframe'''
 
-    if os.path.exists(hdf_filepath):
-        print "READING HDF"
-        df = pd.read_hdf(hdf_filepath, 'table')
+    if "sc_df" in hdf_store:
+        sc_df = hdf_store['sc_df']
     else:
-        print "No HDF file. Need to create DF"
-        df = to_df(file_path, False)
-        print "SAVING HDF to", hdf_filepath
-        df.to_hdf(hdf_filepath, 'table')
-
-    pk_lookup = {"y": "year", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
+        sc_df = to_df(file_path, False)
+        try:
+            hdf_store['sc_df'] = sc_df
+        except OverflowError:
+            print "WARNING: Unable to save dataframe, Overflow Error."
+            hdf_store.close()
+            os.remove(os.path.join(output_path, 'sc_data.h5'))
 
     tables_list = ["yb", "yc", "ys", "ybs", "ybc", "ysc", "ybsc"]
+    index_lookup = {"y": "year", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
 
     for table_name in tables_list:
-        pk = [pk_lookup[l] for l in table_name]
+        pk = [index_lookup[l] for l in table_name]
 
         print '''\nAggregating {0}'''.format(table_name)
-        tbl = aggregate(table_name, pk, df)
+        tbl = aggregate(table_name, pk, sc_df)
 
+        print '''Adding length column to {0}'''.format(table_name)
         tbl = add_column_length(table_name, tbl)
-        # tbl.rename(columns={"student_id": "students"}, inplace=True)
+
         file_name = table_name + ".tsv.bz2"
         print '''Save {0} to output path'''.format(file_name)
         new_file_path = os.path.abspath(os.path.join(output_path, file_name))
