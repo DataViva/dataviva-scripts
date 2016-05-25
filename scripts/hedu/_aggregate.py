@@ -1,13 +1,11 @@
 import pandas as pd
 import numpy as np
+import itertools
+from collections import namedtuple
 
 
 def aggregate(indexes, df):
     df = df.drop(['gender', 'ethnicity', 'school_type'], axis=1)
-
-    # -- For aggregation make sure we are only looking at the deepest level!!
-    deepestBra = df.bra_id.str.len() == 9
-    deepestCourse = df.course_hedu_id.str.len() == 6
 
     agg_rules = {
         "age": np.mean,
@@ -25,14 +23,6 @@ def aggregate(indexes, df):
     pk_types = set([type(t) for t in indexes])
     if pk_types == set([str]) and indexes == ["year", "bra_id"]:
         agg_rules["university_id"] = pd.Series.nunique
-
-    test = df[~(deepestBra & deepestCourse)]
-    df = df[deepestBra & deepestCourse]
-
-    if not test.empty:
-        print "ROWS REMOVED! On table", indexes
-        print test.head()
-    test = None
 
     aggregated_dfs = []
     aggregated_dfs.append(df.groupby(indexes).agg(agg_rules))
