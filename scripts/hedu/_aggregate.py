@@ -50,11 +50,8 @@ def aggregate(indexes, df):
 
     for levels in aggregation_levels:
         aggregated_df = df.reset_index()
-
         for level in levels:
-            print level.depth, level.column
             aggregated_df[level.column] = aggregated_df[level.column].str.slice(0, level.depth)
-
         aggregated_dfs.append(aggregated_df.groupby(indexes).agg(agg_rules))
 
     return pd.concat(aggregated_dfs) if aggregated_dfs else df.groupby(indexes).agg(agg_rules)
