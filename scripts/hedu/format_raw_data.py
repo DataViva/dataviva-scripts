@@ -8,6 +8,7 @@ import pandas as pd
 from _to_df import to_df
 from _aggregate import aggregate
 from _column_lengths import add_column_length
+from _growth import calc_growth
 
 from _calc_rca import calc_rca
 
@@ -32,7 +33,8 @@ from _calc_rca import calc_rca
 
     Example Usage
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    python scripts/higher_edu/format_raw_data.py data/higher_edu/undergraduate.csv -o -y data/higher_edu/
+    python scripts/hedu/format_raw_data.py data/hedu/raw/Undergraduate_census_2014_microdata.csv -y 2014 -o data/hedu
+    -g data/hedu/2013 -g5 data/hedu/2009
 
 """
 
@@ -44,6 +46,16 @@ def pre_check():
             failed.append(env_var)
     if len(failed):
         sys.exit("The following environment variables need to be set: {0}".format(", ".join(failed)))
+
+
+def open_prev_df(prev_path, table_name, year, indexes):
+    prev_file = os.path.join(prev_path, "{0}.tsv.bz2".format(table_name))
+    previous_df = to_df(prev_file, table_name, indexes)
+    previous_df = previous_df.reset_index(level="year")
+    previous_df["year"] = int(year)
+    previous_df = previous_df.set_index("year", append=True)
+    previous_df = previous_df.reorder_levels(["year"] + list(previous_df.index.names)[:-1])
+    return previous_df
 
 
 @click.command()
@@ -95,6 +107,16 @@ def main(file_path, year, output_path, prev_path, prev5_path):
         aggregated_df.rename(columns={"student_id": "students"}, inplace=True)
         if 'u' not in table_name:
             aggregated_df.rename(columns={"university_id": "num_universities"}, inplace=True)
+
+        if prev_path:
+            print '''\nCalculating {0} 1 year growth'''.format(table_name)
+            previous_df = open_prev_df(prev_path, table_name, year, indexes)
+            aggregated_df = calc_growth(aggregated_df, previous_df, ['enrolled', 'graduates'])
+
+        if prev5_path:
+            print '''\nCalculating {0} 5 year growth'''.format(table_name)
+            previous_df = open_prev_df(prev5_path, table_name, year, indexes)
+            aggregated_df = calc_growth(aggregated_df, previous_df, ['enrolled', 'graduates'], 5)
 
         if table_name == "ybuc":
             print '''Calculating RCAs'''
