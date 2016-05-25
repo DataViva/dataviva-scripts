@@ -1,4 +1,16 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
+import bz2
+import click
+import pandas as pd
+
+from _to_df import to_df
+from _aggregate import aggregate
+from _column_lengths import add_column_length
+
+from _calc_rca import calc_rca
+
 """
     Format Higher ED data for DB entry
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -24,19 +36,6 @@
 
 """
 
-''' Import statements '''
-import os
-import sys
-import bz2
-import click
-import pandas as pd
-
-from _to_df import to_df
-from _aggregate import aggregate
-from _column_lengths import add_column_length
-
-from _calc_rca import calc_rca
-
 
 def pre_check():
     failed = []
@@ -53,6 +52,8 @@ def pre_check():
 @click.option('output_path', '--output', '-o', help='Path to save files to.',
               type=click.Path(), required=True, prompt="Output path")
 def main(file_path, year, output_path):
+
+    print "\nHEDU YEAR: {0}\n".format(year)
     pre_check()
     output_path = os.path.join(output_path, str(year))
 
@@ -66,21 +67,13 @@ def main(file_path, year, output_path):
     if "hedu_df" in hdf_store:
         hedu_df = hdf_store['hedu_df']
     else:
-        hedu_df = to_df(file_path, False)
+        hedu_df = to_df(file_path, year)
         try:
             hdf_store['hedu_df'] = hedu_df
         except OverflowError:
             print "WARNING: Unable to save dataframe, Overflow Error."
             hdf_store.close()
             os.remove(os.path.join(output_path, 'hedu_data.h5'))
-
-    print "\nYEAR: {0}\n".format(year)
-    this_output_path = os.path.join(output_path)
-    if not os.path.exists(this_output_path):
-        os.makedirs(this_output_path)
-
-    print '''Import file to pandas dataframe'''
-    df = to_df(file_path, year)
 
     tables_list = ["yb", "yu", "yc", "ybc", "ybu", "yuc", "ybuc"]
     index_lookup = {"y": "year", "b": "bra_id", "c": "course_hedu_id", "u": "university_id"}
@@ -89,7 +82,7 @@ def main(file_path, year, output_path):
         indexes = [index_lookup[l] for l in table_name]
 
         print '''\nAggregating {0}'''.format(table_name)
-        aggregated_df = aggregate(indexes, df)
+        aggregated_df = aggregate(indexes, hedu_df)
 
         print '''Adding length column to {0}'''.format(table_name)
         aggregated_df = add_column_length(table_name, aggregated_df)
