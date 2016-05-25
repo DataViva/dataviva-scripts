@@ -51,7 +51,11 @@ def pre_check():
 @click.option('-y', '--year', prompt='Year', help='year of the data to convert', required=True, default='all')
 @click.option('output_path', '--output', '-o', help='Path to save files to.',
               type=click.Path(), required=True, prompt="Output path")
-def main(file_path, year, output_path):
+@click.option('prev_path', '--prev', '-g', help='Path to files from the previous year for calculating growth.',
+              type=click.Path(exists=True), required=False)
+@click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.',
+              type=click.Path(exists=True), required=False)
+def main(file_path, year, output_path, prev_path, prev5_path):
 
     print "\nHEDU YEAR: {0}\n".format(year)
     pre_check()
