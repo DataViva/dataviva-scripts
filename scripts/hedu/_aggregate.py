@@ -7,6 +7,23 @@ from collections import namedtuple
 def aggregate(indexes, df):
     df = df.drop(['gender', 'ethnicity', 'school_type'], axis=1)
 
+    Level = namedtuple('Level', ['column', 'depth'])
+
+    depths = {
+        'bra_id': [
+            Level('bra_id', 1),
+            Level('bra_id', 3),
+            Level('bra_id', 5),
+            Level('bra_id', 7),
+            Level('bra_id', 9),
+        ],
+
+        'course_hedu_id': [
+            Level('course_hedu_id', 2),
+            Level('course_hedu_id', 6),
+        ],
+    }
+
     agg_rules = {
         "age": np.mean,
         "enrolled": np.sum,
@@ -20,33 +37,24 @@ def aggregate(indexes, df):
         "entrants": np.sum,
     }
 
-    pk_types = set([type(t) for t in indexes])
-    if pk_types == set([str]) and indexes == ["year", "bra_id"]:
+    if indexes == ["year", "bra_id"]:
         agg_rules["university_id"] = pd.Series.nunique
 
+    index_depths = list(set(indexes) & set(depths.keys()))
+
+    aggregation_levels = list(itertools.product(
+        *[[level for level in depths[index]] for index in index_depths]
+    ))
+
     aggregated_dfs = []
-    aggregated_dfs.append(df.groupby(indexes).agg(agg_rules))
 
-    if 'course_hedu_id' in indexes:
-        df_fields = df.reset_index()
-        df_fields["course_hedu_id"] = df_fields["course_hedu_id"].str.slice(0, 2)
-        aggregated_dfs.append(df_fields.groupby(indexes).agg(agg_rules))
+    for levels in aggregation_levels:
+        aggregated_df = df.reset_index()
 
-    if 'bra_id' in indexes:
-        df_region = df.reset_index()
-        df_region["bra_id"] = df_region["bra_id"].str.slice(0, 1)
-        aggregated_dfs.append(df_region.groupby(indexes).agg(agg_rules))
+        for level in levels:
+            print level.depth, level.column
+            aggregated_df[level.column] = aggregated_df[level.column].str.slice(0, level.depth)
 
-        df_state = df.reset_index()
-        df_state["bra_id"] = df_state["bra_id"].str.slice(0, 3)
-        aggregated_dfs.append(df_state.groupby(indexes).agg(agg_rules))
+        aggregated_dfs.append(aggregated_df.groupby(indexes).agg(agg_rules))
 
-        df_meso = df.reset_index()
-        df_meso["bra_id"] = df_meso["bra_id"].str.slice(0, 5)
-        aggregated_dfs.append(df_meso.groupby(indexes).agg(agg_rules))
-
-        df_micro = df.reset_index()
-        df_micro["bra_id"] = df_micro["bra_id"].str.slice(0, 7)
-        aggregated_dfs.append(df_micro.groupby(indexes).agg(agg_rules))
-
-    return pd.concat(aggregated_dfs)
+    return pd.concat(aggregated_dfs) if aggregated_dfs else df.groupby(indexes).agg(agg_rules)
