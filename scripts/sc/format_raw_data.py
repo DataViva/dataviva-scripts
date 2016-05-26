@@ -53,14 +53,14 @@ def pre_check():
 @click.option('output_path', '--output', '-o', help='Path to save files to.',
               type=click.Path(), required=True, prompt="Output path")
 def main(file_path, year, output_path):
+    print "\nSC YEAR: {0}\n".format(year)
     pre_check()
-    output_path = os.path.join(output_path)
+    output_path = os.path.join(output_path, str(year))
 
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    hdf_store = pd.HDFStore(
-        os.path.abspath(os.path.join(output_path, 'sc_data.h5')))
+    hdf_store = pd.HDFStore(os.path.abspath(os.path.join(output_path, 'sc_data.h5')))
 
     print '''\nImport file to pandas dataframe'''
 
@@ -76,8 +76,7 @@ def main(file_path, year, output_path):
             os.remove(os.path.join(output_path, 'sc_data.h5'))
 
     tables_list = ["yb", "yc", "ys", "ybs", "ybc", "ysc", "ybsc"]
-    index_lookup = {
-        "y": "year", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
+    index_lookup = {"y": "year", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
 
     for table_name in tables_list:
         pk = [index_lookup[l] for l in table_name]

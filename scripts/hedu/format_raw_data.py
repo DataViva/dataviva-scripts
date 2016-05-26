@@ -67,7 +67,6 @@ def open_prev_df(prev_path, table_name, year, indexes):
 @click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.',
               type=click.Path(exists=True), required=False)
 def main(file_path, year, output_path, prev_path, prev5_path):
-
     print "\nHEDU YEAR: {0}\n".format(year)
     pre_check()
     output_path = os.path.join(output_path, str(year))
