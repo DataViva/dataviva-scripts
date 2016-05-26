@@ -52,7 +52,11 @@ def pre_check():
 @click.option('-y', '--year', prompt='Year', help='year of the data to convert', required=True)
 @click.option('output_path', '--output', '-o', help='Path to save files to.',
               type=click.Path(), required=True, prompt="Output path")
-def main(file_path, year, output_path):
+@click.option('prev_path', '--prev', '-g', help='Path to files from the previous year for calculating growth.',
+              type=click.Path(exists=True), required=False)
+@click.option('prev5_path', '--prev5', '-g5', help='Path to files from 5 years ago for calculating growth.',
+              type=click.Path(exists=True), required=False)
+def main(file_path, year, output_path, prev_path, prev5_path):
     print "\nSC YEAR: {0}\n".format(year)
     pre_check()
     output_path = os.path.join(output_path, str(year))
@@ -79,18 +83,18 @@ def main(file_path, year, output_path):
     index_lookup = {"y": "year", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
 
     for table_name in tables_list:
-        pk = [index_lookup[l] for l in table_name]
+        indexes = [index_lookup[l] for l in table_name]
 
         print '''\nAggregating {0}'''.format(table_name)
-        tbl = aggregate(table_name, pk, sc_df)
+        aggregated_df = aggregate(table_name, indexes, sc_df)
 
         print '''Adding length column to {0}'''.format(table_name)
-        tbl = add_column_length(table_name, tbl)
+        aggregated_df = add_column_length(table_name, aggregated_df)
 
         file_name = table_name + ".tsv.bz2"
         print '''Save {0} to output path'''.format(file_name)
         new_file_path = os.path.abspath(os.path.join(output_path, file_name))
-        tbl.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
+        aggregated_df.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
 
 if __name__ == "__main__":
