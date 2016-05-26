@@ -1,29 +1,9 @@
-import sys
 import os
 import bz2
 import MySQLdb
 import pandas as pd
 import numpy as np
 from collections import defaultdict
-
-'''
-0:  Year
-1:  Enroll_ID
-2:  Studant_ID
-3:  Age
-4:  Gender
-5:  Color
-6:  Education_Mode
-7:  Education_Level
-8:  Education_Level_New
-9:  Education
-10: Class_ID
-11: Course_ID
-12: School_ID
-13: Municipality
-14: Location
-15: Adm_Dependency (federal, state or municipal)
-'''
 
 ''' Connect to DB '''
 db = MySQLdb.connect(host=os.environ.get("DATAVIVA_DB_HOST", "localhost"), user=os.environ[
@@ -36,7 +16,8 @@ missing = {
     "course_sc_id": defaultdict(int)
 }
 
-cursor.execute("select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 9;")
+cursor.execute(
+    "select id_ibge, id from attrs_bra where id_ibge is not null and length(id) = 9;")
 bra_lookup = {str(r[0]): r[1] for r in cursor.fetchall()}
 
 cursor.execute("select id from attrs_school;")
@@ -99,24 +80,38 @@ def course_replace(raw):
         return BASIC_EDU_CODE  # -- if missing give BASIC edu code
 
 
-def to_df(input_file_path, index=False, debug=False):
-    if "bz2" in input_file_path:
-        input_file = bz2.BZ2File(input_file_path)
+def to_df(file_path, indexes=None):
+    if "bz2" in file_path:
+        input_file = bz2.BZ2File(file_path)
     else:
-        input_file = open(input_file_path, "rU")
+        input_file = open(file_path, "rU")
 
-    cols = ["year", "enroll_id", "student_id", "age", "gender", "color", "edu_mode",
-            "edu_level", "edu_level_new", "edu", "class_id", "course_sc_id", "school_id",
-            "bra_id_lives", "location_lives", "bra_id", "loc", "school_type"]
-    delim = ";"
-    coerce_cols = {"bra_id": bra_replace, "bra_id_lives": bra_replace, "school_id": school_replace,
-                   "course_sc_id": course_replace}
-    df = pd.read_csv(input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
-    df = df[["year", "enroll_id", "edu_level_new", "school_id",
-             "course_sc_id", "class_id", "bra_id", "age", "bra_id_lives"]]
+    if indexes:
+        converters = {"course_hedu_id": str, "university_id": str}
+        df = pd.read_csv(
+            input_file, sep="\t", converters=converters, engine='python')
+        df = df.set_index(indexes)
+    else:
+        cols = ["year", "enroll_id", "student_id", "age", "gender", "color", "edu_mode",
+                "edu_level", "edu_level_new", "edu", "class_id", "course_sc_id", "school_id",
+                "bra_id_lives", "location_lives", "bra_id", "loc", "school_type"]
+        delim = ";"
+        coerce_cols = {"bra_id": bra_replace, "bra_id_lives": bra_replace, "school_id": school_replace,
+                       "course_sc_id": course_replace}
+        df = pd.read_csv(
+            input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
+        df = df[["year", "enroll_id", "edu_level_new", "school_id",
+                 "course_sc_id", "class_id", "bra_id", "age", "bra_id_lives"]]
 
-    # print df.course_sc_id.unique()
-    # sys.exit()
+        print "Calculating Course IDs for basic education..."
+        df.loc[df['course_sc_id'] == BASIC_EDU_CODE, 'course_sc_id'] = df['course_sc_id'] + \
+            df.edu_level_new.astype(str).str.pad(3)
+        df['course_sc_id'] = df['course_sc_id'].str.replace(' ', '0')
+
+        print "Calculating proper age..."
+        df["distorted_age"] = df.course_sc_id.map(proper_age_map)
+        df.loc[df['distorted_age'].notnull(), 'distorted_age'] = (
+            df.age >= df.distorted_age).astype(int)
 
     for col, missings in missing.items():
         if not len(missings):
@@ -124,23 +119,7 @@ def to_df(input_file_path, index=False, debug=False):
         num_rows = df.shape[0]
         print
         print "[WARNING]"
-        print "The following {0} IDs are not in the DB and will be dropped from the data.".format(col)
+        print "The following {0} IDs are not in the DB. Total: ".format(col, num_rows)
         print list(missings)
-        # drop_criterion = rais_df[col].map(lambda x: x not in vals)
-        # rais_df = rais_df[drop_criterion]
-        df = df.dropna(subset=[col])
-        print
-        print "{0} rows deleted.".format(num_rows - df.shape[0])
-        print
-
-    print "Calculating Course IDs for basic education..."
-    df.loc[df['course_sc_id'] == BASIC_EDU_CODE, 'course_sc_id'] = df[
-        'course_sc_id'] + df.edu_level_new.astype(str).str.pad(3)
-    df['course_sc_id'] = df['course_sc_id'].str.replace(' ', '0')
-
-    print "Calculating proper age..."
-
-    df["distorted_age"] = df.course_sc_id.map(proper_age_map)
-    df.loc[df['distorted_age'].notnull(), 'distorted_age'] = (df.age >= df.distorted_age).astype(int)
 
     return df

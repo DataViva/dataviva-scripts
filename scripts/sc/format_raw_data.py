@@ -71,7 +71,7 @@ def main(file_path, year, output_path, prev_path, prev5_path):
     if "sc_df" in hdf_store:
         sc_df = hdf_store['sc_df']
     else:
-        sc_df = to_df(file_path, False)
+        sc_df = to_df(file_path)
         try:
             hdf_store['sc_df'] = sc_df
         except OverflowError:
