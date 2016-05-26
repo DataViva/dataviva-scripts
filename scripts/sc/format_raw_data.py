@@ -93,8 +93,7 @@ def main(file_path, year, output_path, prev_path, prev5_path):
             os.remove(os.path.join(output_path, 'sc_data.h5'))
 
     tables_list = ["yb", "yc", "ys", "ybs", "ybc", "ysc", "ybsc"]
-    index_lookup = {
-        "y": "year", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
+    index_lookup = {"y": "year", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
 
     for table_name in tables_list:
         indexes = [index_lookup[l] for l in table_name]
