@@ -8,6 +8,7 @@ import pandas as pd
 from _to_df import to_df
 from _aggregate import aggregate
 from _column_lengths import add_column_length
+from _growth import calc_growth
 
 """
     Format SECEX data for DB entry
@@ -47,6 +48,17 @@ def pre_check():
             ", ".join(failed)))
 
 
+def open_prev_df(prev_path, table_name, year, indexes):
+    prev_file = os.path.join(prev_path, "{0}.tsv.bz2".format(table_name))
+    previous_df = to_df(prev_file, table_name, indexes)
+    previous_df = previous_df.reset_index(level="year")
+    previous_df["year"] = int(year)
+    previous_df = previous_df.set_index("year", append=True)
+    previous_df = previous_df.reorder_levels(
+        ["year"] + list(previous_df.index.names)[:-1])
+    return previous_df
+
+
 @click.command()
 @click.argument('file_path', type=click.Path(exists=True))
 @click.option('-y', '--year', prompt='Year', help='year of the data to convert', required=True)
@@ -64,7 +76,8 @@ def main(file_path, year, output_path, prev_path, prev5_path):
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    hdf_store = pd.HDFStore(os.path.abspath(os.path.join(output_path, 'sc_data.h5')))
+    hdf_store = pd.HDFStore(
+        os.path.abspath(os.path.join(output_path, 'sc_data.h5')))
 
     print '''\nImport file to pandas dataframe'''
 
@@ -80,7 +93,8 @@ def main(file_path, year, output_path, prev_path, prev5_path):
             os.remove(os.path.join(output_path, 'sc_data.h5'))
 
     tables_list = ["yb", "yc", "ys", "ybs", "ybc", "ysc", "ybsc"]
-    index_lookup = {"y": "year", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
+    index_lookup = {
+        "y": "year", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
 
     for table_name in tables_list:
         indexes = [index_lookup[l] for l in table_name]
@@ -90,6 +104,16 @@ def main(file_path, year, output_path, prev_path, prev5_path):
 
         print '''Adding length column to {0}'''.format(table_name)
         aggregated_df = add_column_length(table_name, aggregated_df)
+
+        if prev_path:
+            print '''\nCalculating {0} 1 year growth'''.format(table_name)
+            previous_df = open_prev_df(prev_path, table_name, year, indexes)
+            aggregated_df = calc_growth(aggregated_df, previous_df, ['enrolled'])
+
+        if prev5_path:
+            print '''\nCalculating {0} 5 year growth'''.format(table_name)
+            previous_df = open_prev_df(prev5_path, table_name, year, indexes)
+            aggregated_df = calc_growth(aggregated_df, previous_df, ['enrolled'], 5)
 
         file_name = table_name + ".tsv.bz2"
         print '''Save {0} to output path'''.format(file_name)

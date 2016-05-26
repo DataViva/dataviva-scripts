@@ -110,8 +110,7 @@ def to_df(file_path, indexes=None):
 
         print "Calculating proper age..."
         df["distorted_age"] = df.course_sc_id.map(proper_age_map)
-        df.loc[df['distorted_age'].notnull(), 'distorted_age'] = (
-            df.age >= df.distorted_age).astype(int)
+        df.loc[df['distorted_age'].notnull(), 'distorted_age'] = (df.age >= df.distorted_age).astype(int)
 
     for col, missings in missing.items():
         if not len(missings):
