@@ -1,4 +1,14 @@
 # -*- coding: utf-8 -*-
+import os
+import sys
+import bz2
+import click
+import pandas as pd
+
+from _to_df import to_df
+from _aggregate import aggregate
+from _column_lengths import add_column_length
+
 """
     Format SECEX data for DB entry
     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -26,23 +36,6 @@
 
 """
 
-''' Import statements '''
-import os
-import sys
-import time
-import bz2
-import click
-import pandas as pd
-import pandas.io.sql as sql
-import numpy as np
-
-from _to_df import to_df
-from _replace_vals import replace_vals
-from _aggregate import aggregate
-from _shard import shard
-from _calc_rca import calc_rca
-from _column_lengths import add_column_length
-
 
 def pre_check():
     failed = []
@@ -50,13 +43,15 @@ def pre_check():
         if os.environ.get(env_var) is None:
             failed.append(env_var)
     if len(failed):
-        sys.exit("The following environment variables need to be set: {0}".format(", ".join(failed)))
+        sys.exit("The following environment variables need to be set: {0}".format(
+            ", ".join(failed)))
 
 
 @click.command()
 @click.argument('file_path', type=click.Path(exists=True))
 @click.option('-y', '--year', prompt='Year', help='year of the data to convert', required=True)
-@click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
+@click.option('output_path', '--output', '-o', help='Path to save files to.',
+              type=click.Path(), required=True, prompt="Output path")
 def main(file_path, year, output_path):
     pre_check()
     output_path = os.path.join(output_path)
@@ -64,7 +59,8 @@ def main(file_path, year, output_path):
     if not os.path.exists(output_path):
         os.makedirs(output_path)
 
-    hdf_store = pd.HDFStore(os.path.abspath(os.path.join(output_path, 'sc_data.h5')))
+    hdf_store = pd.HDFStore(
+        os.path.abspath(os.path.join(output_path, 'sc_data.h5')))
 
     print '''\nImport file to pandas dataframe'''
 
@@ -80,7 +76,8 @@ def main(file_path, year, output_path):
             os.remove(os.path.join(output_path, 'sc_data.h5'))
 
     tables_list = ["yb", "yc", "ys", "ybs", "ybc", "ysc", "ybsc"]
-    index_lookup = {"y": "year", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
+    index_lookup = {
+        "y": "year", "b": "bra_id", "c": "course_sc_id", "s": "school_id"}
 
     for table_name in tables_list:
         pk = [index_lookup[l] for l in table_name]

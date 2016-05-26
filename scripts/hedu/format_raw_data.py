@@ -9,7 +9,6 @@ from _to_df import to_df
 from _aggregate import aggregate
 from _column_lengths import add_column_length
 from _growth import calc_growth
-
 from _calc_rca import calc_rca
 
 """
