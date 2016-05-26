@@ -23,14 +23,14 @@ def aggregate(indexes, df):
     }
 
     agg_rules = {
-        "age": np.mean,
-        "enroll_id": pd.Series.count,
-        "class_id": pd.Series.nunique,
-        "distorted_age": np.sum,
+        'age': np.mean,
+        'enroll_id': pd.Series.count,
+        'class_id': pd.Series.nunique,
+        'distorted_age': np.sum,
     }
 
-    if indexes == ["year", "bra_id"]:
-        agg_rules["school_id"] = pd.Series.nunique
+    if indexes == ['year', 'bra_id']:
+        agg_rules['school_id'] = pd.Series.nunique
 
     aggregated_dfs = []
     aggregated_dfs.append(df.groupby(indexes).agg(agg_rules))
@@ -46,14 +46,11 @@ def aggregate(indexes, df):
     for levels in aggregation_levels:
         aggregated_df = df.reset_index()
         for level in levels:
-            aggregated_df[level.column] = aggregated_df[
-                level.column].str.slice(0, level.depth)
+            aggregated_df[level.column] = aggregated_df[level.column].str.slice(0, level.depth)
+            if 'course_sc_id' in indexes:
+                aggregated_df['distortion_rate'] = aggregated_df['distorted_age'] / aggregated_df['enroll_id']
+                aggregated_df.loc[aggregated_df['distorted_age'].isnull(), 'distortion_rate'] = '\N'
+                aggregated_df.drop('distorted_age', axis=1, inplace=True)
         aggregated_dfs.append(aggregated_df.groupby(indexes).agg(agg_rules))
 
     return pd.concat(aggregated_dfs) if aggregated_dfs else df.groupby(indexes).agg(agg_rules)
-
-    # if cid_len or course_flag:
-    #    print "Step G. (course_sc_id step) compute distortion rate"
-    #    df['distortion_rate'] = df["distorted_age"] / df["enroll_id"]
-    #    df.loc[df['distorted_age'].isnull() , 'distortion_rate'] = '\N'
-    # df.drop('distorted_age', axis=1, inplace=True)
