@@ -86,7 +86,7 @@ def main(file_path, year, output_path, prev_path, prev5_path):
         indexes = [index_lookup[l] for l in table_name]
 
         print '''\nAggregating {0}'''.format(table_name)
-        aggregated_df = aggregate(table_name, indexes, sc_df)
+        aggregated_df = aggregate(indexes, sc_df)
 
         print '''Adding length column to {0}'''.format(table_name)
         aggregated_df = add_column_length(table_name, aggregated_df)
