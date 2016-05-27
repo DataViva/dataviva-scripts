@@ -12,7 +12,7 @@ from _to_df import to_df
 
 '''
     Usage:
-    python hists.py -y 2014 -o data/rais/ -a bra
+    python -u scripts/rais/hists.py -y 2014 -o data/rais -a cbo > load_rais_hists_cbo.log &
 '''
 
 latest_year = 2014
@@ -135,8 +135,8 @@ def main(year, output_path, attr_type):
         hist_bins.close()
         time_elapsed = "%s minutes" % str((time.time() - start) / 60)
 
-        print '''\nTotal time %s''' % time_elapsed
-        print '''\nSending alert e-mail'''
+        print('''\nTotal time %s''') % time_elapsed
+        print('''\nSending alert e-mail''')
 
         client = sendgrid.SendGridClient(os.environ['SENDGRID_API_KEY'])
         message = sendgrid.Mail()
