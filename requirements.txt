@@ -31,3 +31,6 @@ rarfile
 cython
 numexpr
 tables
+
+# for alert emails
+sendgrid

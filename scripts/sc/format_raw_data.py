@@ -3,7 +3,9 @@ import os
 import sys
 import bz2
 import click
+import time
 import pandas as pd
+import sendgrid
 
 from _to_df import to_df
 from _aggregate import aggregate
@@ -70,6 +72,7 @@ def open_prev_df(prev_path, table_name, year, indexes):
               type=click.Path(exists=True), required=False)
 def main(file_path, year, output_path, prev_path, prev5_path):
     print "\nSC YEAR: {0}\n".format(year)
+    start = time.time()
     pre_check()
     output_path = os.path.join(output_path, str(year))
 
@@ -115,10 +118,24 @@ def main(file_path, year, output_path, prev_path, prev5_path):
             aggregated_df = calc_growth(aggregated_df, previous_df, ['enrolled'], 5)
 
         file_name = table_name + ".tsv.bz2"
-        print '''Save {0} to output path'''.format(file_name)
+        print '''\nSave {0} to output path'''.format(file_name)
         new_file_path = os.path.abspath(os.path.join(output_path, file_name))
         aggregated_df.to_csv(bz2.BZ2File(new_file_path, 'wb'), sep="\t", index=True)
 
+    time_elapsed = "%s minutes" % str((time.time() - start) / 60)
+
+    print '''\nTotal time %s''' % time_elapsed
+    print '''\nSending alert e-mail'''
+
+    client = sendgrid.SendGridClient(os.environ['SENDGRID_API_KEY'])
+    message = sendgrid.Mail()
+
+    message.add_to(os.environ.get('ADMIN_EMAIL', 'contato@dataviva.info'))
+    message.set_from("calc-server@dataviva.info")
+    message.set_subject("Scholar census %s ready!" % year)
+    message.set_html("Your calculation took %s, please check out the output at the calc-server" % time_elapsed)
+
+    client.send(message)
 
 if __name__ == "__main__":
     main()
