@@ -10,7 +10,7 @@ from time import sleep
     python hist.py -y 2013 -o data/rais/ -a bra
 '''
 
-latest_year = 2013
+latest_year = 2014
 
 ''' Connect to DB '''
 db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"],
