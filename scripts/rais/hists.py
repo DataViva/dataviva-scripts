@@ -72,9 +72,8 @@ def main(year, output_path, attr_type):
         years = [int(year)]
     print("years:", str(years))
 
+    start = time.time()
     for year in years:
-        start = time.time()
-
         d = pd.HDFStore(os.path.join(output_path, str(year), 'rais_df_raw.h5'))
         if "rais_df" in d:
             rais_df = d['rais_df']
@@ -133,19 +132,19 @@ def main(year, output_path, attr_type):
 
         d.close()
         hist_bins.close()
-        time_elapsed = "%s minutes" % str((time.time() - start) / 60)
+    time_elapsed = "%s minutes" % str((time.time() - start) / 60)
 
-        print('''\nTotal time %s''') % time_elapsed
-        print('''\nSending alert e-mail''')
+    print('''\nTotal time %s''') % time_elapsed
+    print('''\nSending alert e-mail''')
 
-        client = sendgrid.SendGridClient(os.environ['SENDGRID_API_KEY'])
-        message = sendgrid.Mail()
+    client = sendgrid.SendGridClient(os.environ['SENDGRID_API_KEY'])
+    message = sendgrid.Mail()
 
-        message.add_to(os.environ.get('ADMIN_EMAIL', 'contato@dataviva.info'))
-        message.set_from("calc-server@dataviva.info")
-        message.set_subject("Rais histogram for %s ready!" % year)
-        message.set_html("Your calculation took %s, please check out the output at the calc-server" % time_elapsed)
+    message.add_to(os.environ.get('ADMIN_EMAIL', 'contato@dataviva.info'))
+    message.set_from("calc-server@dataviva.info")
+    message.set_subject("Rais histogram for %s ready!" % year)
+    message.set_html("Your calculation took %s, please check out the output at the calc-server" % time_elapsed)
 
-        client.send(message)
+    client.send(message)
 if __name__ == "__main__":
     main()
