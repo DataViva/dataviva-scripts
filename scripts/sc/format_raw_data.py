@@ -52,7 +52,7 @@ def pre_check():
 
 def open_prev_df(prev_path, table_name, year, indexes):
     prev_file = os.path.join(prev_path, "{0}.tsv.bz2".format(table_name))
-    previous_df = to_df(prev_file, table_name, indexes)
+    previous_df = to_df(prev_file, indexes)
     previous_df = previous_df.reset_index(level="year")
     previous_df["year"] = int(year)
     previous_df = previous_df.set_index("year", append=True)
