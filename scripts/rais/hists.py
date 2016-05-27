@@ -1,21 +1,26 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function
-import os, sys, math, MySQLdb, click, time
+import os
+import sys
+import math
+import MySQLdb
+import click
+import time
 import pandas as pd
+import sendgrid
 from _to_df import to_df
-from time import sleep
 
 '''
     Usage:
-    python hist.py -y 2013 -o data/rais/ -a bra
+    python hists.py -y 2014 -o data/rais/ -a bra
 '''
 
 latest_year = 2014
 
 ''' Connect to DB '''
 db = MySQLdb.connect(host=os.environ["DATAVIVA_DB_HOST"], user=os.environ["DATAVIVA_DB_USER"],
-                        passwd=os.environ["DATAVIVA_DB_PW"],
-                        db=os.environ["DATAVIVA_DB_NAME"])
+                     passwd=os.environ["DATAVIVA_DB_PW"],
+                     db=os.environ["DATAVIVA_DB_NAME"])
 db.autocommit(1)
 cursor = db.cursor()
 
@@ -30,33 +35,39 @@ table_lookup = {
     "cnae": "rais_yi"
 }
 
+
 def roundup(x):
     return int(math.ceil(x / 100.0)) * 100
+
 
 def rounddown(x):
     return int(math.floor(x / 100.0)) * 100
 
+
 def hist(id, df, min_val, max_val, bin_size, attr_type, year):
     df['wage_clipped'] = df['wage'].clip(lower=min_val, upper=max_val)
-    bins = range(min_val, max_val+bin_size, bin_size)
+    bins = range(min_val, max_val + bin_size, bin_size)
     df['bin'] = pd.cut(df.wage_clipped, bins)
     # hist = str(df.bin.value_counts().to_dict()).replace(' ', '').replace(']', '').replace('(', '')
-    hist_0s = {"{},{}".format(b, bins[i+1]):0 for i, b in enumerate(bins[:-1])}
-    hist = {k.replace(' ', '').replace(']', '').replace('(', ''):v for k, v in df.bin.value_counts().to_dict().items()}
+    hist_0s = {"{},{}".format(b, bins[i + 1]): 0 for i, b in enumerate(bins[:-1])}
+    hist = {k.replace(' ', '').replace(']', '').replace(
+        '(', ''): v for k, v in df.bin.value_counts().to_dict().items()}
     full_hist = hist_0s.copy()
     full_hist.update(hist)
     full_hist = str(full_hist).replace(' ', '')
     table = table_lookup[attr_type]
     cursor.execute("update {} set hist=%s where year=%s and {}_id=%s".format(table, attr_type), (full_hist, year, id))
 
+
 @click.command()
 @click.option('-y', '--year', prompt='Year', help='year of the data to convert', required=True)
-@click.option('output_path', '--output', '-o', help='Path to save files to.', type=click.Path(), required=True, prompt="Output path")
-@click.option('--attr_type', '-a', type=click.Choice(['bra','cbo','cnae']), required=True, prompt="Attr Type")
+@click.option('output_path', '--output', '-o', help='Path to save files to.',
+              type=click.Path(), required=True, prompt="Output path")
+@click.option('--attr_type', '-a', type=click.Choice(['bra', 'cbo', 'cnae']), required=True, prompt="Attr Type")
 def main(year, output_path, attr_type):
 
     if "-" in year:
-        years = range(int(year.split('-')[0]), int(year.split('-')[1])+1)
+        years = range(int(year.split('-')[0]), int(year.split('-')[1]) + 1)
     else:
         years = [int(year)]
     print("years:", str(years))
@@ -68,7 +79,7 @@ def main(year, output_path, attr_type):
         if "rais_df" in d:
             rais_df = d['rais_df']
         else:
-            file_path = os.path.join(output_path,'Rais_{}.csv'.format(year))
+            file_path = os.path.join(output_path, 'Rais_{}.csv'.format(year))
             rais_df = to_df(file_path)
             d['rais_df'] = rais_df
 
@@ -87,14 +98,14 @@ def main(year, output_path, attr_type):
                 if len(this_id_df.index) < 10:
                     print("\nNot enough occurences for histogram")
                     continue
-                print("********* {}: {} ({}/{}) *********".format(year, id, i+1, len(uniqs)), end='\r')
+                print("********* {}: {} ({}/{}) *********".format(year, id, i + 1, len(uniqs)), end='\r')
                 sys.stdout.flush()
 
                 if int(year) == latest_year:
                     wage = this_id_df["wage"]
-                    wmin = rounddown(wage.mean() - (wage.std()*2))
+                    wmin = rounddown(wage.mean() - (wage.std() * 2))
                     wmin = 0 if wmin < 0 else wmin
-                    wmax = rounddown(wage.mean() + (wage.std()*2))
+                    wmax = rounddown(wage.mean() + (wage.std() * 2))
                     wrange = wmax - wmin
                     # print wrange
                     bin_size = 100
@@ -122,7 +133,19 @@ def main(year, output_path, attr_type):
 
         d.close()
         hist_bins.close()
-        print("\n\n--- %s minutes ---\n\n" % str((time.time() - start)/60))
+        time_elapsed = "%s minutes" % str((time.time() - start) / 60)
 
+        print '''\nTotal time %s''' % time_elapsed
+        print '''\nSending alert e-mail'''
+
+        client = sendgrid.SendGridClient(os.environ['SENDGRID_API_KEY'])
+        message = sendgrid.Mail()
+
+        message.add_to(os.environ.get('ADMIN_EMAIL', 'contato@dataviva.info'))
+        message.set_from("calc-server@dataviva.info")
+        message.set_subject("Rais histogram for %s ready!" % year)
+        message.set_html("Your calculation took %s, please check out the output at the calc-server" % time_elapsed)
+
+        client.send(message)
 if __name__ == "__main__":
     main()
