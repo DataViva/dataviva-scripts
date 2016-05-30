@@ -134,7 +134,7 @@ def main(year, output_path, attr_type):
         hist_bins.close()
     time_elapsed = "%s minutes" % str((time.time() - start) / 60)
 
-    print('''\nTotal time %s''') % time_elapsed
+    print('''\nTotal time %s''' % time_elapsed)
     print('''\nSending alert e-mail''')
 
     client = sendgrid.SendGridClient(os.environ['SENDGRID_API_KEY'])
