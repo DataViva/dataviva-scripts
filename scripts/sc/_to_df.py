@@ -75,9 +75,13 @@ def school_replace(raw):
 
 def course_replace(raw):
     try:
-        return course_lookup[str(raw).strip().zfill(5)]
+        return course_lookup[str(raw).strip().zfill(5) if len(raw) > 0 else str(raw)]
     except:
         return BASIC_EDU_CODE  # -- if missing give BASIC edu code
+
+
+def edu_level_replace(raw):
+    return str(raw).zfill(3)
 
 
 def to_df(file_path, indexes=None):
@@ -97,15 +101,15 @@ def to_df(file_path, indexes=None):
                 "bra_id_lives", "location_lives", "bra_id", "loc", "school_type"]
         delim = ";"
         coerce_cols = {"bra_id": bra_replace, "bra_id_lives": bra_replace, "school_id": school_replace,
-                       "course_sc_id": course_replace}
+                       "course_sc_id": course_replace, "edu_level_new": edu_level_replace}
         df = pd.read_csv(
             input_file, header=0, sep=delim, names=cols, converters=coerce_cols)
         df = df[["year", "enroll_id", "edu_level_new", "school_id",
                  "course_sc_id", "class_id", "bra_id", "age", "bra_id_lives"]]
 
         print "Calculating Course IDs for basic education..."
-        df.loc[df['course_sc_id'] == BASIC_EDU_CODE, 'course_sc_id'] = df['course_sc_id'] + \
-            df.edu_level_new.astype(str).str.pad(3)
+
+        df.loc[df['course_sc_id'] == BASIC_EDU_CODE, 'course_sc_id'] = df['course_sc_id'] + df.edu_level_new
         df['course_sc_id'] = df['course_sc_id'].str.replace(' ', '0')
 
         print "Calculating proper age..."
