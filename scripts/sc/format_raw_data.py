@@ -107,6 +107,12 @@ def main(file_path, year, output_path, prev_path, prev5_path):
         print '''Adding length column to {0}'''.format(table_name)
         aggregated_df = add_column_length(table_name, aggregated_df)
 
+        print '''Renaming {0} columns'''.format(table_name)
+        aggregated_df.rename(columns={"enroll_id": "enrolled"}, inplace=True)
+        aggregated_df.rename(columns={"class_id": "classes"}, inplace=True)
+        if 's' not in table_name:
+            aggregated_df.rename(columns={"school_id": "num_schools"}, inplace=True)
+
         if prev_path:
             print '''\nCalculating {0} 1 year growth'''.format(table_name)
             previous_df = open_prev_df(prev_path, table_name, year, indexes)
