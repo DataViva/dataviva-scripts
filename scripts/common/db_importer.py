@@ -57,10 +57,11 @@ def main(idir, separator, name, host, user, password, database):
         fields = ",".join(fields)
         fields_null = ",".join(fields_null)
 
+        fields_termination = ',' if separator == ',' else '\\t'
         cmd = '''mysql -h %s -u%s -p%s %s --local-infile=1 -e "LOAD DATA LOCAL INFILE '%s' INTO TABLE %s
                  FIELDS TERMINATED BY '%s' LINES TERMINATED BY '\n' IGNORE 1 LINES (%s) SET %s;" ''' % (
-            host, user, password, database, f, tablename, separator, fields, fields_null)
-        # print cmd
+            host, user, password, database, f, tablename, fields_termination, fields, fields_null)
+        print cmd
         os.system(cmd)
 
         # delete bunzipped file
