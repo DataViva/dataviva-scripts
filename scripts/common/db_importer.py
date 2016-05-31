@@ -10,15 +10,13 @@ USAGE:
 python db_importer.py --idir=data/hedu/2012/ --name=hedu
 '''
 
-pattern = re.compile('(\w+).csv(.bz2)*')
+pattern = re.compile('(\w+).tsv(.bz2)*')
 
 
 def parse_table(t, dbname):
     m = pattern.search(t)
     if m:
         return dbname + "_" + m.group(1)
-
-# via http://stackoverflow.com/questions/13299731/python-need-to-loop-through-directories-looking-for-txt-files
 
 
 def findFiles(path, filter):
@@ -36,8 +34,7 @@ def findFiles(path, filter):
 @click.option('--password', '-p', prompt=True, help='Database password.')
 @click.option('--database', '-d', prompt=True, help='Database name.')
 def main(idir, separator, name, host, user, password, database):
-    file_type = 'csv' if separator == ',' else 'tsv'
-    for f in findFiles(idir, '*.' + file_type + '*'):
+    for f in findFiles(idir, '*.tsv*'):
         bzipped = False
         # print f, "Processing"
         if f.endswith("bz2"):
@@ -57,10 +54,9 @@ def main(idir, separator, name, host, user, password, database):
         fields = ",".join(fields)
         fields_null = ",".join(fields_null)
 
-        fields_termination = ',' if separator == ',' else '\\t'
         cmd = '''mysql -h %s -u%s -p%s %s --local-infile=1 -e "LOAD DATA LOCAL INFILE '%s' INTO TABLE %s
-                 FIELDS TERMINATED BY '%s' LINES TERMINATED BY '\n' IGNORE 1 LINES (%s) SET %s;" ''' % (
-            host, user, password, database, f, tablename, fields_termination, fields, fields_null)
+                 FIELDS TERMINATED BY '\t' LINES TERMINATED BY '\n' IGNORE 1 LINES (%s) SET %s;" ''' % (
+            host, user, password, database, f, tablename, fields, fields_null)
         print cmd
         os.system(cmd)
 
