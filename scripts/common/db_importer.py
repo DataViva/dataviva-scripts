@@ -32,7 +32,7 @@ def findFiles(path, filter):
 @click.option('--user', '-u', prompt=True, help='Database user.')
 @click.option('--password', '-p', prompt=True, help='Database password.')
 @click.option('--database', '-d', prompt=True, help='Database name.')
-def main(idir, separator, name, host, user, password, database):
+def main(idir, name, host, user, password, database):
     for f in findFiles(idir, '*.tsv*'):
         bzipped = False
         # print f, "Processing"
