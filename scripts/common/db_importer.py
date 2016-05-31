@@ -27,7 +27,6 @@ def findFiles(path, filter):
 
 @click.command()
 @click.option('--idir', '-i', default='.', type=click.Path(exists=True), prompt=False, help='Directory for files.')
-@click.option('--separator', '-s', default=',', prompt=False, help='Fields separator.')
 @click.option('--name', '-n', prompt=True, help='Name of database eg rais or secex.')
 @click.option('--host', '-h', prompt=True, help='Database host ip.')
 @click.option('--user', '-u', prompt=True, help='Database user.')
@@ -45,7 +44,7 @@ def main(idir, separator, name, host, user, password, database):
         tablename = parse_table(f, name)
         print "importing", f, "into", tablename
         header = handle.readline().strip()
-        fields = header.split(',' if separator == ',' else '\t')
+        fields = header.split('\t')
         fields_null = ["{0} = nullif(@v{0},'')".format(fi) for fi in fields]
         # print "fields", fields
 
