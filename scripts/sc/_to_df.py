@@ -91,7 +91,7 @@ def to_df(file_path, indexes=None):
         input_file = open(file_path, "rU")
 
     if indexes:
-        converters = {"course_hedu_id": str, "university_id": str}
+        converters = {"course_hedu_id": str, "school_id": str}
         df = pd.read_csv(
             input_file, sep="\t", converters=converters, engine='python')
         df = df.set_index(indexes)
