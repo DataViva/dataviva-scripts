@@ -28,14 +28,16 @@ def findFiles(path, filter):
 
 
 @click.command()
-@click.option('--idir', '-i', default='.', type=click.Path(exists=True), prompt=False, help='Directory for csv files.')
+@click.option('--idir', '-i', default='.', type=click.Path(exists=True), prompt=False, help='Directory for files.')
+@click.option('--separator', '-s', default=',', prompt=False, help='Fields separator.')
 @click.option('--name', '-n', prompt=True, help='Name of database eg rais or secex.')
 @click.option('--host', '-h', prompt=True, help='Database host ip.')
 @click.option('--user', '-u', prompt=True, help='Database user.')
 @click.option('--password', '-p', prompt=True, help='Database password.')
 @click.option('--database', '-d', prompt=True, help='Database name.')
-def main(idir, name, host, user, password, database):
-    for f in findFiles(idir, '*.csv*'):
+def main(idir, separator, name, host, user, password, database):
+    file_type = 'csv' if separator == ',' else 'tsv'
+    for f in findFiles(idir, '*.' + file_type + '*'):
         bzipped = False
         # print f, "Processing"
         if f.endswith("bz2"):
@@ -46,7 +48,7 @@ def main(idir, name, host, user, password, database):
         tablename = parse_table(f, name)
         print "importing", f, "into", tablename
         header = handle.readline().strip()
-        fields = header.split(',')
+        fields = header.split(separator)
         fields_null = ["{0} = nullif(@v{0},'')".format(fi) for fi in fields]
         # print "fields", fields
 
@@ -56,8 +58,8 @@ def main(idir, name, host, user, password, database):
         fields_null = ",".join(fields_null)
 
         cmd = '''mysql -h %s -u%s -p%s %s --local-infile=1 -e "LOAD DATA LOCAL INFILE '%s' INTO TABLE %s
-                 FIELDS TERMINATED BY ',' LINES TERMINATED BY '\n' IGNORE 1 LINES (%s) SET %s;" ''' % (
-            host, user, password, database, f, tablename, fields, fields_null)
+                 FIELDS TERMINATED BY '%s' LINES TERMINATED BY '\n' IGNORE 1 LINES (%s) SET %s;" ''' % (
+            host, user, password, database, f, tablename, separator, fields, fields_null)
         # print cmd
         os.system(cmd)
 
