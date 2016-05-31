@@ -48,7 +48,7 @@ def main(idir, separator, name, host, user, password, database):
         tablename = parse_table(f, name)
         print "importing", f, "into", tablename
         header = handle.readline().strip()
-        fields = header.split(separator)
+        fields = header.split(',' if separator == ',' else '\t')
         fields_null = ["{0} = nullif(@v{0},'')".format(fi) for fi in fields]
         # print "fields", fields
 
