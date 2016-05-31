@@ -54,8 +54,8 @@ def aggregate(indexes, df):
         if 'course_sc_id' in indexes:
             aggregated_df['distortion_rate'] = aggregated_df['distorted_age'] / aggregated_df['enroll_id']
             aggregated_df.loc[aggregated_df['distorted_age'].isnull(), 'distortion_rate'] = '\N'
-            aggregated_df.drop('distorted_age', axis=1, inplace=True)
 
+        aggregated_df.drop('distorted_age', axis=1, inplace=True)
         aggregated_dfs.append(aggregated_df)
 
     return pd.concat(aggregated_dfs) if aggregated_dfs else df.groupby(indexes).agg(agg_rules)
