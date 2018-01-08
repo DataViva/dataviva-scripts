@@ -1,0 +1,36 @@
+# need to be able to connect to the DB
+MySQL-python
+
+# ipython a WAY better interactive python shell
+# readline
+# ipython
+
+# helpful library for advanced math / data manipulation similar to matlab
+# required for pandas
+numpy
+
+# scipy for calculations and regressions
+# required for pandas
+# scipy
+# scikits.statsmodels
+
+# Pandas library for doing matrix math, dataframes etc. similar to R
+pandas
+# patsy
+
+# Command line utility
+click
+
+# Read RAR files. In order to work properly you will also need the unrar tool
+rarfile
+
+# Helpful HTTP library
+# requests
+
+# for storing dataframes
+cython
+numexpr
+tables
+
+# for alert emails
+sendgrid

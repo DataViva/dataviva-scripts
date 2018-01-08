@@ -1,0 +1,3 @@
+[submodule "lib/ps_calcs"]
+	path = lib/ps_calcs
+	url = https://github.com/alexandersimoes/ps_calcs.git
