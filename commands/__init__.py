@@ -9,7 +9,7 @@ from commands.load_metadata import states
 from commands.load_metadata import regions
 from commands.load_metadata import continents
 from commands.load_metadata import territories
-from commands.load_metadata import economic_blocks
+from commands.load_metadata import economic_blocs
 from commands.load_metadata import municipalities
 from commands.load_metadata import industries
 from commands.load_metadata import hedu_course
@@ -33,7 +33,7 @@ load_metadata.add_command(states)
 load_metadata.add_command(regions)
 load_metadata.add_command(continents)
 load_metadata.add_command(territories)
-load_metadata.add_command(economic_blocks)
+load_metadata.add_command(economic_blocs)
 load_metadata.add_command(municipalities)
 load_metadata.add_command(industries)
 load_metadata.add_command(hedu_course)

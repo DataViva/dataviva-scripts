@@ -4,7 +4,7 @@ from clients import s3, redis
 
 @click.command()
 def sc_course():
-    csv = s3.get('redshift/attrs/attrs_sc_course.csv')
+    csv = s3.get('redshift/attrs/sc_courses.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -46,7 +46,7 @@ def sc_course():
 @click.command()
 def ports():
 
-    csv = s3.get('redshift/attrs/attrs_porto.csv')
+    csv = s3.get('redshift/attrs/ports.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -70,7 +70,7 @@ def ports():
 
 @click.command()
 def countries():
-    csv = s3.get('redshift/attrs/attrs_continente.csv')
+    csv = s3.get('redshift/attrs/continents.csv')
     df_continents = pandas.read_csv(
         csv,
         sep=';',
@@ -90,7 +90,7 @@ def countries():
             'name_pt': row["name_pt"],
         }
 
-    csv = s3.get('redshift/attrs/attrs_wld.csv')
+    csv = s3.get('redshift/attrs/wld.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -121,7 +121,7 @@ def countries():
 @click.command()
 def occupations():
 
-    csv = s3.get('redshift/attrs/attrs_cbo.csv')
+    csv = s3.get('redshift/attrs/cbo.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -166,7 +166,7 @@ def occupations():
 
 @click.command()
 def products():
-    csv = s3.get('redshift/attrs/attrs_hs.csv')
+    csv = s3.get('redshift/attrs/hs.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -232,7 +232,7 @@ def products():
 
 @click.command()
 def states():
-    csv = s3.get('redshift/attrs/attrs_uf_ibge_mdic.csv')
+    csv = s3.get('redshift/attrs/uf_ibge_mdic.csv')
     df = pandas.read_csv(
             csv,
             sep=';',
@@ -266,7 +266,7 @@ def states():
 
 @click.command()
 def regions():
-    csv = s3.get('redshift/attrs/attrs_regioes.csv')
+    csv = s3.get('redshift/attrs/regions.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -294,7 +294,7 @@ def regions():
 
 @click.command()
 def continents():
-    csv = s3.get('redshift/attrs/attrs_continente.csv')
+    csv = s3.get('redshift/attrs/continents.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -330,14 +330,14 @@ def continents():
 
 @click.command()
 def territories():
-    csv = s3.get('redshift/attrs/attrs_territorios_de_desenvolvimento.csv')
+    csv = s3.get('redshift/attrs/development_territories.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
         header=0,
-        names=['territory','microterritory','municipy_id'],
+        names=['territory','microterritory','municipality_id'],
         converters={
-            "municipy_id": str
+            "municipality_id": str
         }
     )
 
@@ -347,19 +347,19 @@ def territories():
         territory = {
             'territory': row["territory"],
             'microterritory': row["microterritory"],
-            'municipy_id': row["municipy_id"]
+            'municipality_id': row["municipality_id"]
         }
 
-        territories[row['municipy_id']] = territory
-        redis.set('territory/' + str(row['municipy_id']), pickle.dumps(territory))
+        territories[row['municipality_id']] = territory
+        redis.set('territory/' + str(row['municipality_id']), pickle.dumps(territory))
 
     s3.put('attrs_territory.json', json.dumps(territories, ensure_ascii=False))
 
     click.echo("Territories loaded.")
 
 @click.command()
-def economic_blocks():
-    csv = s3.get('redshift/attrs/attrs_bloco_economico.csv')
+def economic_blocs():
+    csv = s3.get('redshift/attrs/economic_blocs.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -370,15 +370,15 @@ def economic_blocks():
         }
     )
 
-    economic_blocks = {}
+    economic_blocs = {}
 
     for _, row in df.iterrows():
 
-        if economic_blocks.get(row["id"]):
-            economic_block = economic_blocks[row["id"]]
-            economic_block["countries"].append(row["country_id"])
+        if economic_blocs.get(row["id"]):
+            economic_bloc = economic_blocs[row["id"]]
+            economic_bloc["countries"].append(row["country_id"])
         else:
-            economic_block = {
+            economic_bloc = {
                 'name_en': row["name"],
                 'name_pt': row["name"],
                 'countries': [
@@ -386,16 +386,16 @@ def economic_blocks():
                 ]
             }
 
-        economic_blocks[row['id']] = economic_block
-        redis.set('economic_block/' + str(row['id']), pickle.dumps(economic_block))
+        economic_blocs[row['id']] = economic_bloc
+        redis.set('economic_bloc/' + str(row['id']), pickle.dumps(economic_bloc))
 
-    s3.put('attrs_economic_block.json', json.dumps(economic_blocks, ensure_ascii=False))
+    s3.put('attrs_economic_bloc.json', json.dumps(economic_blocs, ensure_ascii=False))
 
-    click.echo("Economic Blocks loaded.")
+    click.echo("Economic Blocs loaded.")
 
 @click.command()
 def municipalities():
-    csv = s3.get('redshift/attrs/attrs_municipios.csv')
+    csv = s3.get('redshift/attrs/municipalities.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -450,7 +450,7 @@ def municipalities():
 
 @click.command()
 def industries():
-    csv = s3.get('redshift/attrs/attrs_cnae.csv')
+    csv = s3.get('redshift/attrs/cnae.csv')
     df = pandas.read_csv(
         csv,
         sep=',',
@@ -526,7 +526,7 @@ def industries():
 
 @click.command()
 def hedu_course():
-    csv = s3.get('redshift/attrs/attrs_hedu_course.csv')
+    csv = s3.get('redshift/attrs/hedu_courses.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -596,7 +596,7 @@ def establishments():
 
 @click.command()
 def inflections():
-    csv = s3.get('redshift/attrs/attrs_infleccoes.csv')
+    csv = s3.get('redshift/attrs/inflections.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -660,63 +660,64 @@ def attrs(attrs):
 @click.command()
 def metadata_command():
     attrs([
-        #hedu
-        {'name': 'shift', 'csv_filename': 'attrs_shift.csv'},
-        {'name': 'funding_type', 'csv_filename': 'attrs_funding_type.csv'},
-        {'name': 'school_type', 'csv_filename': 'attrs_school_type.csv'},
+
+                #hedu
+        {'name': 'shift', 'csv_filename': 'shifts.csv'},
+        {'name': 'funding_type', 'csv_filename': 'funding_types.csv'},
+        {'name': 'school_type', 'csv_filename': 'school_type.csv'},
         #rais and scholar
-        {'name': 'ethnicity', 'csv_filename': 'attrs_etnias.csv'},
+        {'name': 'ethnicity', 'csv_filename': 'ethnicities.csv'},
         #rais
-        {'name': 'gender', 'csv_filename': 'attrs_generos.csv'},
-        {'name': 'establishment_size', 'csv_filename': 'attrs_tam_estab.csv'},
-        {'name': 'literacy', 'csv_filename': 'attrs_escolaridade.csv'},
-        {'name': 'simple', 'csv_filename': 'attrs_simples.csv'},
-        {'name': 'legal_nature', 'csv_filename': 'attrs_natureza_juridica.csv'},
+        {'name': 'gender', 'csv_filename': 'genders.csv'},
+        {'name': 'establishment_size', 'csv_filename': 'establishment_size.csv'},
+        {'name': 'literacy', 'csv_filename': 'literacy.csv'},
+        {'name': 'simple', 'csv_filename': 'simple.csv'},
+        {'name': 'legal_nature', 'csv_filename': 'legal_natures.csv'},
         #sc
-        {'name': 'university', 'csv_filename': 'attrs_university.csv'},
-        {'name': 'sc_school', 'csv_filename': 'attrs_school.csv'},
-        {'name': 'administrative_dependency', 'csv_filename': 'attrs_administrative_dependency.csv'},
+        {'name': 'university', 'csv_filename': 'universities.csv'},
+        {'name': 'sc_school', 'csv_filename': 'schools.csv'},
+        {'name': 'administrative_dependency', 'csv_filename': 'administrative_dependencies.csv'},
         #cnes bed
-        {'name': 'bed_type', 'csv_filename': 'attrs_tipos_leito.csv'},
-        {'name': 'bed_type_per_specialty', 'csv_filename': 'attrs_cnes_codleito.csv'},
+        {'name': 'bed_type', 'csv_filename': 'hospital_bed_types.csv'},
+        {'name': 'bed_type_per_specialty', 'csv_filename': 'cnes_bed_type_per_specialty.csv'},
         #cnes
-        {'name': 'cnes_pf_pj', 'csv_filename': 'attrs_cnes_pf_pj.csv'},
+        {'name': 'cnes_pf_pj', 'csv_filename': 'cnes_pf_pj.csv'},
         # cnes establishment
-        {'name': 'establishment_type', 'csv_filename': 'attrs_cnes_establishment_type.csv'},
-        {'name': 'unit_type', 'csv_filename': 'attrs_cnes_tp_unid.csv'},
-        {'name': 'hierarchy_level', 'csv_filename': 'attrs_cnes_niv_hier_2.csv'},
-        {'name': 'tax_withholding', 'csv_filename': 'attrs_cnes_retencao_2.csv'},
-        {'name': 'administrative_sphere', 'csv_filename': 'attrs_cnes_esfera.csv'},
-        {'name': 'selective_waste_collection', 'csv_filename': 'attrs_cnes_coletres.csv'},
-        {'name': 'hospital_care', 'csv_filename': 'attrs_cnes_atendhos.csv'},
-        {'name': 'neonatal_unit_facility', 'csv_filename': 'attrs_cnes_centrneo.csv'},
-        {'name': 'niv_dep_1', 'csv_filename': 'attrs_cnes_niv_dep.csv'},
-        {'name': 'ambulatory_care_facility', 'csv_filename': 'attrs_cnes_atendamb.csv'},
-        {'name': 'emergency_facility', 'csv_filename': 'attrs_cnes_urgemerg.csv'},
-        {'name': 'hospital_attention', 'csv_filename': 'attrs_cnes_nivate_h.csv'},
-        {'name': 'ambulatory_attention', 'csv_filename': 'attrs_cnes_nivate_a.csv'},
-        {'name': 'provider_type', 'csv_filename': 'attrs_cnes_tp_prest.csv'},
-        {'name': 'sus_bond', 'csv_filename': 'attrs_sus_bond.csv'},
-        {'name': 'cnes_altacomplexidade_hosp', 'csv_filename': 'attrs_cnes_altacomplexidade_hosp.csv'},
-        {'name': 'cnes_mediacomplexidade_hosp', 'csv_filename': 'attrs_cnes_mediacomplexidade_hosp.csv'},
-        {'name': 'cnes_internacao_hosp', 'csv_filename': 'attrs_cnes_internacao_hosp.csv'},
-        {'name': 'cnes_altacomplexidade_amb', 'csv_filename': 'attrs_cnes_altacomplexidade_amb.csv'},
-        {'name': 'cnes_mediacomplexidade_amb', 'csv_filename': 'attrs_cnes_mediacomplexidade_amb.csv'},
-        {'name': 'cnes_atencaobasica_amb', 'csv_filename': 'attrs_cnes_atencaobasica_amb.csv'},
-        {'name': 'cnes_tipodeurgencia', 'csv_filename': 'attrs_cnes_tipodeurgencia.csv'},
-        {'name': 'cnes_tipodesadt', 'csv_filename': 'attrs_cnes_tipodesadt.csv'},
-        {'name': 'cnes_tipodeambulatorio', 'csv_filename': 'attrs_cnes_tipodeambulatorio.csv'},
-        {'name': 'cnes_tipointernacao', 'csv_filename': 'attrs_cnes_tipointernacao.csv'},
-        {'name': 'obstetrical_center_facility', 'csv_filename': 'attrs_cnes_centrobs.csv'},
-        {'name': 'surgery_center_facility', 'csv_filename': 'attrs_cnes_centrcir.csv'},
-        {'name': 'health_region', 'csv_filename': 'attrs_cnes_regsaude.csv'},
+        {'name': 'establishment_type', 'csv_filename': 'cnes_establishment_type.csv'},
+        {'name': 'unit_type', 'csv_filename': 'cnes_unit_type.csv'},
+        {'name': 'hierarchy_level', 'csv_filename': 'cnes_hierarchy_level.csv'},
+        {'name': 'tax_withholding', 'csv_filename': 'cnes_tax_withholding.csv'},
+        {'name': 'administrative_sphere', 'csv_filename': 'cnes_administrative_sphere.csv'},
+        {'name': 'selective_waste_collection', 'csv_filename': 'cnes_selective_waste_collection.csv'},
+        {'name': 'hospital_care', 'csv_filename': 'cnes_hospital_care.csv'},
+        {'name': 'neonatal_unit_facility', 'csv_filename': 'cnes_neonatal_unit_facility.csv'},
+        {'name': 'niv_dep_1', 'csv_filename': 'cnes_niv_dep_1.csv'},
+        {'name': 'ambulatory_care_facility', 'csv_filename': 'cnes_ambulatory_care_facility.csv'},
+        {'name': 'emergency_facility', 'csv_filename': 'emergency_facilities.csv'},
+        {'name': 'hospital_attention', 'csv_filename': 'cnes_hospital_attention.csv'},
+        {'name': 'ambulatory_attention', 'csv_filename': 'cnes_ambulatory_attention.csv'},
+        {'name': 'provider_type', 'csv_filename': 'cnes_provider_type.csv'},
+        {'name': 'sus_bond', 'csv_filename': 'sus_bond.csv'},
+        {'name': 'high_complexity_hospitals', 'csv_filename': 'cnes_high_complexity_hospitals.csv'},
+        {'name': 'medium_complexity_hospitals', 'csv_filename': 'cnes_medium_complexity_hospitals.csv'},
+        {'name': 'hospitalization_hospitals', 'csv_filename': 'cnes_hospitalization_hospitals.csv'},
+        {'name': 'high_complexity_ambulatories', 'csv_filename': 'cnes_high_complexity_ambulatories.csv'},
+        {'name': 'medium_complexity_ambulatories', 'csv_filename': 'cnes_medium_complexity_ambulatories.csv'},
+        {'name': 'basic_attention_ambulatories', 'csv_filename': 'cnes_basic_attention_ambulatories.csv'},
+        {'name': 'urgency_type', 'csv_filename': 'cnes_urgency_type.csv'},
+        {'name': 'sadt_type', 'csv_filename': 'cnes_sadt_type.csv'},
+        {'name': 'ambulatory_type', 'csv_filename': 'cnes_ambulatory_type.csv'},
+        {'name': 'hospitalization_type', 'csv_filename': 'cnes_hospitalization_type.csv'},
+        {'name': 'obstetrical_center_facility', 'csv_filename': 'cnes_obstetrical_center_facility.csv'},
+        {'name': 'surgery_center_facility', 'csv_filename': 'cnes_surgery_center_facility.csv'},
+        {'name': 'health_region', 'csv_filename': 'cnes_health_region.csv'},
         #cnes equipment
-        {'name': 'sus_availability_indicator', 'csv_filename': 'attrs_cnes_ind_sus.csv'},
-        {'name': 'equipment_code', 'csv_filename': 'attrs_cnes_codequip.csv'},
-        {'name': 'equipment_type', 'csv_filename': 'attrs_cnes_tipequip.csv'},
+        {'name': 'sus_availability_indicator', 'csv_filename': 'cnes_sus_availability_indicator.csv'},
+        {'name': 'equipment_code', 'csv_filename': 'cnes_equipment_code.csv'},
+        {'name': 'equipment_type', 'csv_filename': 'cnes_equipment_type.csv'},
         # cnes professionals
-        {'name': 'professional_link', 'csv_filename': 'attrs_cnes_vinculac.csv'},
-        {'name': 'sus_healthcare_professional', 'csv_filename': 'attrs_cnes_prof_sus.csv'},
+        {'name': 'professional_link', 'csv_filename': 'professional_links.csv'},
+        {'name': 'sus_healthcare_professional', 'csv_filename': 'cnes_sus_healthcare_professional.csv'},
         #comum
     ])
 
@@ -732,7 +733,7 @@ def all(ctx):
     ctx.invoke(regions)
     ctx.invoke(continents)
     ctx.invoke(territories)
-    ctx.invoke(economic_blocks)
+    ctx.invoke(economic_blocs)
     ctx.invoke(municipalities)
     ctx.invoke(industries)
     ctx.invoke(hedu_course)
