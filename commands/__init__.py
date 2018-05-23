@@ -3,7 +3,7 @@ import click
 from commands.load_metadata.all import all
 from commands.load_metadata.continents import continents
 from commands.load_metadata.countries import countries
-from commands.load_metadata.economic_blocks import economic_blocks
+from commands.load_metadata.economic_blocs import economic_blocs
 from commands.load_metadata.establishments import establishments
 from commands.load_metadata.hedu_course import hedu_course
 from commands.load_metadata.industries import industries
@@ -32,7 +32,7 @@ load_metadata.add_command(states)
 load_metadata.add_command(regions)
 load_metadata.add_command(continents)
 load_metadata.add_command(territories)
-load_metadata.add_command(economic_blocks)
+load_metadata.add_command(economic_blocs)
 load_metadata.add_command(municipalities)
 load_metadata.add_command(industries)
 load_metadata.add_command(hedu_course)

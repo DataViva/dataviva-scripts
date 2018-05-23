@@ -38,4 +38,4 @@ def economic_blocs():
     s3.put('economic_bloc.json', json.dumps(
         economic_blocs, ensure_ascii=False))
 
-    click.echo("Economic Blocks loaded.")
+    click.echo("Economic Blocs loaded.")

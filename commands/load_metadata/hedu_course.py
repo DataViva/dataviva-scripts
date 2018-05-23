@@ -7,7 +7,7 @@ from clients import s3, redis
 
 @click.command()
 def hedu_course():
-    csv = s3.get('metadata/hedu_course.csv')
+    csv = s3.get('metadata/hedu_courses.csv')
     df = pandas.read_csv(
         csv,
         sep=';',

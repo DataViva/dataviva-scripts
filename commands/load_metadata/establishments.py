@@ -7,7 +7,7 @@ from clients import s3, redis
 
 @click.command()
 def establishments():
-    csv = s3.get('attrs/cnes_final.csv')
+    csv = s3.get('metadata/cnes_final.csv')
     df = pandas.read_csv(
         csv,
         sep=';',

@@ -27,7 +27,7 @@ def countries():
             'name_pt': row["name_pt"],
         }
 
-    csv = s3.get('metadata/attrs_wld.csv')
+    csv = s3.get('metadata/wld.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
