@@ -15,7 +15,7 @@ def get(filename):
 
 def put(filename, object):
     obj = client.put_object(
-        Bucket='api-metadata',
+        Bucket=getenv('S3_BUCKET'),
         Key=filename,
         Body=object,
         ContentType='application/json',
