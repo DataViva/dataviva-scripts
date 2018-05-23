@@ -1,23 +1,22 @@
 import click
 
-from commands.load_metadata import sc_course
-from commands.load_metadata import ports
-from commands.load_metadata import countries
-from commands.load_metadata import occupations
-from commands.load_metadata import products
-from commands.load_metadata import states
-from commands.load_metadata import regions
-from commands.load_metadata import continents
-from commands.load_metadata import territories
-from commands.load_metadata import economic_blocs
-from commands.load_metadata import municipalities
-from commands.load_metadata import industries
-from commands.load_metadata import hedu_course
-from commands.load_metadata import establishments
-from commands.load_metadata import inflections
-from commands.load_metadata import attrs
-from commands.load_metadata import metadata_command
-from commands.load_metadata import all
+from commands.load_metadata.all import all
+from commands.load_metadata.continents import continents
+from commands.load_metadata.countries import countries
+from commands.load_metadata.economic_blocks import economic_blocks
+from commands.load_metadata.establishments import establishments
+from commands.load_metadata.hedu_course import hedu_course
+from commands.load_metadata.industries import industries
+from commands.load_metadata.inflections import inflections
+from commands.load_metadata.metadata_command import metadata_command
+from commands.load_metadata.municipalities import municipalities
+from commands.load_metadata.occupations import occupations
+from commands.load_metadata.ports import ports
+from commands.load_metadata.products import products
+from commands.load_metadata.regions import regions
+from commands.load_metadata.sc_course import sc_course
+from commands.load_metadata.states import states
+from commands.load_metadata.territories import territories
 
 
 @click.group()
@@ -33,7 +32,7 @@ load_metadata.add_command(states)
 load_metadata.add_command(regions)
 load_metadata.add_command(continents)
 load_metadata.add_command(territories)
-load_metadata.add_command(economic_blocs)
+load_metadata.add_command(economic_blocks)
 load_metadata.add_command(municipalities)
 load_metadata.add_command(industries)
 load_metadata.add_command(hedu_course)
