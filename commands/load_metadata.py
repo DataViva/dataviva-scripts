@@ -38,8 +38,8 @@ def sc_course():
             redis.set('sc_course/' + str(row['id']), pickle.dumps(sc_course))
             sc_courses[row['id']] = sc_course
 
-    s3.put('attrs_sc_course.json', json.dumps(sc_courses, ensure_ascii=False))
-    s3.put('attrs_sc_course_field.json', json.dumps(sc_courses_field, ensure_ascii=False))
+    s3.put('sc_course.json', json.dumps(sc_courses, ensure_ascii=False))
+    s3.put('sc_course_field.json', json.dumps(sc_courses_field, ensure_ascii=False))
 
     click.echo("SC Courses loaded.")
 
@@ -64,7 +64,7 @@ def ports():
         ports[row['id']] = port
         redis.set('port/' + str(row['id']), pickle.dumps(port))
 
-    s3.put('attrs_port.json', json.dumps(ports, ensure_ascii=False))
+    s3.put('port.json', json.dumps(ports, ensure_ascii=False))
 
     click.echo("Ports loaded.")
 
@@ -114,7 +114,7 @@ def countries():
         countries[row['id']] = country
         redis.set('country/' + str(row['id']), pickle.dumps(country))
 
-    s3.put('attrs_country.json', json.dumps(countries, ensure_ascii=False))
+    s3.put('country.json', json.dumps(countries, ensure_ascii=False))
 
     click.echo("Countries loaded.")
 
@@ -158,9 +158,9 @@ def occupations():
             redis.set('occupation_family/' + str(row['id']), pickle.dumps(occupation_family))
             occupations_family[row['id']] = occupation_family
 
-    s3.put('attrs_occupation_family.json', json.dumps(occupations_family, ensure_ascii=False))
+    s3.put('occupation_family.json', json.dumps(occupations_family, ensure_ascii=False))
 
-    s3.put('attrs_occupation_group.json', json.dumps(occupations_group, ensure_ascii=False))
+    s3.put('occupation_group.json', json.dumps(occupations_group, ensure_ascii=False))
 
     click.echo("Occupations loaded.")
 
@@ -222,11 +222,11 @@ def products():
             products[product_id] = product
             redis.set('product/' + str(product_id), pickle.dumps(product))
 
-    s3.put('attrs_product.json', json.dumps(products, ensure_ascii=False))
+    s3.put('product.json', json.dumps(products, ensure_ascii=False))
 
-    s3.put('attrs_product_section.json', json.dumps(product_sections, ensure_ascii=False))
+    s3.put('product_section.json', json.dumps(product_sections, ensure_ascii=False))
 
-    s3.put('attrs_product_chapter.json', json.dumps(product_chapters, ensure_ascii=False))
+    s3.put('product_chapter.json', json.dumps(product_chapters, ensure_ascii=False))
 
     click.echo("Products loaded.")
 
@@ -260,7 +260,7 @@ def states():
         states[row['ibge_id']] = state
         redis.set('state/' + str(row['ibge_id']), pickle.dumps(state))
 
-    s3.put('attrs_state.json', json.dumps(states, ensure_ascii=False))
+    s3.put('state.json', json.dumps(states, ensure_ascii=False))
 
     click.echo("States loaded.")
 
@@ -288,7 +288,7 @@ def regions():
         regions[row['id']] = region
         redis.set('region/' + str(row['id']), pickle.dumps(region))
 
-    s3.put('attrs_region.json', json.dumps(regions, ensure_ascii=False))
+    s3.put('region.json', json.dumps(regions, ensure_ascii=False))
 
     click.echo("Regions loaded.")
 
@@ -324,7 +324,7 @@ def continents():
         continents[row['id']] = continent
         redis.set('continent/' + str(row['id']), pickle.dumps(continent))
 
-    s3.put('attrs_continent.json', json.dumps(continents, ensure_ascii=False))
+    s3.put('continent.json', json.dumps(continents, ensure_ascii=False))
 
     click.echo("Continents loaded.")
 
@@ -353,7 +353,7 @@ def territories():
         territories[row['municipality_id']] = territory
         redis.set('territory/' + str(row['municipality_id']), pickle.dumps(territory))
 
-    s3.put('attrs_territory.json', json.dumps(territories, ensure_ascii=False))
+    s3.put('territory.json', json.dumps(territories, ensure_ascii=False))
 
     click.echo("Territories loaded.")
 
@@ -389,7 +389,7 @@ def economic_blocs():
         economic_blocs[row['id']] = economic_bloc
         redis.set('economic_bloc/' + str(row['id']), pickle.dumps(economic_bloc))
 
-    s3.put('attrs_economic_bloc.json', json.dumps(economic_blocs, ensure_ascii=False))
+    s3.put('economic_bloc.json', json.dumps(economic_blocs, ensure_ascii=False))
 
     click.echo("Economic Blocs loaded.")
 
@@ -440,11 +440,11 @@ def municipalities():
         redis.set('microregion/' + str(row['microrregiao_id']), pickle.dumps(municipality['microregion']))
         redis.set('mesoregion/' + str(row['mesorregiao_id']), pickle.dumps(municipality['mesoregion']))
 
-    s3.put('attrs_municipality.json', json.dumps(municipalities, ensure_ascii=False))
+    s3.put('municipality.json', json.dumps(municipalities, ensure_ascii=False))
 
-    s3.put('attrs_microregion.json', json.dumps(microregions, ensure_ascii=False))
+    s3.put('microregion.json', json.dumps(microregions, ensure_ascii=False))
 
-    s3.put('attrs_mesoregion.json', json.dumps(mesoregions, ensure_ascii=False))
+    s3.put('mesoregion.json', json.dumps(mesoregions, ensure_ascii=False))
 
     click.echo("Municipalities, microregions and mesoregions loaded.")
 
@@ -516,11 +516,11 @@ def industries():
             redis.set('industry_class/' + str(class_id), pickle.dumps(industry_classe))
             industry_classes[class_id] = industry_classe
 
-    s3.put('attrs_industry_class.json', json.dumps(industry_classes, ensure_ascii=False))
+    s3.put('industry_class.json', json.dumps(industry_classes, ensure_ascii=False))
 
-    s3.put('attrs_industry_division.json', json.dumps(industry_divisions, ensure_ascii=False))
+    s3.put('industry_division.json', json.dumps(industry_divisions, ensure_ascii=False))
 
-    s3.put('attrs_industry_section.json', json.dumps(industry_sections, ensure_ascii=False))
+    s3.put('industry_section.json', json.dumps(industry_sections, ensure_ascii=False))
 
     click.echo("Industries loaded.")
 
@@ -563,9 +563,9 @@ def hedu_course():
             redis.set('hedu_course/' + str(row['id']), pickle.dumps(hedu_course))
             hedu_courses[row['id']] = hedu_course
 
-    s3.put('attrs_hedu_course.json', json.dumps(hedu_courses, ensure_ascii=False))
+    s3.put('hedu_course.json', json.dumps(hedu_courses, ensure_ascii=False))
 
-    s3.put('attrs_hedu_course_field.json', json.dumps(hedu_courses_field, ensure_ascii=False))
+    s3.put('hedu_course_field.json', json.dumps(hedu_courses_field, ensure_ascii=False))
 
     click.echo("HEDU Courses loaded.")
 
@@ -617,7 +617,7 @@ def inflections():
         inflections[row['id']] = inflection
         redis.set('inflection/' + str(row['id']), pickle.dumps(inflection))
 
-    s3.put('attrs_inflection.json', json.dumps(inflections, ensure_ascii=False))
+    s3.put('inflection.json', json.dumps(inflections, ensure_ascii=False))
 
     click.echo("Inflections loaded.")
 
@@ -653,7 +653,7 @@ def attrs(attrs):
 
         items = items + '}'
 
-        s3.put('attrs_' + attr['name'] + '.json', items)
+        s3.put('' + attr['name'] + '.json', items)
 
         click.echo(" loaded.")
 
