@@ -4,7 +4,7 @@ from clients import s3, redis
 
 @click.command()
 def sc_course():
-    csv = s3.get('redshift/attrs/sc_courses.csv')
+    csv = s3.get('metadata/sc_courses.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -46,7 +46,7 @@ def sc_course():
 @click.command()
 def ports():
 
-    csv = s3.get('redshift/attrs/ports.csv')
+    csv = s3.get('metadata/ports.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -70,7 +70,7 @@ def ports():
 
 @click.command()
 def countries():
-    csv = s3.get('redshift/attrs/continents.csv')
+    csv = s3.get('metadata/continents.csv')
     df_continents = pandas.read_csv(
         csv,
         sep=';',
@@ -90,7 +90,7 @@ def countries():
             'name_pt': row["name_pt"],
         }
 
-    csv = s3.get('redshift/attrs/wld.csv')
+    csv = s3.get('metadata/wld.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -121,7 +121,7 @@ def countries():
 @click.command()
 def occupations():
 
-    csv = s3.get('redshift/attrs/cbo.csv')
+    csv = s3.get('metadata/cbo.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -166,7 +166,7 @@ def occupations():
 
 @click.command()
 def products():
-    csv = s3.get('redshift/attrs/hs.csv')
+    csv = s3.get('metadata/hs.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -232,7 +232,7 @@ def products():
 
 @click.command()
 def states():
-    csv = s3.get('redshift/attrs/uf_ibge_mdic.csv')
+    csv = s3.get('metadata/uf_ibge_mdic.csv')
     df = pandas.read_csv(
             csv,
             sep=';',
@@ -266,7 +266,7 @@ def states():
 
 @click.command()
 def regions():
-    csv = s3.get('redshift/attrs/regions.csv')
+    csv = s3.get('metadata/regions.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -294,7 +294,7 @@ def regions():
 
 @click.command()
 def continents():
-    csv = s3.get('redshift/attrs/continents.csv')
+    csv = s3.get('metadata/continents.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -330,7 +330,7 @@ def continents():
 
 @click.command()
 def territories():
-    csv = s3.get('redshift/attrs/development_territories.csv')
+    csv = s3.get('metadata/development_territories.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -359,7 +359,7 @@ def territories():
 
 @click.command()
 def economic_blocs():
-    csv = s3.get('redshift/attrs/economic_blocs.csv')
+    csv = s3.get('metadata/economic_blocs.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -395,7 +395,7 @@ def economic_blocs():
 
 @click.command()
 def municipalities():
-    csv = s3.get('redshift/attrs/municipalities.csv')
+    csv = s3.get('metadata/municipalities.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -450,7 +450,7 @@ def municipalities():
 
 @click.command()
 def industries():
-    csv = s3.get('redshift/attrs/cnae.csv')
+    csv = s3.get('metadata/cnae.csv')
     df = pandas.read_csv(
         csv,
         sep=',',
@@ -526,7 +526,7 @@ def industries():
 
 @click.command()
 def hedu_course():
-    csv = s3.get('redshift/attrs/hedu_courses.csv')
+    csv = s3.get('metadata/hedu_courses.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -596,7 +596,7 @@ def establishments():
 
 @click.command()
 def inflections():
-    csv = s3.get('redshift/attrs/inflections.csv')
+    csv = s3.get('metadata/inflections.csv')
     df = pandas.read_csv(
         csv,
         sep=';',
@@ -624,7 +624,7 @@ def inflections():
 def attrs(attrs):
     for attr in attrs:
         click.echo('Loading %s ...' % attr['name'])
-        csv = s3.get('redshift/attrs/%s' % attr['csv_filename'])
+        csv = s3.get('metadata/%s' % attr['csv_filename'])
         df = pandas.read_csv(
             csv,
             sep=';',
