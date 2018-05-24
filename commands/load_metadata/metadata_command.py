@@ -83,7 +83,7 @@ def attrs(attrs):
             engine='c'
         )
 
-        items = '{'
+        items = {}
 
         for _, row in df.iterrows():
             item = {
@@ -92,17 +92,9 @@ def attrs(attrs):
                 'name_en': row["name_en"],
             }
 
-            if items == '{':
-                items = '{}\"{}\": {}'.format(
-                    items, row['id'], json.dumps(item, ensure_ascii=False))
-            else:
-                items = '{}, \"{}\": {}'.format(
-                    items, row['id'], json.dumps(item, ensure_ascii=False))
-
+            items[row['id']] = item
             redis.set(attr['name'] + '/' + str(row['id']), pickle.dumps(item))
 
-        items = items + '}'
-
-        s3.put(attr['name'] + '.json', items)
+        redis.set(attr['name'], pickle.dumps(items))
 
         click.echo(" loaded.")
