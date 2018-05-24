@@ -95,6 +95,6 @@ def attrs(attrs):
             items[row['id']] = item
             redis.set(attr['name'] + '/' + str(row['id']), pickle.dumps(item))
 
-        redis.set(attr['name'], pickle.dumps(items))
+        s3.put(attr['name'], json.dumps(items, ensure_ascii=False))
 
         click.echo(" loaded.")
