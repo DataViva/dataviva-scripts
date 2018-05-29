@@ -6,7 +6,10 @@ from clients import s3, redis
 
 
 @click.command()
-def products():
+@click.option('--both', 'upload', flag_value='s3_and_redis', default=True, help='Upload metadata to both s3 and Redis')
+@click.option('--s3', 'upload', flag_value='only_s3', help='Upload metadata only to s3')
+@click.option('--redis', 'upload', flag_value='only_redis', help='Upload metadata only to Redis')
+def products(upload):
     csv = s3.get('metadata/hs.csv')
     df = pandas.read_csv(
         csv,
@@ -32,7 +35,8 @@ def products():
                 'name_en': row["name_en"],
             }
 
-            redis.set('product_section/' + str(product_section_id),
+            if upload != 'only_s3':
+                redis.set('product_section/' + str(product_section_id),
                       pickle.dumps(product_section))
             product_sections[product_section_id] = product_section
 
@@ -45,7 +49,8 @@ def products():
                 'name_en': row["name_en"],
             }
 
-            redis.set('product_chapter/' + str(product_chapter_id),
+            if upload != 'only_s3':
+                redis.set('product_chapter/' + str(product_chapter_id),
                       pickle.dumps(product_chapter))
             product_chapters[product_chapter_id] = product_chapter
 
@@ -63,14 +68,16 @@ def products():
             }
 
             products[product_id] = product
-            redis.set('product/' + str(product_id), pickle.dumps(product))
+            if upload != 'only_s3':
+                redis.set('product/' + str(product_id), pickle.dumps(product))
 
-    s3.put('product.json', json.dumps(products, ensure_ascii=False))
+    if upload != 'only_redis':
+        s3.put('product.json', json.dumps(products, ensure_ascii=False))
 
-    s3.put('product_section.json', json.dumps(
-        product_sections, ensure_ascii=False))
+        s3.put('product_section.json', json.dumps(
+            product_sections, ensure_ascii=False))
 
-    s3.put('product_chapter.json', json.dumps(
-        product_chapters, ensure_ascii=False))
+        s3.put('product_chapter.json', json.dumps(
+            product_chapters, ensure_ascii=False))
 
     click.echo("Products loaded.")

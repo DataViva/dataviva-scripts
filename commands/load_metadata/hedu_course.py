@@ -6,7 +6,10 @@ from clients import s3, redis
 
 
 @click.command()
-def hedu_course():
+@click.option('--both', 'upload', flag_value='s3_and_redis', default=True, help='Upload metadata to both s3 and Redis')
+@click.option('--s3', 'upload', flag_value='only_s3', help='Upload metadata only to s3')
+@click.option('--redis', 'upload', flag_value='only_redis', help='Upload metadata only to Redis')
+def hedu_course(upload):
     csv = s3.get('metadata/hedu_courses.csv')
     df = pandas.read_csv(
         csv,
@@ -29,7 +32,8 @@ def hedu_course():
                 'name_en': row["name_en"],
             }
 
-            redis.set('hedu_course_field/' +
+            if upload != 'only_s3':
+                redis.set('hedu_course_field/' +
                       str(row['id']), pickle.dumps(hedu_course_field))
             hedu_courses_field[row['id']] = hedu_course_field
 
@@ -42,14 +46,16 @@ def hedu_course():
                 'hedu_course_field': hedu_courses_field[row['id'][:2]]
             }
 
-            redis.set('hedu_course/' +
+            if upload != 'only_s3':
+                redis.set('hedu_course/' +
                       str(row['id']), pickle.dumps(hedu_course))
             hedu_courses[row['id']] = hedu_course
 
-    s3.put('hedu_course.json', json.dumps(
-        hedu_courses, ensure_ascii=False))
+    if upload != 'only_redis':
+        s3.put('hedu_course.json', json.dumps(
+            hedu_courses, ensure_ascii=False))
 
-    s3.put('hedu_course_field.json', json.dumps(
-        hedu_courses_field, ensure_ascii=False))
+        s3.put('hedu_course_field.json', json.dumps(
+            hedu_courses_field, ensure_ascii=False))
 
     click.echo("HEDU Courses loaded.")

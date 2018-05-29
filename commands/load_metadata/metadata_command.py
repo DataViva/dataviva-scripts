@@ -6,7 +6,10 @@ from clients import s3, redis
 
 
 @click.command()
-def metadata_command():
+@click.option('--both', 'upload', flag_value='s3_and_redis', default=True, help='Upload metadata to both s3 and Redis')
+@click.option('--s3', 'upload', flag_value='only_s3', help='Upload metadata only to s3')
+@click.option('--redis', 'upload', flag_value='only_redis', help='Upload metadata only to Redis')
+def metadata_command(upload):
     attrs([
         #hedu
         {'name': 'shift', 'csv_filename': 'shifts.csv'},
@@ -66,10 +69,10 @@ def metadata_command():
         {'name': 'professional_link', 'csv_filename': 'professional_links.csv'},
         {'name': 'sus_healthcare_professional', 'csv_filename': 'cnes_sus_healthcare_professional.csv'},
         #comum
-    ])
+    ], upload)
 
 
-def attrs(attrs):
+def attrs(attrs, upload):
     for attr in attrs:
         click.echo('Loading %s ...' % attr['name'])
         csv = s3.get('metadata/%s' % attr['csv_filename'])
@@ -93,8 +96,10 @@ def attrs(attrs):
             }
 
             items[row['id']] = item
-            redis.set(attr['name'] + '/' + str(row['id']), pickle.dumps(item))
+            if upload != 'only_s3':
+                redis.set(attr['name'] + '/' + str(row['id']), pickle.dumps(item))
 
-        s3.put(attr['name'], json.dumps(items, ensure_ascii=False))
+        if upload != 'only_redis':
+            s3.put(attr['name'] + '.json', json.dumps(items, ensure_ascii=False))
 
         click.echo(" loaded.")

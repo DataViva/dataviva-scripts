@@ -6,7 +6,10 @@ from clients import s3, redis
 
 
 @click.command()
-def industries():
+@click.option('--both', 'upload', flag_value='s3_and_redis', default=True, help='Upload metadata to both s3 and Redis')
+@click.option('--s3', 'upload', flag_value='only_s3', help='Upload metadata only to s3')
+@click.option('--redis', 'upload', flag_value='only_redis', help='Upload metadata only to Redis')
+def industries(upload):
     csv = s3.get('metadata/cnae.csv')
     df = pandas.read_csv(
         csv,
@@ -40,7 +43,8 @@ def industries():
                 'name_en': row["name_en"]
             }
 
-            redis.set('industry_section/' +
+            if upload != 'only_s3':
+                redis.set('industry_section/' +
                       str(row['id']), pickle.dumps(industry_section))
             industry_sections[row['id']] = industry_section
 
@@ -55,7 +59,8 @@ def industries():
                 'industry_section': row["id"][0]
             }
 
-            redis.set('industry_division/' + str(division_id),
+            if upload != 'only_s3':
+                redis.set('industry_division/' + str(division_id),
                       pickle.dumps(industry_division))
             industry_divisions[division_id] = industry_division
 
@@ -71,17 +76,19 @@ def industries():
                 'industry_division': industry_divisions[row["id"][1:3]]
             }
 
-            redis.set('industry_class/' + str(class_id),
+            if upload != 'only_s3':
+                redis.set('industry_class/' + str(class_id),
                       pickle.dumps(industry_classe))
             industry_classes[class_id] = industry_classe
 
-    s3.put('industry_class.json', json.dumps(
-        industry_classes, ensure_ascii=False))
+    if upload != 'only_redis':
+        s3.put('industry_class.json', json.dumps(
+            industry_classes, ensure_ascii=False))
 
-    s3.put('industry_division.json', json.dumps(
-        industry_divisions, ensure_ascii=False))
+        s3.put('industry_division.json', json.dumps(
+            industry_divisions, ensure_ascii=False))
 
-    s3.put('industry_section.json', json.dumps(
-        industry_sections, ensure_ascii=False))
+        s3.put('industry_section.json', json.dumps(
+            industry_sections, ensure_ascii=False))
 
     click.echo("Industries loaded.")

@@ -6,7 +6,10 @@ from clients import s3, redis
 
 
 @click.command()
-def occupations():
+@click.option('--both', 'upload', flag_value='s3_and_redis', default=True, help='Upload metadata to both s3 and Redis')
+@click.option('--s3', 'upload', flag_value='only_s3', help='Upload metadata only to s3')
+@click.option('--redis', 'upload', flag_value='only_redis', help='Upload metadata only to Redis')
+def occupations(upload):
 
     csv = s3.get('metadata/cbo.csv')
     df = pandas.read_csv(
@@ -30,7 +33,8 @@ def occupations():
                 'name_en': row["name_en"]
             }
 
-            redis.set('occupation_group/' +
+            if upload != 'only_s3':
+                redis.set('occupation_group/' +
                       str(row['id']), pickle.dumps(occupation_group))
             occupations_group[row['id']] = occupation_group
 
@@ -43,14 +47,16 @@ def occupations():
                 'occupation_group': occupations_group[row['id'][0]],
             }
 
-            redis.set('occupation_family/' +
+            if upload != 'only_s3':
+                redis.set('occupation_family/' +
                       str(row['id']), pickle.dumps(occupation_family))
             occupations_family[row['id']] = occupation_family
 
-    s3.put('occupation_family.json', json.dumps(
-        occupations_family, ensure_ascii=False))
+    if upload != 'only_redis':
+        s3.put('occupation_family.json', json.dumps(
+            occupations_family, ensure_ascii=False))
 
-    s3.put('occupation_group.json', json.dumps(
-        occupations_group, ensure_ascii=False))
+        s3.put('occupation_group.json', json.dumps(
+            occupations_group, ensure_ascii=False))
 
     click.echo("Occupations loaded.")
