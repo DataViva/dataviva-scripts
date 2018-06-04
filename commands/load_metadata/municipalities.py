@@ -6,7 +6,10 @@ from clients import s3, redis
 
 
 @click.command()
-def municipalities():
+@click.option('--both', 'upload', flag_value='s3_and_redis', default=True, help='Upload metadata to both s3 and Redis')
+@click.option('--s3', 'upload', flag_value='only_s3', help='Upload metadata only to s3')
+@click.option('--redis', 'upload', flag_value='only_redis', help='Upload metadata only to Redis')
+def municipalities(upload):
     csv = s3.get('metadata/municipalities.csv')
     df = pandas.read_csv(
         csv,
@@ -62,20 +65,22 @@ def municipalities():
         microregions[row['microrregiao_id']] = municipality['microregion']
         mesoregions[row['mesorregiao_id']] = municipality['mesoregion']
 
-        redis.set('muLoadIndustriesnicipality/' +
+        if upload != 'only_s3':
+            redis.set('muLoadIndustriesnicipality/' +
                   str(row['municipio_id']), pickle.dumps(municipality))
-        redis.set('microregion/' + str(row['microrregiao_id']),
+            redis.set('microregion/' + str(row['microrregiao_id']),
                   pickle.dumps(municipality['microregion']))
-        redis.set('mesoregion/' + str(row['mesorregiao_id']),
+            redis.set('mesoregion/' + str(row['mesorregiao_id']),
                   pickle.dumps(municipality['mesoregion']))
 
-    s3.put('municipality.json', json.dumps(
-        municipalities, ensure_ascii=False))
+    if upload != 'only_redis':
+        s3.put('municipality.json', json.dumps(
+            municipalities, ensure_ascii=False))
 
-    s3.put('microregion.json', json.dumps(
-        microregions, ensure_ascii=False))
+        s3.put('microregion.json', json.dumps(
+            microregions, ensure_ascii=False))
 
-    s3.put('mesoregion.json', json.dumps(
-        mesoregions, ensure_ascii=False))
+        s3.put('mesoregion.json', json.dumps(
+            mesoregions, ensure_ascii=False))
 
     click.echo("Municipalities, microregions and mesoregions loaded.")
