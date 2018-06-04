@@ -45,7 +45,7 @@ def industries(upload):
 
             if upload != 'only_s3':
                 redis.set('industry_section/' +
-                      str(row['id']), pickle.dumps(industry_section))
+                      str(row['id']), pickle.dumps(industry_section, protocol=2))
             industry_sections[row['id']] = industry_section
 
     for _, row in df.iterrows():
@@ -61,7 +61,7 @@ def industries(upload):
 
             if upload != 'only_s3':
                 redis.set('industry_division/' + str(division_id),
-                      pickle.dumps(industry_division))
+                      pickle.dumps(industry_division, protocol=2))
             industry_divisions[division_id] = industry_division
 
     for _, row in df.iterrows():
@@ -78,7 +78,7 @@ def industries(upload):
 
             if upload != 'only_s3':
                 redis.set('industry_class/' + str(class_id),
-                      pickle.dumps(industry_classe))
+                      pickle.dumps(industry_classe, protocol=2))
             industry_classes[class_id] = industry_classe
 
     if upload != 'only_redis':

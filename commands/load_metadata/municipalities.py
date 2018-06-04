@@ -66,12 +66,12 @@ def municipalities(upload):
         mesoregions[row['mesorregiao_id']] = municipality['mesoregion']
 
         if upload != 'only_s3':
-            redis.set('muLoadIndustriesnicipality/' +
-                  str(row['municipio_id']), pickle.dumps(municipality))
+            redis.set('municipality/' +
+                  str(row['municipio_id']), pickle.dumps(municipality, protocol=2))
             redis.set('microregion/' + str(row['microrregiao_id']),
-                  pickle.dumps(municipality['microregion']))
+                  pickle.dumps(municipality['microregion'], protocol=2))
             redis.set('mesoregion/' + str(row['mesorregiao_id']),
-                  pickle.dumps(municipality['mesoregion']))
+                  pickle.dumps(municipality['mesoregion'], protocol=2))
 
     if upload != 'only_redis':
         s3.put('municipality.json', json.dumps(

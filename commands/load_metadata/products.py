@@ -37,7 +37,7 @@ def products(upload):
 
             if upload != 'only_s3':
                 redis.set('product_section/' + str(product_section_id),
-                      pickle.dumps(product_section))
+                      pickle.dumps(product_section, protocol=2))
             product_sections[product_section_id] = product_section
 
         elif row['profundidade'] == 'Capítulo':
@@ -51,7 +51,7 @@ def products(upload):
 
             if upload != 'only_s3':
                 redis.set('product_chapter/' + str(product_chapter_id),
-                      pickle.dumps(product_chapter))
+                      pickle.dumps(product_chapter, protocol=2))
             product_chapters[product_chapter_id] = product_chapter
 
     for _, row in df.iterrows():
@@ -69,7 +69,7 @@ def products(upload):
 
             products[product_id] = product
             if upload != 'only_s3':
-                redis.set('product/' + str(product_id), pickle.dumps(product))
+                redis.set('product/' + str(product_id), pickle.dumps(product, protocol=2))
 
     if upload != 'only_redis':
         s3.put('product.json', json.dumps(products, ensure_ascii=False))

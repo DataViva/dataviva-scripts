@@ -39,7 +39,7 @@ def continents(upload):
 
         continents[row['id']] = continent
         if upload != 'only_s3':
-            redis.set('continent/' + str(row['id']), pickle.dumps(continent))
+            redis.set('continent/' + str(row['id']), pickle.dumps(continent, protocol=2))
 
     if upload != 'only_redis':
         s3.put('continent.json', json.dumps(continents, ensure_ascii=False))

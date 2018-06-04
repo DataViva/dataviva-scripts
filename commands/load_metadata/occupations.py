@@ -35,7 +35,7 @@ def occupations(upload):
 
             if upload != 'only_s3':
                 redis.set('occupation_group/' +
-                      str(row['id']), pickle.dumps(occupation_group))
+                      str(row['id']), pickle.dumps(occupation_group, protocol=2))
             occupations_group[row['id']] = occupation_group
 
     for _, row in df.iterrows():
@@ -49,7 +49,7 @@ def occupations(upload):
 
             if upload != 'only_s3':
                 redis.set('occupation_family/' +
-                      str(row['id']), pickle.dumps(occupation_family))
+                      str(row['id']), pickle.dumps(occupation_family, protocol=2))
             occupations_family[row['id']] = occupation_family
 
     if upload != 'only_redis':

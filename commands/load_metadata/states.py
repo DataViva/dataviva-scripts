@@ -37,7 +37,7 @@ def states(upload):
 
         states[row['ibge_id']] = state
         if upload != 'only_s3':
-            redis.set('state/' + str(row['ibge_id']), pickle.dumps(state))
+            redis.set('state/' + str(row['ibge_id']), pickle.dumps(state, protocol=2))
 
     if upload != 'only_redis':
         s3.put('state.json', json.dumps(states, ensure_ascii=False))

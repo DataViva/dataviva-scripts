@@ -53,7 +53,7 @@ def countries(upload):
 
         countries[row['id']] = country
         if upload != 'only_s3':
-            redis.set('country/' + str(row['id']), pickle.dumps(country))
+            redis.set('country/' + str(row['id']), pickle.dumps(country, protocol=2))
 
     if upload != 'only_redis':
         s3.put('country.json', json.dumps(countries, ensure_ascii=False))

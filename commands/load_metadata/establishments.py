@@ -31,6 +31,6 @@ def establishments(upload):
 
         if upload != 'only_s3':
             redis.set('establishment/' +
-                  str(row['id']), pickle.dumps(establishment))
+                  str(row['id']), pickle.dumps(establishment, protocol=2))
 
     click.echo("Establishment loaded.")

@@ -34,7 +34,7 @@ def hedu_course(upload):
 
             if upload != 'only_s3':
                 redis.set('hedu_course_field/' +
-                      str(row['id']), pickle.dumps(hedu_course_field))
+                      str(row['id']), pickle.dumps(hedu_course_field, protocol=2))
             hedu_courses_field[row['id']] = hedu_course_field
 
     for _, row in df.iterrows():
@@ -48,7 +48,7 @@ def hedu_course(upload):
 
             if upload != 'only_s3':
                 redis.set('hedu_course/' +
-                      str(row['id']), pickle.dumps(hedu_course))
+                      str(row['id']), pickle.dumps(hedu_course, protocol=2))
             hedu_courses[row['id']] = hedu_course
 
     if upload != 'only_redis':

@@ -31,7 +31,7 @@ def inflections(upload):
         inflections[row['id']] = inflection
 
         if upload != 'only_s3':
-            redis.set('inflection/' + str(row['id']), pickle.dumps(inflection))
+            redis.set('inflection/' + str(row['id']), pickle.dumps(inflection, protocol=2))
 
     if upload != 'only_redis':
         s3.put('inflection.json', json.dumps(

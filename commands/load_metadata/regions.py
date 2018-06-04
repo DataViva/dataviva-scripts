@@ -31,7 +31,7 @@ def regions(upload):
 
         regions[row['id']] = region
         if upload != 'only_s3':
-            redis.set('region/' + str(row['id']), pickle.dumps(region))
+            redis.set('region/' + str(row['id']), pickle.dumps(region, protocol=2))
             
     if upload != 'only_redis':
         s3.put('region.json', json.dumps(regions, ensure_ascii=False))

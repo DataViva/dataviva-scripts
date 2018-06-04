@@ -37,7 +37,7 @@ def economic_blocs(upload):
 
         economic_blocs[row['id']] = economic_bloc
         if upload != 'only_s3':
-            redis.set('economic_bloc/' + str(row['id']), pickle.dumps(economic_bloc))
+            redis.set('economic_bloc/' + str(row['id']), pickle.dumps(economic_bloc, protocol=2))
 
     if upload != 'only_redis':
         s3.put('economic_bloc.json', json.dumps(
