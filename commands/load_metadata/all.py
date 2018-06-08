@@ -1,8 +1,4 @@
 import click
-import pandas
-import pickle
-import json
-from clients import s3, redis
 from commands.load_metadata.continents import continents
 from commands.load_metadata.countries import countries
 from commands.load_metadata.economic_blocs import economic_blocs
