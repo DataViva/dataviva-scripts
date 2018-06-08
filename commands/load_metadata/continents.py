@@ -1,6 +1,5 @@
 import click
 import pandas
-import pickle
 import json
 from clients import s3, redis
 
@@ -39,7 +38,7 @@ def continents(upload):
 
         continents[row['id']] = continent
         if upload != 'only_s3':
-            redis.set('continent/' + str(row['id']), pickle.dumps(continent, protocol=2))
+            redis.set('continent/' + str(row['id']), json.dumps(continent, ensure_ascii=False))
 
     if upload != 'only_redis':
         s3.put('continent.json', json.dumps(continents, ensure_ascii=False))
