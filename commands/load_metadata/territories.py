@@ -33,7 +33,7 @@ def territories(upload):
         territories[row['municipy_id']] = territory
         if upload != 'only_s3':
             redis.set('territory/' +
-                  str(row['municipy_id']), pickle.dumps(territory))
+                  str(row['municipy_id']), json.dumps(territory, ensure_ascii=False))
 
     if upload != 'only_redis':
         s3.put('territory.json', json.dumps(territories, ensure_ascii=False))

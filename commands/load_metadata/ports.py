@@ -27,7 +27,7 @@ def ports(upload):
         }
         ports[row['id']] = port
         if upload != 'only_s3':
-            redis.set('port/' + str(row['id']), pickle.dumps(port))
+            redis.set('port/' + str(row['id']), json.dumps(port, ensure_ascii=False))
 
     if upload != 'only_redis':
         s3.put('port.json', json.dumps(ports, ensure_ascii=False))

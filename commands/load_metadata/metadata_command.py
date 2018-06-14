@@ -1,6 +1,5 @@
 import click
 import pandas
-import pickle
 import json
 from clients import s3, redis
 
@@ -97,7 +96,7 @@ def attrs(attrs, upload):
 
             items[row['id']] = item
             if upload != 'only_s3':
-                redis.set(attr['name'] + '/' + str(row['id']), pickle.dumps(item))
+                redis.set(attr['name'] + '/' + str(row['id']), json.dumps(item, ensure_ascii=False))
 
         if upload != 'only_redis':
             s3.put(attr['name'] + '.json', json.dumps(items, ensure_ascii=False))

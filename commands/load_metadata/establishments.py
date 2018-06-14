@@ -1,6 +1,5 @@
 import click
 import pandas
-import pickle
 import json
 from clients import s3, redis
 
@@ -31,6 +30,6 @@ def establishments(upload):
 
         if upload != 'only_s3':
             redis.set('establishment/' +
-                  str(row['id']), pickle.dumps(establishment))
+                  str(row['id']), json.dumps(establishment, ensure_ascii=False))
 
     click.echo("Establishment loaded.")

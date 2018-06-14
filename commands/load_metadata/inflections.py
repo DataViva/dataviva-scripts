@@ -1,6 +1,5 @@
 import click
 import pandas
-import pickle
 import json
 from clients import s3, redis
 
@@ -31,7 +30,7 @@ def inflections(upload):
         inflections[row['id']] = inflection
 
         if upload != 'only_s3':
-            redis.set('inflection/' + str(row['id']), pickle.dumps(inflection))
+            redis.set('inflection/' + str(row['id']), json.dumps(inflection, ensure_ascii=False))
 
     if upload != 'only_redis':
         s3.put('inflection.json', json.dumps(

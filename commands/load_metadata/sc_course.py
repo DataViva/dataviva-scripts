@@ -34,7 +34,7 @@ def sc_course(upload):
 
             if upload != 'only_s3':
                 redis.set('sc_course_field/' +
-                      str(row['id']), pickle.dumps(sc_course_field))
+                      str(row['id']), json.dumps(sc_course_field, ensure_ascii=False))
             sc_courses_field[row['id']] = sc_course_field
 
         elif len(row['id']) == 5:
@@ -44,7 +44,7 @@ def sc_course(upload):
             }
 
             if upload != 'only_s3':
-                redis.set('sc_course/' + str(row['id']), pickle.dumps(sc_course))
+                redis.set('sc_course/' + str(row['id']), json.dumps(sc_course, ensure_ascii=False))
             sc_courses[row['id']] = sc_course
 
     if upload != 'only_redis':

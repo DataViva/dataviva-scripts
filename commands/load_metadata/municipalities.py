@@ -53,11 +53,11 @@ def municipalities(upload):
                 'name_pt': row["microrregiao_name"],
                 'name_en': row["microrregiao_name"],
             },
-            'state': pickle.loads(
-                redis.get('state/' + row['municipio_id'][:2])
+            'state': json.loads(
+                redis.get('state/' + row['municipio_id'][:2]).decode('utf-8')
             ),
-            'region': pickle.loads(
-                redis.get('region/' + row['municipio_id'][0])
+            'region': json.loads(
+                redis.get('region/' + row['municipio_id'][0]).decode('utf-8')
             ),
         }
 
@@ -66,12 +66,12 @@ def municipalities(upload):
         mesoregions[row['mesorregiao_id']] = municipality['mesoregion']
 
         if upload != 'only_s3':
-            redis.set('muLoadIndustriesnicipality/' +
-                  str(row['municipio_id']), pickle.dumps(municipality))
+            redis.set('municipality/' + str(row['municipio_id']), 
+                  json.dumps(municipality, ensure_ascii=False))
             redis.set('microregion/' + str(row['microrregiao_id']),
-                  pickle.dumps(municipality['microregion']))
+                  json.dumps(municipality['microregion'], ensure_ascii=False))
             redis.set('mesoregion/' + str(row['mesorregiao_id']),
-                  pickle.dumps(municipality['mesoregion']))
+                  json.dumps(municipality['mesoregion'], ensure_ascii=False))
 
     if upload != 'only_redis':
         s3.put('municipality.json', json.dumps(

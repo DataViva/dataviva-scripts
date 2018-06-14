@@ -1,6 +1,5 @@
 import click
 import pandas
-import pickle
 import json
 from clients import s3, redis
 
@@ -34,7 +33,7 @@ def hedu_course(upload):
 
             if upload != 'only_s3':
                 redis.set('hedu_course_field/' +
-                      str(row['id']), pickle.dumps(hedu_course_field))
+                      str(row['id']), json.dumps(hedu_course_field, ensure_ascii=False))
             hedu_courses_field[row['id']] = hedu_course_field
 
     for _, row in df.iterrows():
@@ -48,7 +47,7 @@ def hedu_course(upload):
 
             if upload != 'only_s3':
                 redis.set('hedu_course/' +
-                      str(row['id']), pickle.dumps(hedu_course))
+                      str(row['id']), json.dumps(hedu_course, ensure_ascii=False))
             hedu_courses[row['id']] = hedu_course
 
     if upload != 'only_redis':

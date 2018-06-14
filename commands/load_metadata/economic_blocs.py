@@ -1,6 +1,5 @@
 import click
 import pandas
-import pickle
 import json
 from clients import s3, redis
 
@@ -37,7 +36,7 @@ def economic_blocs(upload):
 
         economic_blocs[row['id']] = economic_bloc
         if upload != 'only_s3':
-            redis.set('economic_bloc/' + str(row['id']), pickle.dumps(economic_bloc))
+            redis.set('economic_bloc/' + str(row['id']), json.dumps(economic_bloc, ensure_ascii=False))
 
     if upload != 'only_redis':
         s3.put('economic_bloc.json', json.dumps(
