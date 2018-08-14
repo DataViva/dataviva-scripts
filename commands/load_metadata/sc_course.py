@@ -28,6 +28,7 @@ def sc_course(upload):
 
         if len(row['id']) == 2:
             sc_course_field = {
+                'id': row["id"],
                 'name_pt': row["name_pt"],
                 'name_en': row["name_en"]
             }
@@ -39,6 +40,7 @@ def sc_course(upload):
 
         elif len(row['id']) == 5:
             sc_course = {
+                'id': row["id"],
                 'name_pt': row["name_pt"],
                 'name_en': row["name_en"]
             }
@@ -48,6 +50,9 @@ def sc_course(upload):
             sc_courses[row['id']] = sc_course
 
     if upload != 'only_redis':
+        for course in sc_courses:
+            sc_courses[course]["course_field"] = sc_courses_field[course[:2]]
+
         s3.put('sc_course.json', json.dumps(sc_courses, ensure_ascii=False))
         s3.put('sc_course_field.json', json.dumps(
             sc_courses_field, ensure_ascii=False))
