@@ -17,6 +17,7 @@ from commands.load_metadata.regions import regions
 from commands.load_metadata.sc_course import sc_course
 from commands.load_metadata.states import states
 from commands.load_metadata.territories import territories
+from commands.load_metadata.universities import universities
 
 
 @click.group()
@@ -39,4 +40,5 @@ load_metadata.add_command(hedu_course)
 load_metadata.add_command(establishments)
 load_metadata.add_command(inflections)
 load_metadata.add_command(metadata_command)
+load_metadata.add_command(universities)
 load_metadata.add_command(all)

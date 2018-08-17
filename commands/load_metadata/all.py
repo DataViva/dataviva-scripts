@@ -15,6 +15,7 @@ from commands.load_metadata.regions import regions
 from commands.load_metadata.sc_course import sc_course
 from commands.load_metadata.states import states
 from commands.load_metadata.territories import territories
+from commands.load_metadata.universities import universities
 
 
 @click.command()
@@ -39,3 +40,4 @@ def all(ctx, upload):
     ctx.invoke(states, upload=upload)
     ctx.invoke(municipalities, upload=upload)
     ctx.invoke(territories, upload=upload)
+    ctx.invoke(universities, upload=upload)
