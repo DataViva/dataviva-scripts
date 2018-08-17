@@ -23,7 +23,6 @@ def metadata_command(upload):
         {'name': 'simple', 'csv_filename': 'simple.csv'},
         {'name': 'legal_nature', 'csv_filename': 'legal_natures.csv'},
         #sc
-        {'name': 'university', 'csv_filename': 'universities.csv'},
         {'name': 'sc_school', 'csv_filename': 'schools.csv'},
         {'name': 'administrative_dependency', 'csv_filename': 'administrative_dependencies.csv'},
         #cnes bed
