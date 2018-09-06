@@ -34,7 +34,7 @@ def countries(upload):
         csv,
         sep=';',
         header=0,
-        names=['id', 'name_pt', 'name_en'],
+        names=['id', 'name_pt', 'name_en', 'abbreviation'],
         converters={
             "id": str
         }
@@ -47,6 +47,7 @@ def countries(upload):
             'id': row["id"],
             'name_pt': row["name_pt"],
             'name_en': row["name_en"],
+            'abbrv': row["abbreviation"],
             'continent': continents.get(row["id"], {})
         }
 
