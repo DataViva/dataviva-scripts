@@ -61,6 +61,7 @@ def products(upload):
             product_chapter_id = row["id"][2:4]
 
             product = {
+                'id': row['id'][2:],
                 'name_pt': row["name_pt"],
                 'name_en': row["name_en"],
                 'product_section': product_sections[product_section_id],
