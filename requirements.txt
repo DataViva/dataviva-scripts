@@ -15,3 +15,4 @@ cython
 numexpr
 tables
 rarfile
+MySQL-python
