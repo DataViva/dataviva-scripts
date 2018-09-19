@@ -15,7 +15,7 @@ def regions(upload):
         csv,
         sep=';',
         header=0,
-        names=['id', 'name_en', 'abbr_en', 'name_pt', 'abbr_pt']
+        names=['id', 'name_en', 'abbr_en', 'name_pt', 'abbr_pt', 'old_id']
     )
 
     regions = {}
@@ -27,6 +27,7 @@ def regions(upload):
             'abbr_en': row['abbr_en'],
             'name_pt': row["name_pt"],
             'abbr_pt': row['abbr_pt'],
+            'old_id': row['old_id'],
         }
 
         regions[row['id']] = region

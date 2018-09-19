@@ -25,6 +25,10 @@ def municipalities(upload):
             'municipio_id',
             'municipio_name',
             'municipio_id_mdic',
+            'municipio_old_id',
+            'microrregiao_old_id',
+            'mesorregiao_old_id',
+            'state_old_id',
         ],
         converters={
             "uf_id": str,
@@ -43,15 +47,18 @@ def municipalities(upload):
             'id': row['municipio_id'],
             'name_pt': row["municipio_name"],
             'name_en': row["municipio_name"],
+            'old_id': row['municipio_old_id'],
             'mesoregion': {
                 'id': row["mesorregiao_id"],
                 'name_pt': row["mesorregiao_name"],
                 'name_en': row["mesorregiao_name"],
+                'old_id': row["mesorregiao_old_id"],
             },
             'microregion': {
                 'id': row["microrregiao_id"],
                 'name_pt': row["microrregiao_name"],
                 'name_en': row["microrregiao_name"],
+                'old_id': row["microrregiao_old_id"],
             },
             'state': json.loads(
                 redis.get('state/' + row['municipio_id'][:2]).decode('utf-8')

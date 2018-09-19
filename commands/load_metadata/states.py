@@ -16,7 +16,7 @@ def states(upload):
         csv,
         sep=';',
         header=0,
-        names=['mdic_name', 'mdic_id', 'ibge_id', 'uf'],
+        names=['mdic_name', 'mdic_id', 'ibge_id', 'uf', 'old_id'],
         converters={
             "ibge_id": str
         }
@@ -33,7 +33,8 @@ def states(upload):
             'name_pt': row["mdic_name"],
             'name_en': row["mdic_name"],
             'abbr_pt': row['uf'],
-            'abbr_en': row['uf']
+            'abbr_en': row['uf'], 
+            'old_id': row['old_id']
         }
 
         states[row['ibge_id']] = state
