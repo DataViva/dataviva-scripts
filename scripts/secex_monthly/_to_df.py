@@ -31,6 +31,10 @@ hs_lookup["9991"] = "229999"
 hs_lookup["9992"] = "229999"
 hs_lookup["9998"] = "229999"
 hs_lookup["9997"] = "229999"
+hs_lookup["9620"] = "168529"
+hs_lookup["3826"] = "063824"
+hs_lookup["9619"] = "054818"
+hs_lookup["0308"] = "010307"
 
 cursor.execute("select id_mdic, id from attrs_wld where id_mdic is not null and length(id) = 5;")
 wld_lookup = {str(r[0]):r[1] for r in cursor.fetchall()}
@@ -94,12 +98,12 @@ def to_df(input_file_path, index=False, debug=False):
         index_lookup = {"y":"year", "m":"month", "b":"bra_id", "p":"hs_id", "w":"wld_id"}
         index_cols = [index_lookup[i] for i in index]
         # secex_df = pd.read_csv(input_file, sep="\t", converters={"month":str, "hs_id":str}, low_memory=False)
-        secex_df = pd.read_csv(input_file, sep="\t", converters={"month":str, "hs_id":str}, engine='python')
+        secex_df = pd.read_csv(input_file, sep="\t", converters={"month":str, "hs_id":str, "wld_id":int, "val_usd":float, "val_usd": float}, engine='python')
         secex_df = secex_df.set_index(index_cols)
     else:
         cols = ["year", "month", "wld_id", "state_id", "customs", "bra_id", \
                 "val_kg", "val_usd", "hs_id"]
-        delim = "|"
+        delim = "\t"
         coerce_cols = {"bra_id":bra_replace, "month":format_month, "hs_id":hs_replace, \
                         "state_id":state_replace, "wld_id":wld_replace, "val_kg":val_kg, "val_usd":val_usd}
         secex_df = pd.read_csv(input_file, header=0, sep=delim, converters=coerce_cols, names=cols)

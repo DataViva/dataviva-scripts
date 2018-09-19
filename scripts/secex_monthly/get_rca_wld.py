@@ -22,7 +22,7 @@ def main( year, output_path):
     step = 0
     # regions state, meso, micro, planning region, munic
     depths = {
-        "bra": [1, 3, 5, 7, 8, 9],
+        "bra": [1, 3, 5, 7, 9],
         "cnae": [1, 3, 6],
         "cbo": [1, 4],
         "demo": [1, 4]

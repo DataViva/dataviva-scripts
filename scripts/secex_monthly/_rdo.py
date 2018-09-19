@@ -33,7 +33,7 @@ def get_wld_rcas(geo_level, year, ymbp, ypw_file_path):
     ymbp = ymbp.pivot(index="bra_id", columns="hs_id", values="export_val").fillna(0)
 
     '''Get world values from ypw file'''
-    ybp_wld = pd.read_csv(ypw_file_path, compression="bz2", sep="\t", converters={"hs_id":str})
+    ybp_wld = pd.read_csv(ypw_file_path, sep="\t", converters={"hs_id":str})
     ybp_wld = ybp_wld.rename(columns={"val_usd":"export_val"})
     ybp_wld = ybp_wld.pivot(index="wld_id", columns="hs_id", values="export_val")
     ybp_wld = ybp_wld.reindex(columns=ymbp.columns).fillna(0)
@@ -63,7 +63,7 @@ def get_domestic_rcas(geo_level, year, ymbp, trade_flow):
 def get_wld_proximity(year, ypw_file_path):
 
     '''Get world values from ypw file'''
-    table = pd.read_csv(ypw_file_path, compression="bz2", sep="\t", converters={"hs_id":str})
+    table = pd.read_csv(ypw_file_path, sep="\t", converters={"hs_id":str})
     table = table.rename(columns={"val_usd":"export_val"})
     table = table.pivot(index="wld_id", columns="hs_id", values="export_val").fillna(0)
 
