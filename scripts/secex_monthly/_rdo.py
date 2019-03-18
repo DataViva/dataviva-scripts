@@ -33,7 +33,7 @@ def get_wld_rcas(geo_level, year, ymbp, ypw_file_path):
     ymbp = ymbp.pivot(index="bra_id", columns="hs_id", values="export_val").fillna(0)
 
     '''Get world values from ypw file'''
-    ybp_wld = pd.read_csv(ypw_file_path, sep="\t", converters={"hs_id":str})
+    ybp_wld = pd.read_csv(ypw_file_path,  sep="\t", converters={"hs_id":str})
     ybp_wld = ybp_wld.rename(columns={"val_usd":"export_val"})
     ybp_wld = ybp_wld.pivot(index="wld_id", columns="hs_id", values="export_val")
     ybp_wld = ybp_wld.reindex(columns=ymbp.columns).fillna(0)
@@ -63,7 +63,7 @@ def get_domestic_rcas(geo_level, year, ymbp, trade_flow):
 def get_wld_proximity(year, ypw_file_path):
 
     '''Get world values from ypw file'''
-    table = pd.read_csv(ypw_file_path, sep="\t", converters={"hs_id":str})
+    table = pd.read_csv(ypw_file_path,  sep="\t", converters={"hs_id":str})
     table = table.rename(columns={"val_usd":"export_val"})
     table = table.pivot(index="wld_id", columns="hs_id", values="export_val").fillna(0)
 
@@ -131,34 +131,40 @@ def rdo(ymbp, ymp, year, geo_depths, ypw_file_path):
         '''
             DISTANCES
         '''
-        '''domestic distances'''
-        prox_dom = ps_calcs.proximity(rcas_dom_binary)
-        dist_dom = ps_calcs.distance(rcas_dom_binary, prox_dom).fillna(0)
 
-        '''world distances'''
+        '''
+            Proximity
+        '''
+
+	    
+        #prox_dom = ps_calcs.proximity(rcas_dom_binary)
         prox_wld = get_wld_proximity(year, ypw_file_path)
         hs_wld = set(rcas_wld_binary.columns).intersection(set(prox_wld.columns))
-
-        # hs_wld = set(rcas_wld_binary.columns).union(set(prox_wld.columns))
         prox_wld = prox_wld.reindex(columns=hs_wld, index=hs_wld)
         rcas_wld_binary = rcas_wld_binary.reindex(columns=hs_wld)
 
+        '''same PCIs for all since we are using world PCIs'''
+        pcis = get_pcis(geo_level, ymp)
+        all_hs_dom = set(pcis.index).intersection(set(rcas_dom.columns))
+        rcas_dom_binary = rcas_dom_binary.reindex(columns = all_hs_dom)
+        prox_dom = prox_wld.reindex(index = all_hs_dom, columns = all_hs_dom)
+
+        '''domestic distances'''
+        dist_dom = ps_calcs.distance(rcas_dom_binary, prox_dom).fillna(0)
+
+        '''world distances'''
         dist_wld = ps_calcs.distance(rcas_wld_binary, prox_wld).fillna(0)
+
 
         '''
             OPP GAIN
         '''
 
-        '''same PCIs for all since we are using world PCIs'''
-        pcis = get_pcis(geo_level, ymp)
-
-        # all_hs_dom = set(pcis.index).union(set(rcas_dom.columns))
-        all_hs_dom = set(pcis.index).intersection(set(rcas_dom.columns))
-        pcis_dom = pcis.reindex(index=all_hs_dom)
-        rcas_dom_binary = rcas_dom_binary.reindex(columns = all_hs_dom)
-        prox_dom = prox_dom.reindex(index = all_hs_dom, columns = all_hs_dom)
-
+               
+        
         # print rcas_dom_binary.shape, prox_dom.shape, pcis.shape
+        pcis_dom = pcis.reindex(index=all_hs_dom)
+
 
         # all_hs_wld = set(pcis.index).union(set(rcas_wld.columns))
         all_hs_wld = set(pcis.index).intersection(set(rcas_wld.columns))

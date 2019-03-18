@@ -12,7 +12,7 @@ def pci_wld_eci(eci_file_path, pci_file_path, ymp, ymw, year):
     ecis["year"] = int(year)
     ecis["month"] = "00"
     ecis = ecis.set_index(["year", "month", "wld_id"])
-
+    
     ymp["pci"] = pcis["pci"]
     ymw["eci"] = ecis["eci"]
     

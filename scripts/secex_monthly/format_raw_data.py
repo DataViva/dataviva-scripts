@@ -80,11 +80,11 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
         ymbpw = aggregate(secex_df)
 
         step += 1
-        print '''\nSTEP {0}: \nShard'''.format(step)
+        print'''\nSTEP {0}: \nShard'''.format(step)
         [ymb, ymbp, ymbw, ymp, ympw, ymw] = shard(ymbpw)
 
         step += 1
-        print '''\nSTEP {0}: \nCalculate PCI & ECI'''.format(step)
+        print''' \nSTEP {0}: \nCalculate PCI & ECI'''.format(step)
         [ymp, ymw] = pci_wld_eci(eci_file_path, pci_file_path, ymp, ymw, year)
 
         step += 1
@@ -101,15 +101,15 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
         ymb = domestic_eci(ymp, ymb, ymbp, depths["bra"])
 
         step += 1
-        print '''\nSTEP {0}: \nCalculate domestic ECI'''.format(step)
+        print ('''\nSTEP {0}: \nCalculate domestic ECI'''.format(step))
         ymb = domestic_eci(ymp, ymb, ymbp, depths["bra"])
 
         step += 1
-        print '''\nSTEP {0}: \nCalculate Brazilian RCA'''.format(step)
+        print ('''\nSTEP {0}: \nCalculate Brazilian RCA'''.format(step))
         ymp = brazil_rca(ymp, ypw_file_path, year)
 
         step += 1
-        print '''\nSTEP {0}: \nCalculate RCA, diversity and opp_gain aka RDO'''.format(step)
+        print ('''\nSTEP {0}: \nCalculate RCA, diversity and opp_gain aka RDO'''.format(step))
         ymbp = rdo(ymbp, ymp, year, depths["bra"], ypw_file_path)
 
         tables = {"ymb": ymb, "ymp": ymp, "ymw": ymw, "ymbp": ymbp, "ymbpw": ymbpw, "ymbw": ymbw, "ympw": ympw}
@@ -118,12 +118,12 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
 
     if prev_path:
         step += 1
-        print '''\nSTEP {0}: \nCalculate 1 year growth'''.format(step)
+        print ('''\nSTEP {0}: \nCalculate 1 year growth''').format(step)
         if prev5_path:
             step += 1
-            print '''\nSTEP {0}: \nCalculate 5 year growth'''.format(step)
+            print ('''\nSTEP {0}: \nCalculate 5 year growth'''.format(step))
         for t_name, t in tables.items():
-            print t_name
+            print (t_name)
             prev_file = os.path.join(prev_path, "{0}.tsv.bz2".format(t_name))
             t_prev = to_df(prev_file, t_name)
             t_prev = t_prev.reset_index(level="year")
@@ -143,11 +143,11 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
 
                 t = calc_growth(t, t_prev, 5)
 
-    print "computing column lengths"
+    print ("computing column lengths")
     for table_name, table_data in tables.items():
         tables[table_name] = add_column_length(table_name, table_data)
 
-    print '''\nFINAL STEP: \nSave files to output path'''
+    print ('''\nFINAL STEP: \nSave files to output path''')
     for t_name, t in tables.items():
         if not os.path.exists(output_path):
             os.makedirs(output_path)
@@ -157,7 +157,7 @@ def main(export_file_path, import_file_path, year, eci_file_path, pci_file_path,
     total_run_time = (time.time() - start) / 60
     print
     print
-    print "Total runtime: {0} minutes".format(int(total_run_time))
+    print ("Total runtime: {0} minutes").format(int(total_run_time))
     print
     print
 
