@@ -3,6 +3,7 @@ import pandas
 import pickle
 import json
 from clients import s3, redis
+from os import getenv
 
 
 @click.command()
@@ -29,6 +30,7 @@ def municipalities(upload):
             'microrregiao_old_id',
             'mesorregiao_old_id',
             'state_old_id',
+            'population'
         ],
         converters={
             "uf_id": str,
